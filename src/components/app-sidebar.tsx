@@ -52,11 +52,7 @@ export function AppSidebar() {
             <Logo />
           </Link>
           <div className="md:hidden">
-            <SidebarTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <PanelLeft />
-              </Button>
-            </SidebarTrigger>
+            <SidebarTrigger />
           </div>
         </div>
       </SidebarHeader>
