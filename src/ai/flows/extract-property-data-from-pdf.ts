@@ -63,9 +63,28 @@ export async function extractPropertyData(input: ExtractPropertyDataInput): Prom
   return extractPropertyDataFlow(input);
 }
 
+const extractTextFromPdfTool = ai.defineTool(
+    {
+      name: 'extractTextFromPdf',
+      description: 'Extracts text from a PDF file provided as a data URI.',
+      inputSchema: z.object({
+        dataUri: z.string().describe("The PDF file's data URI."),
+      }),
+      outputSchema: z.string(),
+    },
+    async (input) => {
+      // TODO: Actually implement PDF extraction using Google Cloud Vision API
+      // For now, just return a placeholder
+      return `Extracted text from PDF with data URI: ${input.dataUri}`;
+    },
+);
+
 const prompt = ai.definePrompt({
   name: 'extractPropertyDataPrompt',
-  input: {schema: ExtractPropertyDataInputSchema},
+  input: {schema: z.object({
+    propertyTitleText: z.string(),
+    briefInformationText: z.string(),
+  })},
   output: {schema: ExtractPropertyDataOutputSchema},
   prompt: `你是一个在新西兰房产行业工作的资深数据分析师。你的任务是分析并从两份提供的 PDF 文件中提取关键数据。你需要理解新西兰房产估价报告的常见结构和术语，如 'Capital Value (CV)'、'Legal Description' 等。请严格按照用户提供的 JSON 格式输出所有信息，如果某个信息在文档中找不到，请在JSON中用“N/A”来代替。\n\n请仔细阅读以下两份 PDF 文档的文本内容，并根据你的专业知识和我的提取指令，提取所有必要信息。第一份文件是房产产权文件（Property Title），第二份是房产简要信息文件（Brief Information）。\n\n---\n\n**提取指令和提示:**
 1.  **从房产产权文件 (Property Title) 中提取：**
@@ -112,24 +131,10 @@ const prompt = ai.definePrompt({
 }
 \n---\n\n**PDF文档内容 (文本形式):**
 \n**文件 1 (Property Title):**
-{{extractTextFromPdf dataUri=propertyTitlePdfDataUri}}\n\n**文件 2 (Brief Information):**
-{{extractTextFromPdf dataUri=briefInformationPdfDataUri}}
+{{{propertyTitleText}}}
+\n\n**文件 2 (Brief Information):**
+{{{briefInformationText}}}
 `,
-  tools: [
-    {
-      name: 'extractTextFromPdf',
-      description: 'Extracts text from a PDF file provided as a data URI.',
-      inputSchema: z.object({
-        dataUri: z.string().describe("The PDF file's data URI."),
-      }),
-      outputSchema: z.string(),
-      async func(input) {
-        // TODO: Actually implement PDF extraction using Google Cloud Vision API
-        // For now, just return a placeholder
-        return `Extracted text from PDF with data URI: ${input.dataUri}`;
-      },
-    },
-  ],
 });
 
 const extractPropertyDataFlow = ai.defineFlow(
@@ -139,7 +144,13 @@ const extractPropertyDataFlow = ai.defineFlow(
     outputSchema: ExtractPropertyDataOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const propertyTitleText = await extractTextFromPdfTool({ dataUri: input.propertyTitlePdfDataUri });
+    const briefInformationText = await extractTextFromPdfTool({ dataUri: input.briefInformationPdfDataUri });
+
+    const {output} = await prompt({
+        propertyTitleText,
+        briefInformationText,
+    });
     return output!;
   }
 );
