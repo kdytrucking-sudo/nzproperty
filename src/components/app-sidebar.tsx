@@ -6,6 +6,7 @@ import {
   PanelLeft,
   Settings,
   Pencil,
+  FileText,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -36,6 +37,11 @@ export function AppSidebar() {
       href: '/manage-content',
       label: 'Manage Content',
       icon: Pencil,
+    },
+    {
+      href: '/manage-templates',
+      label: 'Manage Templates',
+      icon: FileText,
     },
     {
       href: '/json-editor',
