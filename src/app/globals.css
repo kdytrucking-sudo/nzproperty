@@ -82,4 +82,15 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Styling for React Quill Rich Text Editor */
+  .ql-toolbar {
+    @apply rounded-t-lg border-border bg-card;
+  }
+  .ql-container {
+    @apply rounded-b-lg border-border bg-card text-card-foreground;
+  }
+  .ql-editor {
+    @apply min-h-[400px];
+  }
 }
