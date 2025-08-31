@@ -1,6 +1,6 @@
 'use client';
 
-import { APIProvider, Map } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 import { useEffect, useState } from 'react';
 
 // IMPORTANT: You need to add your Google Maps API Key to your environment variables.
@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react';
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 type MapPreviewProps = {
-  address: string;
+  address: string | null;
 };
 
 export function MapPreview({ address }: MapPreviewProps) {
@@ -19,10 +19,12 @@ export function MapPreview({ address }: MapPreviewProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!address || !API_KEY) {
+    if (!address) {
       setPosition(null);
+      setError(null);
       return;
     }
+    if (!API_KEY) return;
 
     const geocodeAddress = async () => {
       try {
@@ -46,11 +48,7 @@ export function MapPreview({ address }: MapPreviewProps) {
       }
     };
 
-    const timeoutId = setTimeout(() => {
-        geocodeAddress();
-    }, 1000); // Debounce API calls
-
-    return () => clearTimeout(timeoutId);
+    geocodeAddress();
   }, [address]);
 
   if (!API_KEY) {
@@ -64,20 +62,30 @@ export function MapPreview({ address }: MapPreviewProps) {
       </div>
     );
   }
+  
+  if (!address) {
+    return (
+        <div className="flex aspect-video w-full items-center justify-center rounded-lg border bg-muted">
+            <p className="text-muted-foreground">Enter an address and click Update to see the map</p>
+        </div>
+    );
+  }
 
   return (
     <div className="aspect-video w-full overflow-hidden rounded-lg border">
       <APIProvider apiKey={API_KEY}>
         <Map
           defaultCenter={{ lat: -40.9006, lng: 174.8860 }} // Default to New Zealand
-          defaultZoom={position ? 15 : 5}
+          defaultZoom={5}
           center={position || undefined}
           zoom={position ? 15 : 5}
-          gestureHandling={'greedy'}
-          disableDefaultUI={true}
+          gestureHandling={'auto'}
+          disableDefaultUI={false}
           mapId={'nz-property-ace-map'}
           className="h-full w-full"
-        />
+        >
+          {position && <AdvancedMarker position={position} />}
+        </Map>
       </APIProvider>
       {error && !position && (
          <div className="absolute inset-0 flex items-center justify-center bg-background/80">

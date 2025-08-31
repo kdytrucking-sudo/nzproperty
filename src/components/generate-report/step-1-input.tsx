@@ -43,6 +43,7 @@ const fileToDataUri = (file: File): Promise<string> => {
 export function Step1Input({ onDataExtracted }: Step1InputProps) {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = React.useState(false);
+  const [addressForMap, setAddressForMap] = React.useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -73,11 +74,8 @@ export function Step1Input({ onDataExtracted }: Step1InputProps) {
         briefInformationPdfDataUri,
       };
 
-      // Since the AI flow is a mock, it will return placeholder data.
-      // In a real application, this would be a call to the actual AI service.
       const result: PropertyData = await extractPropertyData(input);
       
-      // We will merge the address from the form into the result as the AI might not always get it.
       result.propertyDetails.address = values.address;
 
       toast({
@@ -97,6 +95,10 @@ export function Step1Input({ onDataExtracted }: Step1InputProps) {
     }
   }
 
+  const handleUpdateMap = () => {
+    setAddressForMap(address);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -113,14 +115,17 @@ export function Step1Input({ onDataExtracted }: Step1InputProps) {
                   render={({ field }) => (
                     <FormItem>
                       <label className="text-sm font-medium">Property Address</label>
-                      <FormControl>
-                        <Input placeholder="e.g., 123 Queen Street, Auckland" {...field} />
-                      </FormControl>
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Input placeholder="e.g., 123 Queen Street, Auckland" {...field} />
+                        </FormControl>
+                         <Button type="button" variant="secondary" onClick={handleUpdateMap}>Update</Button>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <MapPreview address={address} />
+                <MapPreview address={addressForMap} />
               </div>
 
               <div className="space-y-6">
