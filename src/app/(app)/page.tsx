@@ -14,6 +14,8 @@ function GenerateReportFlow() {
   const [step, setStep] = React.useState<Step>('input');
   const [propertyData, setPropertyData] = React.useState<PropertyData | null>(null);
   const [generatedReportDataUri, setGeneratedReportDataUri] = React.useState<string | null>(null);
+  const [generatedFileName, setGeneratedFileName] = React.useState<string>('');
+
 
   const handleDataExtracted = (data: PropertyData) => {
     setPropertyData(data);
@@ -21,13 +23,19 @@ function GenerateReportFlow() {
   };
 
   const handleReportGenerated = (reportDataUri: string) => {
+    const address = propertyData?.propertyDetails?.address || 'Report';
+    const date = new Date().toISOString().split('T')[0];
+    const fileName = `${address} - ${date}.docx`;
+
     setGeneratedReportDataUri(reportDataUri);
+    setGeneratedFileName(fileName);
     setStep('result');
   };
 
   const handleStartOver = () => {
     setPropertyData(null);
     setGeneratedReportDataUri(null);
+    setGeneratedFileName('');
     setStep('input');
   };
 
@@ -95,6 +103,7 @@ function GenerateReportFlow() {
             >
               <Step3Result 
                 reportDataUri={generatedReportDataUri}
+                fileName={generatedFileName}
                 onStartOver={handleStartOver} 
               />
             </motion.div>

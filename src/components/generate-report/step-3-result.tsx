@@ -7,17 +7,15 @@ import * as React from 'react';
 
 type Step3ResultProps = {
   reportDataUri: string;
+  fileName: string;
   onStartOver: () => void;
 };
 
-export function Step3Result({ reportDataUri, onStartOver }: Step3ResultProps) {
+export function Step3Result({ reportDataUri, fileName, onStartOver }: Step3ResultProps) {
   
   const handleDownload = () => {
     const link = document.createElement("a");
     link.href = reportDataUri;
-    // Suggest a filename for the download.
-    // e.g. "Valuation Report - 2024-01-01.docx"
-    const fileName = `Valuation Report - ${new Date().toISOString().split('T')[0]}.docx`;
     link.download = fileName;
     document.body.appendChild(link);
     link.click();
@@ -27,7 +25,7 @@ export function Step3Result({ reportDataUri, onStartOver }: Step3ResultProps) {
   // Automatically trigger download on component mount
   React.useEffect(() => {
     handleDownload();
-  }, [reportDataUri]);
+  }, [reportDataUri, fileName]);
 
   return (
     <Card className="w-full max-w-2xl mx-auto">

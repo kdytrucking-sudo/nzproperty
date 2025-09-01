@@ -8,10 +8,9 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
-import { PropertyData } from '@/lib/types';
 
 const GenerateReportInputSchema = z.object({
   templateDataUri: z
@@ -29,6 +28,22 @@ const GenerateReportOutputSchema = z.object({
     .describe('The generated .docx file as a data URI.'),
 });
 export type GenerateReportOutput = z.infer<typeof GenerateReportOutputSchema>;
+
+// Custom parser to handle [Replace_xxxx] syntax
+const customParser = (tag: string) => {
+    return {
+        get(scope: any) {
+            if (tag === '.') {
+                return scope;
+            }
+            if (scope[tag]) {
+                return scope[tag];
+            }
+            return undefined;
+        },
+    };
+};
+
 
 export async function generateReportFromTemplate(
   input: GenerateReportInput
@@ -52,17 +67,38 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
+      // Use custom parser for [Replace_xxxx] format
+      parser: (tag) => {
+        return {
+          get: (scope) => {
+            if (scope[tag]) {
+              return scope[tag];
+            }
+            return `[${tag}]`; // Keep placeholder if not found
+          },
+        };
+      },
+      delimiters: {
+        start: '[',
+        end: ']',
+      },
       // Handle cases where data is missing for a placeholder
       nullGetter: () => "N/A", 
     });
     
-    const flattenedData = {
-        ...data.propertyDetails,
-        ...data.valuationSummary,
-        comparableSales: data.comparableSales,
-        risksAndOpportunities: data.risksAndOpportunities,
-        additionalNotes: data.additionalNotes,
+    // Flatten the data and add 'Replace_' prefix
+    const flattenedData: { [key: string]: any } = {};
+    for (const sectionKey in data) {
+        if (typeof data[sectionKey] === 'object' && data[sectionKey] !== null && !Array.isArray(data[sectionKey])) {
+            for (const itemKey in data[sectionKey]) {
+                flattenedData[`Replace_${itemKey}`] = data[sectionKey][itemKey];
+            }
+        } else {
+             // For top-level items and arrays
+            flattenedData[`Replace_${sectionKey}`] = data[sectionKey];
+        }
     }
+
 
     // 3. Set the data
     doc.setData(flattenedData);
