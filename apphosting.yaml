@@ -5,3 +5,15 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+  # The following CPU and memory values are samples. You can change these values as needed.
+  # https://firebase.google.com/docs/app-hosting/configure#set-cpu
+  cpu: 1
+  # https://firebase.google.com/docs/app-hosting/configure#set-memory
+  memoryMiB: 512
+
+# A liveness probe demonstrates that your app is alive and well.
+# https://firebase.google.com/docs/app-hosting/configure-health-checks
+livenessProbe:
+  # An HTTP request to the root of your application.
+  httpGet:
+    path: /
