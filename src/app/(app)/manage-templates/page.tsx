@@ -171,7 +171,7 @@ export default function ManageTemplatesPage() {
             <div className="flex justify-between">
                 <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button>Save Changes</Button>
+                        <Button>Save as New Template</Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
