@@ -13,6 +13,9 @@ import { useToast } from '@/hooks/use-toast';
 import type { PropertyData } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import * as React from 'react';
+import { useTemplates } from '@/hooks/use-templates';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { generateReportFromTemplate } from '@/ai/flows/generate-report-from-template';
 
 const comparableSaleSchema = z.object({
   compAddress: z.string().min(1, 'Address is required.'),
@@ -22,7 +25,7 @@ const comparableSaleSchema = z.object({
   compFloorArea: z.string(),
 });
 
-const formSchema = z.object({
+const reportDataSchema = z.object({
   propertyDetails: z.object({
     address: z.string().min(1, 'Address is required.'),
     legalDescription: z.string(),
@@ -46,39 +49,67 @@ const formSchema = z.object({
   additionalNotes: z.string(),
 });
 
+const formSchema = z.object({
+    templateId: z.string().min(1, 'A template is required.'),
+    data: reportDataSchema,
+})
+
 type Step2ReviewProps = {
   extractedData: PropertyData;
-  onReportGenerated: () => void;
+  onReportGenerated: (reportDataUri: string) => void;
   onBack: () => void;
 };
 
 export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2ReviewProps) {
   const { toast } = useToast();
+  const { templates } = useTemplates();
   const [isGenerating, setIsGenerating] = React.useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: extractedData,
+    defaultValues: {
+        templateId: templates.length > 0 ? templates[0].id : '',
+        data: extractedData,
+    },
   });
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: 'comparableSales',
+    name: 'data.comparableSales',
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsGenerating(true);
-    console.log('Generating report with data:', values);
     
-    // Simulate report generation
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    toast({
-      title: 'Report Generated Successfully',
-      description: 'Your property valuation report is ready.',
-    });
-    setIsGenerating(false);
-    onReportGenerated();
+    const selectedTemplate = templates.find(t => t.id === values.templateId);
+    if (!selectedTemplate) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Selected template not found.' });
+        setIsGenerating(false);
+        return;
+    }
+
+    try {
+        const result = await generateReportFromTemplate({
+            templateDataUri: selectedTemplate.dataUri,
+            data: values.data,
+        });
+
+        toast({
+            title: 'Report Generated Successfully',
+            description: 'Your property valuation report is ready for download.',
+        });
+        onReportGenerated(result.generatedDocxDataUri);
+
+    } catch (error) {
+        console.error('Error generating report:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Uh oh! Something went wrong.',
+            description: 'There was a problem generating your report. Please try again.',
+        });
+    } finally {
+        setIsGenerating(false);
+    }
   }
 
   return (
@@ -86,12 +117,39 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       <CardHeader>
         <CardTitle>2. Review & Edit Extracted Data</CardTitle>
         <CardDescription>
-          Review the data extracted by the AI. Make any necessary corrections before generating the final report.
+          Review the data, make corrections, and select a template to generate the final report.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="templateId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Select Report Template</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a .docx template to use..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {templates.length === 0 ? (
+                        <SelectItem value="no-templates" disabled>No templates uploaded yet</SelectItem>
+                      ) : (
+                        templates.map(template => (
+                          <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
             <Tabs defaultValue="property-details">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="property-details">Property Details</TabsTrigger>
@@ -101,11 +159,11 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
 
               <TabsContent value="property-details" className="space-y-4 pt-4">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {Object.keys(form.getValues('propertyDetails')).map((key) => (
+                  {Object.keys(form.getValues('data.propertyDetails')).map((key) => (
                     <FormField
                       key={key}
                       control={form.control}
-                      name={`propertyDetails.${key as keyof PropertyData['propertyDetails']}`}
+                      name={`data.propertyDetails.${key as keyof PropertyData['propertyDetails']}`}
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</FormLabel>
@@ -122,11 +180,11 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
 
               <TabsContent value="valuation-summary" className="space-y-4 pt-4">
                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {Object.keys(form.getValues('valuationSummary')).map((key) => (
+                  {Object.keys(form.getValues('data.valuationSummary')).map((key) => (
                     <FormField
                       key={key}
                       control={form.control}
-                      name={`valuationSummary.${key as keyof PropertyData['valuationSummary']}`}
+                      name={`data.valuationSummary.${key as keyof PropertyData['valuationSummary']}`}
                       render={({ field }) => (
                         <FormItem className={key === 'keyAssumptions' ? 'md:col-span-2' : ''}>
                           <FormLabel>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</FormLabel>
@@ -141,7 +199,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                 </div>
                 <FormField
                   control={form.control}
-                  name="risksAndOpportunities"
+                  name="data.risksAndOpportunities"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Risks and Opportunities</FormLabel>
@@ -154,7 +212,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                 />
                 <FormField
                   control={form.control}
-                  name="additionalNotes"
+                  name="data.additionalNotes"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Additional Notes</FormLabel>
@@ -172,11 +230,11 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                   {fields.map((field, index) => (
                     <div key={field.id} className="relative rounded-md border p-4 pr-12">
                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
-                        <FormField control={form.control} name={`comparableSales.${index}.compAddress`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name={`comparableSales.${index}.compSaleDate`} render={({ field }) => (<FormItem><FormLabel>Sale Date</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name={`comparableSales.${index}.compSalePrice`} render={({ field }) => (<FormItem><FormLabel>Sale Price</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name={`comparableSales.${index}.compLandArea`} render={({ field }) => (<FormItem><FormLabel>Land Area</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name={`comparableSales.${index}.compFloorArea`} render={({ field }) => (<FormItem><FormLabel>Floor Area</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`data.comparableSales.${index}.compAddress`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`data.comparableSales.${index}.compSaleDate`} render={({ field }) => (<FormItem><FormLabel>Sale Date</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`data.comparableSales.${index}.compSalePrice`} render={({ field }) => (<FormItem><FormLabel>Sale Price</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`data.comparableSales.${index}.compLandArea`} render={({ field }) => (<FormItem><FormLabel>Land Area</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`data.comparableSales.${index}.compFloorArea`} render={({ field }) => (<FormItem><FormLabel>Floor Area</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
                       <Button type="button" variant="destructive" size="icon" className="absolute right-2 top-2 h-7 w-7" onClick={() => remove(index)}>
                         <Trash2 className="h-4 w-4" />
@@ -194,7 +252,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
               <Button type="button" variant="outline" onClick={onBack}>
                 Back
               </Button>
-              <Button type="submit" disabled={isGenerating}>
+              <Button type="submit" disabled={isGenerating || templates.length === 0}>
                 {isGenerating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

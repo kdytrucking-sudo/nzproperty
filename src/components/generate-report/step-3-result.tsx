@@ -2,23 +2,32 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2, Download, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Download } from 'lucide-react';
+import * as React from 'react';
 
 type Step3ResultProps = {
+  reportDataUri: string;
   onStartOver: () => void;
 };
 
-export function Step3Result({ onStartOver }: Step3ResultProps) {
+export function Step3Result({ reportDataUri, onStartOver }: Step3ResultProps) {
+  
   const handleDownload = () => {
-    // In a real application, this would trigger a download of the .docx file
-    alert('Downloading report as .docx file...');
+    const link = document.createElement("a");
+    link.href = reportDataUri;
+    // Suggest a filename for the download.
+    // e.g. "Valuation Report - 2024-01-01.docx"
+    const fileName = `Valuation Report - ${new Date().toISOString().split('T')[0]}.docx`;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  const handleOpenInGoogleDocs = () => {
-    // In a real application, this would open the Google Doc in a new tab
-    alert('Opening report in Google Docs...');
-    window.open('https://docs.google.com', '_blank');
-  };
+  // Automatically trigger download on component mount
+  React.useEffect(() => {
+    handleDownload();
+  }, [reportDataUri]);
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -28,18 +37,14 @@ export function Step3Result({ onStartOver }: Step3ResultProps) {
         </div>
         <CardTitle className="mt-4 text-2xl">Report Generated Successfully!</CardTitle>
         <CardDescription>
-          Your professional property valuation report has been created.
+          Your download should start automatically. If it doesn't, use the button below.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center space-y-4">
         <div className="flex w-full space-x-4">
           <Button className="flex-1" onClick={handleDownload}>
             <Download className="mr-2 h-4 w-4" />
-            Download as Word
-          </Button>
-          <Button variant="secondary" className="flex-1" onClick={handleOpenInGoogleDocs}>
-            <ExternalLink className="mr-2 h-4 w-4" />
-            Open in Google Docs
+            Download Again
           </Button>
         </div>
         <Button variant="link" onClick={onStartOver}>

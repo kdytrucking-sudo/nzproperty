@@ -6,24 +6,28 @@ import { Step2Review } from '@/components/generate-report/step-2-review';
 import { Step3Result } from '@/components/generate-report/step-3-result';
 import type { PropertyData } from '@/lib/types';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Template, TemplatesProvider } from '@/hooks/use-templates';
 
 type Step = 'input' | 'review' | 'result';
 
-export default function GenerateReportPage() {
+function GenerateReportFlow() {
   const [step, setStep] = React.useState<Step>('input');
   const [propertyData, setPropertyData] = React.useState<PropertyData | null>(null);
+  const [generatedReportDataUri, setGeneratedReportDataUri] = React.useState<string | null>(null);
 
   const handleDataExtracted = (data: PropertyData) => {
     setPropertyData(data);
     setStep('review');
   };
 
-  const handleReportGenerated = () => {
+  const handleReportGenerated = (reportDataUri: string) => {
+    setGeneratedReportDataUri(reportDataUri);
     setStep('result');
   };
 
   const handleStartOver = () => {
     setPropertyData(null);
+    setGeneratedReportDataUri(null);
     setStep('input');
   };
 
@@ -80,7 +84,7 @@ export default function GenerateReportPage() {
             </motion.div>
           )}
 
-          {step === 'result' && (
+          {step === 'result' && generatedReportDataUri && (
              <motion.div
               key="result"
               initial="enter"
@@ -89,11 +93,22 @@ export default function GenerateReportPage() {
               variants={variants}
               transition={{ duration: 0.3 }}
             >
-              <Step3Result onStartOver={handleStartOver} />
+              <Step3Result 
+                reportDataUri={generatedReportDataUri}
+                onStartOver={handleStartOver} 
+              />
             </motion.div>
           )}
         </AnimatePresence>
       </main>
     </div>
   );
+}
+
+export default function GenerateReportPage() {
+    return (
+        <TemplatesProvider>
+            <GenerateReportFlow />
+        </TemplatesProvider>
+    )
 }
