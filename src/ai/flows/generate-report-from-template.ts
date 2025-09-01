@@ -14,25 +14,6 @@ import Docxtemplater from 'docxtemplater';
 import fs from 'fs/promises';
 import path from 'path';
 
-const GenerateReportInputSchema = z.object({
-  templateDataUri: z
-    .string()
-    .describe(
-      "The .docx template file as a data URI. Expected format: 'data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,<encoded_data>'."
-    ),
-  data: z.any().describe('The JSON data to populate the template with.'),
-  photos: z.array(z.string()).optional().describe('An array of photo data URIs to insert into the template.'),
-});
-export type GenerateReportInput = z.infer<typeof GenerateReportInputSchema>;
-
-const GenerateReportOutputSchema = z.object({
-  generatedDocxDataUri: z
-    .string()
-    .describe('The generated .docx file as a data URI.'),
-  replacementsCount: z.number().describe('The number of placeholders that were replaced.'),
-});
-export type GenerateReportOutput = z.infer<typeof GenerateReportOutputSchema>;
-
 // A custom parser to handle custom delimiters and loops
 const customParser = (tag: string) => {
   if (tag.startsWith('Replace_')) {
@@ -55,9 +36,10 @@ const customParser = (tag: string) => {
       end: '/',
     };
   }
-   if (tag.startsWith('Image')) {
+  // This is a simple check for image tags based on Alt Text
+  if (tag.startsWith('Image')) {
      return {
-        get: (scope: any) => scope.images?.[tag],
+        get: (scope: any) => scope[tag],
      };
   }
   return {
@@ -65,39 +47,58 @@ const customParser = (tag: string) => {
   };
 };
 
-// A custom module for handling image injection from base64 data
 const imageModule = {
-    name: 'ImageModule',
-    prefix: 'Image',
-    link: 'word/media/image',
-    build(tag: any) {
-        const regex = new RegExp(`^${this.prefix}(\\d+)$`);
-        const match = tag.match(regex);
-        if (match) {
+    name: "ImageModule",
+    prefix: "[",
+    link: "word/media/image",
+    build(tag: string) {
+        if (tag.startsWith("Image")) {
             return {
                 type: "image",
-                tag: `images.${tag}`,
-                value: parseInt(match[1], 10),
+                tag,
             };
         }
+        return null;
     },
     render(part: any, scope: any) {
-        if (part.type !== 'image') {
+        if (part.type !== "image") {
             return null;
         }
-        const image = scope.images?.[part.tag.substring(7)]; // e.g., get "Image1" from "images.Image1"
+
+        const image = scope[part.tag];
+
         if (image) {
-             return {
-                type: "image",
-                value: image.source,
-                format: `image/${image.format}`,
-                // You might need to specify width/height if not inferred from template
-             };
+            const base64Data = image.split(',')[1];
+            if (base64Data) {
+                return {
+                    type: "image",
+                    value: Buffer.from(base64Data, "base64"),
+                };
+            }
         }
-        // If no image is provided for the placeholder, remove the placeholder tag
+        // If no image is provided, remove the placeholder tag by returning an empty text object
         return { type: "text", value: "" };
     }
 };
+
+const GenerateReportInputSchema = z.object({
+  templateDataUri: z
+    .string()
+    .describe(
+      "The .docx template file as a data URI. Expected format: 'data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,<encoded_data>'."
+    ),
+  data: z.any().describe('The JSON data to populate the template with.'),
+  photos: z.array(z.string()).optional().describe('An array of photo data URIs to insert into the template.'),
+});
+export type GenerateReportInput = z.infer<typeof GenerateReportInputSchema>;
+
+const GenerateReportOutputSchema = z.object({
+  generatedDocxDataUri: z
+    .string()
+    .describe('The generated .docx file as a data URI.'),
+  replacementsCount: z.number().describe('The number of placeholders that were replaced.'),
+});
+export type GenerateReportOutput = z.infer<typeof GenerateReportOutputSchema>;
 
 export async function generateReportFromTemplate(
   input: GenerateReportInput
@@ -119,9 +120,17 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     const zip = new PizZip(buffer);
     
     const doc = new Docxtemplater(zip, {
+      modules: [imageModule],
       paragraphLoop: true,
       linebreaks: true,
-      parser: customParser,
+      parser: (tag) => {
+        // This parser handles Alt Text placeholders like `[Image1]`
+        if (tag.startsWith('[') && tag.endsWith(']')) {
+            const tagName = tag.substring(1, tag.length - 1);
+            return customParser(tagName);
+        }
+        return customParser(tag);
+      },
       delimiters: {
         start: '[',
         end: ']',
@@ -155,21 +164,13 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     flatten(data);
 
     // Prepare image data for the template
-    const images: {[key: string]: any} = {};
     if (photos) {
         photos.forEach((photoDataUri, index) => {
-            const imageKey = `Image${index + 1}`;
-            const base64Data = photoDataUri.split(',')[1];
-            const imageFormat = photoDataUri.substring(photoDataUri.indexOf('/') + 1, photoDataUri.indexOf(';'));
-            images[imageKey] = {
-                _type: "image",
-                source: Buffer.from(base64Data, 'base64'),
-                format: imageFormat,
-            };
+            const imageKey = `Image${index + 1}`; // This matches [Image1], [Image2] etc.
+            flattenedData[imageKey] = photoDataUri;
             replacementCount++;
         });
     }
-    flattenedData.images = images;
     
     doc.setData(flattenedData);
 
