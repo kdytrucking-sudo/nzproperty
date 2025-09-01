@@ -11,51 +11,17 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
-import fs from 'fs/promises';
-import path from 'path';
-
-// A custom parser to handle custom delimiters and loops
-const customParser = (tag: string) => {
-  if (tag.startsWith('Replace_')) {
-    return {
-      get: (scope: any) => scope[tag] || `[${tag}]`,
-    };
-  }
-  if (tag.startsWith('#')) {
-    return {
-      type: 'loop',
-      start: '#',
-      end: '/',
-      get: (scope: any) => scope[tag.substring(1)] || [],
-    };
-  }
-  if (tag.startsWith('/')) {
-    return {
-      type: 'end-loop',
-      start: '#',
-      end: '/',
-    };
-  }
-  // This is a simple check for image tags based on Alt Text
-  if (tag.startsWith('Image')) {
-     return {
-        get: (scope: any) => scope[tag],
-     };
-  }
-  return {
-    get: (scope: any) => scope[tag],
-  };
-};
 
 const imageModule = {
     name: "ImageModule",
-    prefix: "[",
+    prefix: "", // No prefix, we will match the whole tag
     link: "word/media/image",
     build(tag: string) {
-        if (tag.startsWith("Image")) {
+        // This regex will match tags starting with "Image" followed by a number, e.g., Image1, Image22
+        if (/^Image\d+$/.test(tag)) {
             return {
                 type: "image",
-                tag,
+                tag: tag, // The tag is the full Alt Text, e.g., "Image1"
             };
         }
         return null;
@@ -65,18 +31,22 @@ const imageModule = {
             return null;
         }
 
-        const image = scope[part.tag];
+        const image = scope[part.tag]; // scope['Image1']
 
         if (image) {
+            // Remove the data URI prefix if it exists
             const base64Data = image.split(',')[1];
             if (base64Data) {
+                // Return the image data as a buffer
                 return {
                     type: "image",
                     value: Buffer.from(base64Data, "base64"),
+                    // You can also specify size here if needed, e.g.,
+                    // size: [600, 400], 
                 };
             }
         }
-        // If no image is provided, remove the placeholder tag by returning an empty text object
+        // If no image is provided for the placeholder, remove the tag by returning an empty text object
         return { type: "text", value: "" };
     }
 };
@@ -120,16 +90,25 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     const zip = new PizZip(buffer);
     
     const doc = new Docxtemplater(zip, {
-      modules: [imageModule],
+      modules: [imageModule], // Use the image module
       paragraphLoop: true,
       linebreaks: true,
+      // Custom parser to handle [Replace_...] and other tags.
       parser: (tag) => {
-        // This parser handles Alt Text placeholders like `[Image1]`
-        if (tag.startsWith('[') && tag.endsWith(']')) {
-            const tagName = tag.substring(1, tag.length - 1);
-            return customParser(tagName);
-        }
-        return customParser(tag);
+        return {
+          get(scope, context) {
+            if (tag.startsWith('Replace_')) {
+                return scope[tag];
+            }
+            if (tag === 'comparableSales') {
+                return scope.comparableSales;
+            }
+            if (tag.startsWith('Image')) {
+                return scope[tag];
+            }
+            return scope[tag];
+          },
+        };
       },
       delimiters: {
         start: '[',
@@ -138,23 +117,24 @@ const generateReportFromTemplateFlow = ai.defineFlow(
       nullGetter: () => "", // Return empty string for missing values
     });
     
-    const flattenedData: { [key:string]: any } = {};
+    const templateData: { [key:string]: any } = {};
     let replacementCount = 0;
 
-    function flatten(obj: any, path: string[] = []) {
+    // Flatten the nested data object and prefix keys with "Replace_"
+    function flatten(obj: any) {
       for (const key in obj) {
-        const newPath = path.concat(key);
         if (key === 'comparableSales' && Array.isArray(obj[key])) {
-            flattenedData['comparableSales'] = obj[key];
-            replacementCount++;
+            templateData['comparableSales'] = obj[key];
+            if(obj[key].length > 0) replacementCount++;
             continue;
         }
 
         if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-          flatten(obj[key], newPath);
+          flatten(obj[key]);
         } else {
           const finalKey = `Replace_${key}`;
-          flattenedData[finalKey] = obj[key];
+          templateData[finalKey] = obj[key];
+          // Count valid, non-placeholder replacements
           if (obj[key] && typeof obj[key] === 'string' && !obj[key].startsWith('[extracted_') && obj[key] !== 'N/A' && obj[key] !== '') {
             replacementCount++;
           }
@@ -163,16 +143,16 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     }
     flatten(data);
 
-    // Prepare image data for the template
+    // Prepare image data for the template. Keys must match the Alt Text.
     if (photos) {
         photos.forEach((photoDataUri, index) => {
-            const imageKey = `Image${index + 1}`; // This matches [Image1], [Image2] etc.
-            flattenedData[imageKey] = photoDataUri;
+            const imageKey = `Image${index + 1}`; // This matches Alt Text "Image1", "Image2" etc.
+            templateData[imageKey] = photoDataUri;
             replacementCount++;
         });
     }
     
-    doc.setData(flattenedData);
+    doc.setData(templateData);
 
     try {
       doc.render();
@@ -180,7 +160,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
       console.error('Docxtemplater error:', error);
       if (error.properties && error.properties.errors) {
         error.properties.errors.forEach((err: any) => {
-          console.error('Template Error Details:', err);
+          console.error('Template Error Details:', err.properties);
         });
       }
       throw new Error('Failed to render the document. Check template placeholders and data structure.');
