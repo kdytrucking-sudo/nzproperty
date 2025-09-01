@@ -23,11 +23,10 @@ const formSchema = z.object({
   address: z.string().min(1, 'Property address is required.'),
   propertyTitlePdf: z.array(z.instanceof(File)).min(1, 'Property Title PDF is required.'),
   briefInformationPdf: z.array(z.instanceof(File)).min(1, 'Brief Information PDF is required.'),
-  photos: z.array(z.instanceof(File)).optional(),
 });
 
 type Step1InputProps = {
-  onDataExtracted: (data: PropertyData, photos: File[]) => void;
+  onDataExtracted: (data: PropertyData) => void;
 };
 
 const fileToDataUri = (file: File): Promise<string> => {
@@ -51,7 +50,6 @@ export function Step1Input({ onDataExtracted }: Step1InputProps) {
       address: '',
       propertyTitlePdf: [],
       briefInformationPdf: [],
-      photos: [],
     },
   });
 
@@ -82,7 +80,7 @@ export function Step1Input({ onDataExtracted }: Step1InputProps) {
         title: 'Data Extraction Successful',
         description: 'AI has processed the documents. Please review the data.',
       });
-      onDataExtracted(result, values.photos || []);
+      onDataExtracted(result);
     } catch (error) {
       console.error('Error processing documents:', error);
       toast({
@@ -163,26 +161,6 @@ export function Step1Input({ onDataExtracted }: Step1InputProps) {
                                 onValueChange={field.onChange}
                                 options={{ accept: ACCEPTED_FILE_TYPES }}
                                 maxFiles={1}
-                            />
-                        )}
-                    />
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="photos"
-                  render={() => (
-                    <Controller
-                        name="photos"
-                        control={form.control}
-                        render={({field}) => (
-                            <FileUploader
-                                label="Upload Photos (Optional)"
-                                value={field.value}
-                                onValueChange={field.onChange}
-                                options={{ accept: { 'image/*': [] } }}
-                                maxFiles={10}
                             />
                         )}
                     />

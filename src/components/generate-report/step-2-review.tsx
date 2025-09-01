@@ -21,66 +21,54 @@ import { generateReportFromTemplate } from '@/ai/flows/generate-report-from-temp
 const formSchema = z.object({
   templateId: z.string().min(1, 'A template is required.'),
   data: z.any(), // We use z.any() because the structure is now fully dynamic.
-  photos: z.array(z.any()).optional(), // To hold uploaded photo files/data
 });
 
 type Step2ReviewProps = {
   extractedData: PropertyData;
   onReportGenerated: (reportDataUri: string, replacementsCount: number) => void;
   onBack: () => void;
-  photos: File[];
-};
-
-const fileToDataUri = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 };
 
 
 // Helper to render form fields for a given object in the data
 const renderFormSection = (form: any, path: string, data: any) => {
-  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
-    return null;
-  }
+    if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+        return null;
+    }
 
-  const keys = Object.keys(data);
-  const isGrid = keys.length > 2;
+    const keys = Object.keys(data);
+    const isGrid = keys.length > 2;
 
-  return (
-    <div className={isGrid ? "grid grid-cols-1 gap-4 md:grid-cols-2" : "space-y-4"}>
-      {keys.map((key) => {
-        const fieldPath = `${path}.${key}`;
-        const fieldValue = form.getValues(fieldPath);
-        const isTextArea = typeof fieldValue === 'string' && fieldValue.length > 100;
-        const FormComponent = isTextArea ? Textarea : Input;
+    return (
+        <div className={isGrid ? "grid grid-cols-1 gap-4 md:grid-cols-2" : "space-y-4"}>
+            {keys.map((key) => {
+                const fieldPath = `${path}.${key}`;
+                const fieldValue = form.getValues(fieldPath);
+                const isTextArea = typeof fieldValue === 'string' && fieldValue.length > 100;
+                const FormComponent = isTextArea ? Textarea : Input;
 
-        return (
-          <FormField
-            key={fieldPath}
-            control={form.control}
-            name={fieldPath}
-            render={({ field }) => (
-              <FormItem className={isTextArea && isGrid ? 'md:col-span-2' : ''}>
-                <FormLabel>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</FormLabel>
-                <FormControl>
-                  <FormComponent {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        );
-      })}
-    </div>
-  );
+                return (
+                    <FormField
+                        key={fieldPath}
+                        control={form.control}
+                        name={fieldPath}
+                        render={({ field }) => (
+                            <FormItem className={isTextArea && isGrid ? 'md:col-span-2' : ''}>
+                                <FormLabel>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</FormLabel>
+                                <FormControl>
+                                    <FormComponent {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                );
+            })}
+        </div>
+    );
 };
 
 
-export function Step2Review({ extractedData, onReportGenerated, onBack, photos }: Step2ReviewProps) {
+export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2ReviewProps) {
   const { toast } = useToast();
   const { templates, addTemplate } = useTemplates();
   const [isGenerating, setIsGenerating] = React.useState(false);
@@ -91,7 +79,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack, photos }
     defaultValues: {
       templateId: templates.length > 0 ? templates[0].id : '',
       data: extractedData,
-      photos: photos,
     },
   });
 
@@ -148,14 +135,9 @@ export function Step2Review({ extractedData, onReportGenerated, onBack, photos }
     }
 
     try {
-        const photoDataUris = await Promise.all(
-            (values.photos || []).map(file => file instanceof File ? fileToDataUri(file) : Promise.resolve(file))
-        );
-
         const result = await generateReportFromTemplate({
             templateDataUri: selectedTemplate.dataUri,
             data: values.data,
-            photos: photoDataUris,
         });
 
         toast({
@@ -304,4 +286,3 @@ export function Step2Review({ extractedData, onReportGenerated, onBack, photos }
     </Card>
   );
 }
-    
