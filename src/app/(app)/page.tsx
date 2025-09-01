@@ -15,6 +15,7 @@ function GenerateReportFlow() {
   const [propertyData, setPropertyData] = React.useState<PropertyData | null>(null);
   const [generatedReportDataUri, setGeneratedReportDataUri] = React.useState<string | null>(null);
   const [generatedFileName, setGeneratedFileName] = React.useState<string>('');
+  const [replacementsCount, setReplacementsCount] = React.useState(0);
 
 
   const handleDataExtracted = (data: PropertyData) => {
@@ -22,13 +23,14 @@ function GenerateReportFlow() {
     setStep('review');
   };
 
-  const handleReportGenerated = (reportDataUri: string) => {
+  const handleReportGenerated = (reportDataUri: string, count: number) => {
     const address = propertyData?.propertyDetails?.address || 'Report';
     const date = new Date().toISOString().split('T')[0];
     const fileName = `${address} - ${date}.docx`;
 
     setGeneratedReportDataUri(reportDataUri);
     setGeneratedFileName(fileName);
+    setReplacementsCount(count);
     setStep('result');
   };
 
@@ -36,6 +38,7 @@ function GenerateReportFlow() {
     setPropertyData(null);
     setGeneratedReportDataUri(null);
     setGeneratedFileName('');
+    setReplacementsCount(0);
     setStep('input');
   };
 
@@ -105,6 +108,7 @@ function GenerateReportFlow() {
                 reportDataUri={generatedReportDataUri}
                 fileName={generatedFileName}
                 onStartOver={handleStartOver} 
+                replacementsCount={replacementsCount}
               />
             </motion.div>
           )}

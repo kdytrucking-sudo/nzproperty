@@ -26,6 +26,7 @@ const GenerateReportOutputSchema = z.object({
   generatedDocxDataUri: z
     .string()
     .describe('The generated .docx file as a data URI.'),
+  replacementsCount: z.number().describe('The number of placeholders that were replaced.'),
 });
 export type GenerateReportOutput = z.infer<typeof GenerateReportOutputSchema>;
 
@@ -69,10 +70,15 @@ const generateReportFromTemplateFlow = ai.defineFlow(
       linebreaks: true,
       // Use custom parser for [Replace_xxxx] format
       parser: (tag) => {
+        const cleanedTag = tag.replace(/^Replace_/, '');
         return {
           get: (scope) => {
-            if (scope[tag]) {
-              return scope[tag];
+            if (scope[`Replace_${cleanedTag}`]) {
+              return scope[`Replace_${cleanedTag}`];
+            }
+            // To handle nested loops like [comparableSales]...[/comparableSales]
+            if (scope[cleanedTag]) {
+                return scope[cleanedTag];
             }
             return `[${tag}]`; // Keep placeholder if not found
           },
@@ -88,17 +94,29 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     
     // Flatten the data and add 'Replace_' prefix
     const flattenedData: { [key: string]: any } = {};
-    for (const sectionKey in data) {
-        if (typeof data[sectionKey] === 'object' && data[sectionKey] !== null && !Array.isArray(data[sectionKey])) {
-            for (const itemKey in data[sectionKey]) {
-                flattenedData[`Replace_${itemKey}`] = data[sectionKey][itemKey];
-            }
-        } else {
-             // For top-level items and arrays
-            flattenedData[`Replace_${sectionKey}`] = data[sectionKey];
-        }
-    }
+    let replacementCount = 0;
 
+    function flatten(obj: any, path: string[] = []) {
+      for (const key in obj) {
+        if (key === 'comparableSales' && Array.isArray(obj[key])) {
+            flattenedData['comparableSales'] = obj[key];
+            replacementCount++; // Count the loop block as one replacement
+            continue;
+        }
+
+        const newPath = path.concat(key);
+        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+          flatten(obj[key], newPath);
+        } else {
+          const finalKey = `Replace_${key}`;
+          flattenedData[finalKey] = obj[key];
+          if (obj[key] !== `[extracted_${key}]` && obj[key] !== 'N/A' && obj[key] !== '') {
+            replacementCount++;
+          }
+        }
+      }
+    }
+    flatten(data);
 
     // 3. Set the data
     doc.setData(flattenedData);
@@ -129,6 +147,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
 
     return {
       generatedDocxDataUri: outputDataUri,
+      replacementsCount: replacementCount,
     };
   }
 );

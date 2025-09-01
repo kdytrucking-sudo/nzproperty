@@ -37,7 +37,7 @@ const formSchema = z.object({
 
 type Step2ReviewProps = {
   extractedData: PropertyData;
-  onReportGenerated: (reportDataUri: string) => void;
+  onReportGenerated: (reportDataUri: string, replacementsCount: number) => void;
   onBack: () => void;
 };
 
@@ -153,9 +153,9 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
 
         toast({
             title: 'Report Generated Successfully',
-            description: 'Your property valuation report is ready for download.',
+            description: `Replaced ${result.replacementsCount} placeholders. Your report is ready for download.`,
         });
-        onReportGenerated(result.generatedDocxDataUri);
+        onReportGenerated(result.generatedDocxDataUri, result.replacementsCount);
 
     } catch (error: any) {
         console.error('Error generating report:', error);

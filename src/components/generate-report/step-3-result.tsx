@@ -9,9 +9,10 @@ type Step3ResultProps = {
   reportDataUri: string;
   fileName: string;
   onStartOver: () => void;
+  replacementsCount: number;
 };
 
-export function Step3Result({ reportDataUri, fileName, onStartOver }: Step3ResultProps) {
+export function Step3Result({ reportDataUri, fileName, onStartOver, replacementsCount }: Step3ResultProps) {
   
   const handleDownload = () => {
     const link = document.createElement("a");
@@ -35,7 +36,8 @@ export function Step3Result({ reportDataUri, fileName, onStartOver }: Step3Resul
         </div>
         <CardTitle className="mt-4 text-2xl">Report Generated Successfully!</CardTitle>
         <CardDescription>
-          Your download should start automatically. If it doesn't, use the button below.
+            {`Successfully replaced ${replacementsCount} placeholders. `}
+            Your download should start automatically. If it doesn't, use the button below.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center space-y-4">
