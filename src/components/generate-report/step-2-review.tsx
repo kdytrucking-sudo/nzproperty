@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Upload } from 'lucide-react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { PropertyData } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import * as React from 'react';
-import { useTemplates } from '@/hooks/use-templates.tsx';
+import { useTemplates, type Template } from '@/hooks/use-templates.tsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { generateReportFromTemplate } from '@/ai/flows/generate-report-from-template';
 
@@ -62,8 +62,9 @@ type Step2ReviewProps = {
 
 export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2ReviewProps) {
   const { toast } = useToast();
-  const { templates } = useTemplates();
+  const { templates, addTemplate } = useTemplates();
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -77,6 +78,39 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     control: form.control,
     name: 'data.comparableSales',
   });
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUri = e.target?.result as string;
+          const newTemplate: Template = {
+            id: `template-${Date.now()}`,
+            name: file.name,
+            dataUri: dataUri,
+            file: file,
+          };
+          addTemplate(newTemplate);
+          form.setValue('templateId', newTemplate.id); // Select the new template
+          toast({ title: 'Template Uploaded', description: `"${file.name}" has been added and selected.` });
+        };
+        reader.onerror = (err) => {
+            console.error(err);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not read the file.' });
+        }
+        reader.readAsDataURL(file);
+      } else {
+        toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload a .docx file.' });
+      }
+    }
+     // Reset file input to allow uploading the same file again
+     if(fileInputRef.current) {
+        fileInputRef.current.value = '';
+    }
+  };
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsGenerating(true);
@@ -128,8 +162,17 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
               name="templateId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Select Report Template</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <div className="flex items-center justify-between">
+                    <FormLabel>Select Report Template</FormLabel>
+                    <div>
+                        <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".docx" className="hidden" />
+                        <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                            <Upload className="mr-2 h-4 w-4" />
+                            Upload Template
+                        </Button>
+                    </div>
+                  </div>
+                  <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a .docx template to use..." />
