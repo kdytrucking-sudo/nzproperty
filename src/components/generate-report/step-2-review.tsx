@@ -149,7 +149,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack, photos }
 
     try {
         const photoDataUris = await Promise.all(
-            (values.photos || []).map(file => fileToDataUri(file))
+            (values.photos || []).map(file => file instanceof File ? fileToDataUri(file) : Promise.resolve(file))
         );
 
         const result = await generateReportFromTemplate({
