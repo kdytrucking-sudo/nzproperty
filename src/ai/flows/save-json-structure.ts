@@ -10,7 +10,7 @@ import { z } from 'genkit';
 import fs from 'fs/promises';
 import path from 'path';
 
-export const SaveJsonInputSchema = z.object({
+const SaveJsonInputSchema = z.object({
   jsonStructure: z.string().describe('The JSON structure to save as a string.'),
 });
 export type SaveJsonInput = z.infer<typeof SaveJsonInputSchema>;
