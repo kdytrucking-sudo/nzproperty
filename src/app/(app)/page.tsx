@@ -13,13 +13,15 @@ type Step = 'input' | 'review' | 'result';
 function GenerateReportFlow() {
   const [step, setStep] = React.useState<Step>('input');
   const [propertyData, setPropertyData] = React.useState<PropertyData | null>(null);
+  const [photos, setPhotos] = React.useState<File[]>([]);
   const [generatedReportDataUri, setGeneratedReportDataUri] = React.useState<string | null>(null);
   const [generatedFileName, setGeneratedFileName] = React.useState<string>('');
   const [replacementsCount, setReplacementsCount] = React.useState(0);
 
 
-  const handleDataExtracted = (data: PropertyData) => {
+  const handleDataExtracted = (data: PropertyData, uploadedPhotos: File[]) => {
     setPropertyData(data);
+    setPhotos(uploadedPhotos);
     setStep('review');
   };
 
@@ -36,6 +38,7 @@ function GenerateReportFlow() {
 
   const handleStartOver = () => {
     setPropertyData(null);
+    setPhotos([]);
     setGeneratedReportDataUri(null);
     setGeneratedFileName('');
     setReplacementsCount(0);
@@ -91,6 +94,7 @@ function GenerateReportFlow() {
                 extractedData={propertyData} 
                 onReportGenerated={handleReportGenerated}
                 onBack={handleBackToInput}
+                photos={photos}
               />
             </motion.div>
           )}

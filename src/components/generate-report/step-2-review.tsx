@@ -33,13 +33,25 @@ const anyObject = z.record(z.string(), z.any());
 const formSchema = z.object({
   templateId: z.string().min(1, 'A template is required.'),
   data: z.any(), // We use z.any() because the structure is now fully dynamic.
+  photos: z.array(z.any()).optional(), // To hold uploaded photo files/data
 });
 
 type Step2ReviewProps = {
   extractedData: PropertyData;
   onReportGenerated: (reportDataUri: string, replacementsCount: number) => void;
   onBack: () => void;
+  photos: File[];
 };
+
+const fileToDataUri = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
 
 // Helper to render form fields for a given object in the data
 const renderFormSection = (form: any, path: string, data: any) => {
@@ -79,7 +91,7 @@ const renderFormSection = (form: any, path: string, data: any) => {
 };
 
 
-export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2ReviewProps) {
+export function Step2Review({ extractedData, onReportGenerated, onBack, photos }: Step2ReviewProps) {
   const { toast } = useToast();
   const { templates, addTemplate } = useTemplates();
   const [isGenerating, setIsGenerating] = React.useState(false);
@@ -90,6 +102,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     defaultValues: {
       templateId: templates.length > 0 ? templates[0].id : '',
       data: extractedData,
+      photos: photos,
     },
   });
 
@@ -146,9 +159,14 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     }
 
     try {
+        const photoDataUris = await Promise.all(
+            (values.photos || []).map(file => fileToDataUri(file))
+        );
+
         const result = await generateReportFromTemplate({
             templateDataUri: selectedTemplate.dataUri,
             data: values.data,
+            photos: photoDataUris,
         });
 
         toast({
@@ -240,7 +258,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
                             <FormField control={form.control} name={`data.comparableSales.${index}.compAddress`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                             <FormField control={form.control} name={`data.comparableSales.${index}.compSaleDate`} render={({ field }) => (<FormItem><FormLabel>Sale Date</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name={`data.comparableSales.${index}.compSalePrice`} render={({ field }) => (<FormItem><FormLabel>Sale Price</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name={`data.comparableSales.${index}.compSalePrice`} render={({ field }) => (<FormItem><FormLabel>Sale Price</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormMessage>)} />
                             <FormField control={form.control} name={`data.comparableSales.${index}.compLandArea`} render={({ field }) => (<FormItem><FormLabel>Land Area</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                             <FormField control={form.control} name={`data.comparableSales.${index}.compFloorArea`} render={({ field }) => (<FormItem><FormLabel>Floor Area</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                         </div>

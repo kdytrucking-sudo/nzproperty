@@ -27,7 +27,7 @@ const formSchema = z.object({
 });
 
 type Step1InputProps = {
-  onDataExtracted: (data: PropertyData) => void;
+  onDataExtracted: (data: PropertyData, photos: File[]) => void;
 };
 
 const fileToDataUri = (file: File): Promise<string> => {
@@ -82,7 +82,7 @@ export function Step1Input({ onDataExtracted }: Step1InputProps) {
         title: 'Data Extraction Successful',
         description: 'AI has processed the documents. Please review the data.',
       });
-      onDataExtracted(result);
+      onDataExtracted(result, values.photos || []);
     } catch (error) {
       console.error('Error processing documents:', error);
       toast({
