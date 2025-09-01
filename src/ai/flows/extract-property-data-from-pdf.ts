@@ -68,48 +68,28 @@ export async function extractPropertyData(input: ExtractPropertyDataInput): Prom
       outputSchema: outputSchema,
     },
     async (flowInput) => {
-        const filePath = path.join(process.cwd(), 'src', 'lib', 'json-structure.json');
-        const jsonFormat = await fs.readFile(filePath, 'utf-8');
+        const jsonStructurePath = path.join(process.cwd(), 'src', 'lib', 'json-structure.json');
+        const jsonFormat = await fs.readFile(jsonStructurePath, 'utf-8');
+
+        const promptsPath = path.join(process.cwd(), 'src', 'lib', 'prompts.json');
+        const promptsJson = await fs.readFile(promptsPath, 'utf-8');
+        const prompts = JSON.parse(promptsJson);
 
         // TODO: Actually implement PDF extraction. For now, we are returning mock data based on the schema.
         // This is a placeholder for actual PDF text extraction logic.
         const propertyTitleText = "Mock extracted text from property title PDF.";
         const briefInformationText = "Mock extracted text from brief info PDF.";
-
-        const prompt = ai.definePrompt({
-            name: 'extractPropertyDataPrompt',
-            input: {schema: z.object({
-                propertyTitleText: z.string(),
-                briefInformationText: z.string(),
-            })},
-            output: {schema: outputSchema},
-            prompt: `You are an expert data analyst in the New Zealand property sector. Your task is to analyze and extract key data from two provided PDF documents. You must understand common New Zealand property valuation report structures and terminology, such as 'Capital Value (CV)', 'Legal Description', etc. Strictly output all information in the JSON format provided by the user. If a piece of information cannot be found in the document, use "N/A" in the JSON field.
-
-Please carefully read the text content of the following two PDF documents and extract all necessary information based on your expertise and my extraction instructions. The first document is the Property Title, and the second is the Brief Information.
-
+        
+        const finalPrompt = `${prompts.user_prompt}
 ---
-
-**Extraction Instructions and Hints:**
-1.  **From Property Title Document:**
-    *   **legalDescription:** Look for 'Legal Description' or 'Title' section.
-    *   **ownerName:** Look for 'Proprietor' or 'Registered Owner'.
-    *   **landArea:** Look for 'Area' or 'Land Size', usually in square meters (m²) or hectares (ha).
-2.  **From Brief Information Document:**
-    *   **address:** Usually located at the top of the first page.
-    *   **currentCV:** Look for 'Capital Value (CV)' or 'Rating Valuation'.
-    *   **lastSaleDate & lastSalePrice:** Look for 'Sale History' or 'Last Sale' tables.
-3.  **Other Information:**
-    *   Extract any other important supplementary information you find, such as property type, number of bedrooms, garages, etc.
-
+**${prompts.extraction_hints_title}**
+${prompts.extraction_hints}
 ---
-
 **Output JSON Format:**
 \`\`\`json
 ${jsonFormat}
 \`\`\`
-
 ---
-
 **PDF Document Content (Text Form):**
 
 **File 1 (Property Title):**
@@ -117,7 +97,17 @@ ${jsonFormat}
 
 **File 2 (Brief Information):**
 {{{briefInformationText}}}
-`,
+`;
+
+        const prompt = ai.definePrompt({
+            name: 'extractPropertyDataPrompt',
+            system: prompts.system_prompt,
+            input: {schema: z.object({
+                propertyTitleText: z.string(),
+                briefInformationText: z.string(),
+            })},
+            output: {schema: outputSchema},
+            prompt: finalPrompt,
         });
 
         const { output } = await prompt({
