@@ -54,7 +54,8 @@ const renderFormSection = (form: any, path: string, data: any) => {
     <div className={isGrid ? "grid grid-cols-1 gap-4 md:grid-cols-2" : "space-y-4"}>
       {keys.map((key) => {
         const fieldPath = `${path}.${key}`;
-        const isTextArea = typeof data[key] === 'string' && data[key].length > 100;
+        const fieldValue = form.getValues(fieldPath);
+        const isTextArea = typeof fieldValue === 'string' && fieldValue.length > 100;
         const FormComponent = isTextArea ? Textarea : Input;
 
         return (
