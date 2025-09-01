@@ -11,42 +11,16 @@ import { useToast } from '@/hooks/use-toast';
 import * as React from 'react';
 import { FileUploader } from '@/components/file-uploader';
 import { Textarea } from '@/components/ui/textarea';
+import { saveJsonStructure } from '@/ai/flows/save-json-structure';
+import { extractPropertyData } from '@/ai/flows/extract-property-data-from-pdf';
+import initialJsonStructure from '@/lib/json-structure.json';
 
 const ACCEPTED_FILE_TYPES = {
   'application/pdf': ['.pdf'],
 };
 
-const defaultJsonStructure = `{
-  "propertyDetails": {
-    "address": "[extracted_address]",
-    "legalDescription": "[extracted_legal_description]",
-    "ownerName": "[extracted_owner_name]",
-    "landArea": "[extracted_land_area]",
-    "floorArea": "[extracted_floor_area]",
-    "currentCV": "[extracted_current_CV]",
-    "lastSaleDate": "[extracted_last_sale_date]",
-    "lastSalePrice": "[extracted_last_sale_price]",
-    "zoning": "[extracted_zoning]",
-    "propertyType": "[extracted_property_type]"
-  },
-  "valuationSummary": {
-    "valuationDate": "[extracted_valuation_date]",
-    "marketValue": "[extracted_market_value]",
-    "methodologyUsed": "[extracted_methodology]",
-    "keyAssumptions": "[extracted_key_assumptions]"
-  },
-  "comparableSales": [
-    {
-      "compAddress": "[extracted_comp_address_1]",
-      "compSaleDate": "[extracted_comp_sale_date_1]",
-      "compSalePrice": "[extracted_comp_sale_price_1]",
-      "compLandArea": "[extracted_comp_land_area_1]",
-      "compFloorArea": "[extracted_comp_floor_area_1]"
-    }
-  ],
-  "risksAndOpportunities": "[extracted_risks_and_opportunities]",
-  "additionalNotes": "[extracted_additional_notes]"
-}`;
+// Convert initial JSON object to a nicely formatted string
+const defaultJsonString = JSON.stringify(initialJsonStructure, null, 2);
 
 const formSchema = z.object({
   jsonStructure: z.string().refine((val) => {
@@ -61,6 +35,15 @@ const formSchema = z.object({
   testBriefInformationPdf: z.array(z.instanceof(File)).min(1, 'Brief Information PDF is required for testing.'),
 });
 
+const fileToDataUri = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
 export default function JsonEditorPage() {
   const { toast } = useToast();
   const [isTesting, setIsTesting] = React.useState(false);
@@ -70,7 +53,7 @@ export default function JsonEditorPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      jsonStructure: defaultJsonStructure,
+      jsonStructure: defaultJsonString,
       testPropertyTitlePdf: [],
       testBriefInformationPdf: [],
     },
@@ -79,34 +62,50 @@ export default function JsonEditorPage() {
   async function onTestRun(values: z.infer<typeof formSchema>) {
     setIsTesting(true);
     setTestResult(null);
-    console.log('Running test with JSON:', values.jsonStructure);
+    try {
+        if (!values.testPropertyTitlePdf?.[0] || !values.testBriefInformationPdf?.[0]) {
+            throw new Error('PDF files are missing for the test.');
+        }
 
-    // Simulate AI extraction test
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // This is mock data. In a real scenario, this would be the output from the AI.
-    const mockResult = {
-      ...JSON.parse(values.jsonStructure),
-      propertyDetails: {
-        address: "123 Test Street, Auckland",
-        ownerName: "John Doe",
-      }
-    };
-    
-    setTestResult(JSON.stringify(mockResult, null, 2));
-    toast({
-      title: 'Test Complete',
-      description: 'AI extraction test finished. Check the results.',
-    });
-    setIsTesting(false);
+        const [propertyTitlePdfDataUri, briefInformationPdfDataUri] = await Promise.all([
+            fileToDataUri(values.testPropertyTitlePdf[0]),
+            fileToDataUri(values.testBriefInformationPdf[0]),
+        ]);
+
+        const result = await extractPropertyData({
+            propertyTitlePdfDataUri,
+            briefInformationPdfDataUri,
+        });
+
+        setTestResult(JSON.stringify(result, null, 2));
+        toast({
+            title: 'Test Complete',
+            description: 'AI extraction test finished using the current JSON structure.',
+        });
+    } catch (error: any) {
+        console.error('Test run failed:', error);
+        setTestResult(`Error: ${error.message}`);
+        toast({
+            variant: 'destructive',
+            title: 'Test Failed',
+            description: 'Could not run the AI extraction test.',
+        });
+    } finally {
+        setIsTesting(false);
+    }
   }
 
-  async function onSave() {
+  async function onSave(values: z.infer<typeof formSchema>) {
     setIsSaving(true);
-    // Simulate saving to database
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast({ title: 'JSON Structure Saved' });
-    setIsSaving(false);
+    try {
+        await saveJsonStructure({ jsonStructure: values.jsonStructure });
+        toast({ title: 'JSON Structure Saved', description: 'The AI will now use this new structure for data extraction.' });
+    } catch (error: any) {
+        console.error('Failed to save:', error);
+        toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+    } finally {
+        setIsSaving(false);
+    }
   }
 
   return (
@@ -114,7 +113,7 @@ export default function JsonEditorPage() {
       <header>
         <h1 className="font-headline text-3xl font-bold text-foreground">JSON Editor & Tester</h1>
         <p className="text-muted-foreground">
-          Edit and test the JSON structure for AI data extraction.
+          Edit and test the JSON structure for AI data extraction. Your saved changes will be used globally.
         </p>
       </header>
       <main>
@@ -124,7 +123,7 @@ export default function JsonEditorPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>AI Extraction Rules</CardTitle>
-                  <CardDescription>Define the JSON output structure for the AI.</CardDescription>
+                  <CardDescription>Define the JSON output structure for the AI. Click "Save" to apply changes.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <FormField
@@ -134,21 +133,24 @@ export default function JsonEditorPage() {
                       <Textarea {...field} className="min-h-[400px] font-mono text-xs" />
                     )}
                   />
+                   <div className="flex justify-end">
+                    <Button type="button" variant="secondary" onClick={() => onSave(form.getValues())} disabled={isSaving}>
+                      {isSaving ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>) : 'Save JSON'}
+                    </Button>
+                  </div>
                   <Card>
                     <CardHeader>
                       <CardTitle>Test Files</CardTitle>
+                       <CardDescription>Upload files to test the extraction rules defined above.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <FormField control={form.control} name="testPropertyTitlePdf" render={() => (<Controller name="testPropertyTitlePdf" control={form.control} render={({field}) => (<FileUploader label="Test Property Title (PDF)" value={field.value} onValueChange={field.onChange} options={{ accept: ACCEPTED_FILE_TYPES }} maxFiles={1} />)} />)} />
                       <FormField control={form.control} name="testBriefInformationPdf" render={() => (<Controller name="testBriefInformationPdf" control={form.control} render={({field}) => (<FileUploader label="Test Brief Information (PDF)" value={field.value} onValueChange={field.onChange} options={{ accept: ACCEPTED_FILE_TYPES }} maxFiles={1} />)} />)} />
                     </CardContent>
                   </Card>
-                  <div className="flex justify-between">
+                  <div className="flex justify-start">
                      <Button type="submit" disabled={isTesting}>
                       {isTesting ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Testing...</>) : 'Run Test'}
-                    </Button>
-                    <Button type="button" variant="secondary" onClick={onSave} disabled={isSaving}>
-                      {isSaving ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>) : 'Save JSON'}
                     </Button>
                   </div>
                 </CardContent>
