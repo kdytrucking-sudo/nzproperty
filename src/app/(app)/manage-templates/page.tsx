@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Download, Upload, Loader2, FilePlus2, Trash2 } from 'lucide-react';
 import * as React from 'react';
-import { useTemplates, type Template } from '@/hooks/use-templates';
+import { useTemplates, type Template } from '@/hooks/use-templates.tsx';
 import {
   Table,
   TableBody,
@@ -63,7 +63,7 @@ export default function ManageTemplatesPage() {
           Manage Templates
         </h1>
         <p className="text-muted-foreground">
-          Upload and manage your .docx report templates. Placeholders like `{{'{'}}{{'{'}}address{'}'}}{'}'}` will be replaced with data.
+          Upload and manage your .docx report templates. Placeholders like `{{'{'}}{{'{'}}address{'}'}{'}'}` will be replaced with data.
         </p>
       </header>
 

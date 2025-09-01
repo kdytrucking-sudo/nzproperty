@@ -3,7 +3,7 @@ import { Inter, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
-import { TemplatesProvider } from '@/hooks/use-templates';
+import { TemplatesProvider } from '@/hooks/use-templates.tsx';
 
 const fontInter = Inter({
   subsets: ['latin'],

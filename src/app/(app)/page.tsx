@@ -6,7 +6,7 @@ import { Step2Review } from '@/components/generate-report/step-2-review';
 import { Step3Result } from '@/components/generate-report/step-3-result';
 import type { PropertyData } from '@/lib/types';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Template, TemplatesProvider } from '@/hooks/use-templates';
+import { Template, TemplatesProvider } from '@/hooks/use-templates.tsx';
 
 type Step = 'input' | 'review' | 'result';
 

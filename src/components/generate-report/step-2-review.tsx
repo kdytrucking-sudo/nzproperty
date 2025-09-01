@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { PropertyData } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import * as React from 'react';
-import { useTemplates } from '@/hooks/use-templates';
+import { useTemplates } from '@/hooks/use-templates.tsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { generateReportFromTemplate } from '@/ai/flows/generate-report-from-template';
 
