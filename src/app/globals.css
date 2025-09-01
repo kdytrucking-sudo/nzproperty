@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import 'react-quill/dist/quill.snow.css';
-
 @layer base {
   :root {
     --background: 231 67% 94%;
@@ -84,15 +82,37 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  .ProseMirror {
+      @apply min-h-[400px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
   
-  /* Styling for React Quill Rich Text Editor */
-  .ql-toolbar {
-    @apply rounded-t-lg border-border bg-card;
+  .ProseMirror-focused {
+      @apply outline-none ring-2 ring-ring ring-offset-2;
   }
-  .ql-container {
-    @apply rounded-b-lg border-border bg-card text-card-foreground;
+
+  .ProseMirror p.is-editor-empty:first-child::before {
+    @apply text-muted-foreground float-left h-0 pointer-events-none;
+    content: attr(data-placeholder);
   }
-  .ql-editor {
-    @apply min-h-[400px];
+
+  .ProseMirror h1 {
+    @apply text-4xl font-bold;
+  }
+
+  .ProseMirror h2 {
+    @apply text-3xl font-semibold;
+  }
+
+  .ProseMirror ul {
+    @apply list-disc list-inside;
+  }
+
+  .ProseMirror ol {
+    @apply list-decimal list-inside;
+  }
+
+  .ProseMirror blockquote {
+    @apply border-l-4 border-muted-foreground pl-4 italic;
   }
 }
