@@ -1,8 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, PlusCircle, Trash2, Upload } from 'lucide-react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,13 +13,13 @@ import { useToast } from '@/hooks/use-toast';
 import type { PropertyData } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import * as React from 'react';
-import { useTemplates, type Template } from '@/hooks/use-templates.tsx';
+import { useTemplates } from '@/hooks/use-templates.tsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { generateReportFromTemplate } from '@/ai/flows/generate-report-from-template';
 
 // The main form schema
 const formSchema = z.object({
-  templateId: z.string().min(1, 'A template is required.'),
+  templateId: z.string().min(1, 'A report template is required.'),
   data: z.any(), // We use z.any() because the structure is now fully dynamic.
 });
 
@@ -44,7 +44,8 @@ const renderFormSection = (form: any, path: string, data: any) => {
             {keys.map((key) => {
                 const fieldPath = `${path}.${key}`;
                 const fieldValue = form.getValues(fieldPath);
-                const isTextArea = typeof fieldValue === 'string' && fieldValue.length > 100;
+                // Render textarea for longer strings, otherwise use input
+                const isTextArea = typeof fieldValue === 'string' && (fieldValue.length > 80 || fieldValue.includes('\n'));
                 const FormComponent = isTextArea ? Textarea : Input;
 
                 return (
@@ -70,12 +71,11 @@ const renderFormSection = (form: any, path: string, data: any) => {
 
 export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2ReviewProps) {
   const { toast } = useToast();
-  const { templates, addTemplate } = useTemplates();
+  const { templates } = useTemplates();
   const [isGenerating, setIsGenerating] = React.useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
-    // We don't use a resolver here because the schema is dynamic
+    resolver: zodResolver(formSchema),
     defaultValues: {
       templateId: templates.length > 0 ? templates[0].id : '',
       data: extractedData,
@@ -89,47 +89,14 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   
   // Get the top-level keys from the data to create tabs (excluding comparables)
   const tabKeys = Object.keys(extractedData).filter(key => key !== 'comparableSales' && typeof extractedData[key] === 'object' && !Array.isArray(extractedData[key]));
-  const defaultTab = tabKeys.length > 0 ? tabKeys[0] : 'comparables';
+  const defaultTab = tabKeys.length > 0 ? tabKeys[0] : 'comparableSales';
   
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const dataUri = e.target?.result as string;
-          const newTemplate: Template = {
-            id: `template-${Date.now()}`,
-            name: file.name,
-            dataUri: dataUri,
-            file: file,
-          };
-          addTemplate(newTemplate);
-          form.setValue('templateId', newTemplate.id); // Select the new template
-          toast({ title: 'Template Uploaded', description: `"${file.name}" has been added and selected.` });
-        };
-        reader.onerror = (err) => {
-            console.error(err);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not read the file.' });
-        }
-        reader.readAsDataURL(file);
-      } else {
-        toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload a .docx file.' });
-      }
-    }
-     if(fileInputRef.current) {
-        fileInputRef.current.value = '';
-    }
-  };
-
-
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsGenerating(true);
     
     const selectedTemplate = templates.find(t => t.id === values.templateId);
     if (!selectedTemplate) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Selected template not found.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Selected template not found. Please upload one on the "Manage Templates" page.' });
         setIsGenerating(false);
         return;
     }
@@ -174,16 +141,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
               name="templateId"
               render={({ field }) => (
                 <FormItem>
-                  <div className="flex items-center justify-between">
-                    <FormLabel>Select Report Template</FormLabel>
-                    <div>
-                        <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".docx" className="hidden" />
-                        <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                            <Upload className="mr-2 h-4 w-4" />
-                            Upload Template
-                        </Button>
-                    </div>
-                  </div>
+                  <FormLabel>Select Report Template</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -192,7 +150,9 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     </FormControl>
                     <SelectContent>
                       {templates.length === 0 ? (
-                        <SelectItem value="no-templates" disabled>No templates uploaded yet</SelectItem>
+                        <SelectItem value="no-templates" disabled>
+                          No templates found. Please upload one in 'Manage Templates'.
+                        </SelectItem>
                       ) : (
                         templates.map(template => (
                           <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>

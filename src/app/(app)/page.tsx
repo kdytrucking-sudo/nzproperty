@@ -6,9 +6,6 @@ import { Step2Review } from '@/components/generate-report/step-2-review';
 import { Step3Result } from '@/components/generate-report/step-3-result';
 import type { PropertyData } from '@/lib/types';
 import { AnimatePresence, motion } from 'framer-motion';
-import { TemplatesProvider } from '@/hooks/use-templates.tsx';
-
-type Step = 'input' | 'review' | 'result';
 
 function GenerateReportFlow() {
   const [step, setStep] = React.useState<Step>('input');
@@ -45,6 +42,8 @@ function GenerateReportFlow() {
   const handleBackToInput = () => {
     setStep('input');
   }
+  
+  type Step = 'input' | 'review' | 'result';
 
   const variants = {
     enter: { opacity: 0, y: 20 },
@@ -120,8 +119,6 @@ function GenerateReportFlow() {
 
 export default function GenerateReportPage() {
     return (
-        <TemplatesProvider>
-            <GenerateReportFlow />
-        </TemplatesProvider>
+        <GenerateReportFlow />
     )
 }
