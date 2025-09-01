@@ -9,12 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import dynamic from 'next/dynamic';
+import mammoth from 'mammoth';
 
 // Sticking with React-Quill but ensuring it works.
 // The previous patch approach was flawed. A direct import and usage is better.
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
-import 'react-quill/dist/quill.snow.css';
-import mammoth from 'mammoth';
 
 
 type Template = {
