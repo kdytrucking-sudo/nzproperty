@@ -63,7 +63,7 @@ export default function ManageTemplatesPage() {
           Manage Templates
         </h1>
         <p className="text-muted-foreground">
-          Upload and manage your .docx report templates. Placeholders like `{{'{'}}{{'{'}}address{'}'}{'}'}` will be replaced with data.
+          Upload and manage your .docx report templates. Placeholders like {'{{address}}'} will be replaced with data.
         </p>
       </header>
 
