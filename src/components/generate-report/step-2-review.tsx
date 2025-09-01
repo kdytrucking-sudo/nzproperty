@@ -17,18 +17,6 @@ import { useTemplates, type Template } from '@/hooks/use-templates.tsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { generateReportFromTemplate } from '@/ai/flows/generate-report-from-template';
 
-// Zod schema for a single comparable sale
-const comparableSaleSchema = z.object({
-  compAddress: z.string().min(1, 'Address is required.'),
-  compSaleDate: z.string().min(1, 'Sale date is required.'),
-  compSalePrice: z.string().min(1, 'Sale price is required.'),
-  compLandArea: z.string(),
-  compFloorArea: z.string(),
-});
-
-// A flexible schema that can handle any object shape.
-const anyObject = z.record(z.string(), z.any());
-
 // The main form schema
 const formSchema = z.object({
   templateId: z.string().min(1, 'A template is required.'),
