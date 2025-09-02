@@ -8,6 +8,7 @@ import {
   Pencil,
   FileText,
   FileUp,
+  MessageSquareQuote,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -38,6 +39,11 @@ export function AppSidebar() {
       href: '/manage-content',
       label: 'Manage Content',
       icon: Pencil,
+    },
+     {
+      href: '/manage-commentary',
+      label: 'Manage Commentary',
+      icon: MessageSquareQuote,
     },
     {
       href: '/manage-templates',
