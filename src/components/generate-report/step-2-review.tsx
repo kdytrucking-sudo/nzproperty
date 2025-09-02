@@ -31,6 +31,13 @@ type Step2ReviewProps = {
   onBack: () => void;
 };
 
+// Define which fields should always be textareas
+const textAreaFields = [
+    'data.DIY.SWOT Analysis Strengths',
+    'data.DIY.SWOT Analysis Weaknesses',
+    'data.DIY.Location Description',
+    'data.Property.Property Brief Description'
+];
 
 // Helper to render form fields for a given object in the data
 const renderFormSection = (form: any, path: string, data: any) => {
@@ -45,10 +52,7 @@ const renderFormSection = (form: any, path: string, data: any) => {
         <div className={isGrid ? "grid grid-cols-1 gap-4 md:grid-cols-2" : "space-y-4"}>
             {keys.map((key) => {
                 const fieldPath = `${path}.${key}`;
-                const fieldValue = form.getValues(fieldPath);
-                
-                // Render Textarea if the placeholder value starts with [textarea_
-                const isTextArea = typeof fieldValue === 'string' && fieldValue.startsWith('[textarea_');
+                const isTextArea = textAreaFields.includes(fieldPath);
                 const FormComponent = isTextArea ? Textarea : Input;
 
                 return (
