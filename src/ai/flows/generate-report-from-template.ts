@@ -16,7 +16,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import initialJsonStructure from '@/lib/json-structure.json';
 import globalContent from '@/lib/global-content.json';
-import { contentFields } from '@/app/(app)/manage-content/page';
+import { contentFields } from '@/lib/content-config';
 
 const GenerateReportInputSchema = z.object({
   templateFileName: z.string().describe('The file name of the .docx template stored on the server.'),
