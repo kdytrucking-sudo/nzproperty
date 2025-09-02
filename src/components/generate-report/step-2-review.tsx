@@ -13,15 +13,15 @@ import { useToast } from '@/hooks/use-toast';
 import type { PropertyData } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import * as React from 'react';
-import { useTemplates } from '@/hooks/use-templates.tsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { generateReportFromTemplate } from '@/ai/flows/generate-report-from-template';
 import { contentFields } from '@/app/(app)/manage-content/page';
 import globalContent from '@/lib/global-content.json';
+import { listTemplates } from '@/ai/flows/list-templates';
 
 // The main form schema
 const formSchema = z.object({
-  templateId: z.string().min(1, 'A report template is required.'),
+  templateFileName: z.string().min(1, 'A report template is required.'),
   data: z.any(), // We use z.any() because the structure is now fully dynamic.
 });
 
@@ -73,13 +73,29 @@ const renderFormSection = (form: any, path: string, data: any) => {
 
 export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2ReviewProps) {
   const { toast } = useToast();
-  const { templates } = useTemplates();
+  const [templates, setTemplates] = React.useState<string[]>([]);
   const [isGenerating, setIsGenerating] = React.useState(false);
+
+  React.useEffect(() => {
+    async function fetchTemplates() {
+        try {
+            const templateList = await listTemplates();
+            setTemplates(templateList);
+            if (templateList.length > 0) {
+                // Set default value for the form
+                form.setValue('templateFileName', templateList[0]);
+            }
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Failed to load templates', description: error.message });
+        }
+    }
+    fetchTemplates();
+  }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      templateId: templates.length > 0 ? templates[0].id : '',
+      templateFileName: '',
       data: extractedData,
     },
   });
@@ -96,9 +112,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsGenerating(true);
     
-    const selectedTemplate = templates.find(t => t.id === values.templateId);
-    if (!selectedTemplate) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Selected template not found. Please upload one on the "Manage Templates" page.' });
+    if (!values.templateFileName) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Please select a template.' });
         setIsGenerating(false);
         return;
     }
@@ -115,7 +130,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
 
 
         const result = await generateReportFromTemplate({
-            templateDataUri: selectedTemplate.dataUri,
+            templateFileName: values.templateFileName,
             data: templateReadyData,
         });
 
@@ -150,7 +165,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField
               control={form.control}
-              name="templateId"
+              name="templateFileName"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Select Report Template</FormLabel>
@@ -166,8 +181,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                           No templates found. Please upload one in 'Manage Templates'.
                         </SelectItem>
                       ) : (
-                        templates.map(template => (
-                          <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                        templates.map(templateName => (
+                          <SelectItem key={templateName} value={templateName}>{templateName}</SelectItem>
                         ))
                       )}
                     </SelectContent>

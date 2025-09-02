@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, FilePlus2, Trash2 } from 'lucide-react';
 import * as React from 'react';
-import { useTemplates, fileToTemplate } from '@/hooks/use-templates.tsx';
 import {
   Table,
   TableBody,
@@ -15,31 +14,77 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from '@/components/ui/skeleton';
+import { listTemplates } from '@/ai/flows/list-templates';
+import { uploadTemplate } from '@/ai/flows/upload-template';
+import { deleteTemplate } from '@/ai/flows/delete-template';
 
+const fileToDataUri = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+};
 
 export default function ManageTemplatesPage() {
   const { toast } = useToast();
-  const { templates, addTemplate, removeTemplate, isLoaded } = useTemplates();
+  const [templates, setTemplates] = React.useState<string[]>([]);
+  const [isLoaded, setIsLoaded] = React.useState(false);
   const [isUploading, setIsUploading] = React.useState(false);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const fetchTemplates = React.useCallback(async () => {
+    try {
+      const templateList = await listTemplates();
+      setTemplates(templateList);
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error fetching templates', description: error.message });
+    } finally {
+      setIsLoaded(true);
+    }
+  }, [toast]);
+
+  React.useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' && file.name.endsWith('.docx')) {
         setIsUploading(true);
-        fileToTemplate(file, (newTemplate) => {
-            addTemplate(newTemplate);
-            toast({ title: 'Template Uploaded', description: `"${file.name}" has been added.` });
-            setIsUploading(false);
-        });
+        try {
+          const dataUri = await fileToDataUri(file);
+          await uploadTemplate({ fileName: file.name, dataUri });
+          toast({ title: 'Template Uploaded', description: `"${file.name}" has been saved.` });
+          await fetchTemplates(); // Refresh the list
+        } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+        } finally {
+          setIsUploading(false);
+        }
       } else {
-        toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload a .docx file.' });
+        toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload a valid .docx file.' });
       }
     }
      // Reset file input to allow uploading the same file again
      if(fileInputRef.current) {
         fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteTemplate = async (fileName: string) => {
+    setDeletingId(fileName);
+    try {
+        await deleteTemplate({ fileName });
+        toast({ title: 'Template Deleted', description: `"${fileName}" has been removed.` });
+        setTemplates(prev => prev.filter(t => t !== fileName));
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Deletion Failed', description: error.message });
+    } finally {
+        setDeletingId(null);
     }
   };
 
@@ -50,7 +95,7 @@ export default function ManageTemplatesPage() {
           Manage Templates
         </h1>
         <p className="text-muted-foreground">
-          Upload and manage your .docx report templates. These are saved in your browser for future use.
+          Upload and manage your .docx report templates. These are saved on the server for global use.
         </p>
       </header>
 
@@ -83,8 +128,11 @@ export default function ManageTemplatesPage() {
                 <TableBody>
                   {!isLoaded ? (
                      <TableRow>
-                        <TableCell colSpan={2} className="h-24">
-                           <Skeleton className="h-6 w-1/2" />
+                        <TableCell colSpan={2}>
+                           <div className="flex items-center space-x-2">
+                             <Skeleton className="h-6 w-6 rounded-full" />
+                             <Skeleton className="h-6 w-1/2" />
+                           </div>
                         </TableCell>
                     </TableRow>
                   ) : templates.length === 0 ? (
@@ -94,16 +142,17 @@ export default function ManageTemplatesPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    templates.map((template) => (
-                      <TableRow key={template.id}>
-                        <TableCell className="font-medium">{template.name}</TableCell>
+                    templates.map((templateName) => (
+                      <TableRow key={templateName}>
+                        <TableCell className="font-medium">{templateName}</TableCell>
                         <TableCell className="text-right">
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            onClick={() => removeTemplate(template.id)}
+                            onClick={() => handleDeleteTemplate(templateName)}
+                            disabled={deletingId === templateName}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            {deletingId === templateName ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4" />}
                             <span className="sr-only">Delete</span>
                           </Button>
                         </TableCell>

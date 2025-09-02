@@ -11,13 +11,12 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
+import fs from 'fs/promises';
+import path from 'path';
+
 
 const GenerateReportInputSchema = z.object({
-  templateDataUri: z
-    .string()
-    .describe(
-      "The .docx template file as a data URI. Expected format: 'data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,<encoded_data>'."
-    ),
+  templateFileName: z.string().describe('The file name of the .docx template stored on the server.'),
   data: z.any().describe('The JSON data to populate the template with.'),
 });
 export type GenerateReportInput = z.infer<typeof GenerateReportInputSchema>;
@@ -62,84 +61,92 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     inputSchema: GenerateReportInputSchema,
     outputSchema: GenerateReportOutputSchema,
   },
-  async ({ templateDataUri, data }) => {
-    // 1. Decode the base64 template
-    const base64Content = templateDataUri.split(',')[1];
-    const buffer = Buffer.from(base64Content, 'base64');
-
-    const zip = new PizZip(buffer);
-    
-    const doc = new Docxtemplater(zip, {
-      paragraphLoop: true,
-      linebreaks: true,
-      parser: parser,
-      delimiters: {
-        start: '[',
-        end: ']',
-      },
-      nullGetter: () => "", // Return empty string for missing values
-    });
-    
-    const templateData: { [key:string]: any } = {};
-    let replacementCount = 0;
-
-    // Flatten the nested data object for simple replacements
-    function flatten(obj: any, path: string = '') {
-      for (const key in obj) {
-        if (key === 'comparableSales' && Array.isArray(obj[key])) {
-            templateData['comparableSales'] = obj[key];
-            if(obj[key].length > 0) replacementCount++;
-            continue;
-        }
-
-        // Keep TermText keys at the top level
-        if(key.startsWith('TermText_')) {
-            templateData[key] = obj[key];
-            if (obj[key] && obj[key] !== 'N/A' && obj[key] !== '') {
-                replacementCount++;
-            }
-            continue;
-        }
-
-        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-          flatten(obj[key], path ? `${path}_${key}`: key);
-        } else {
-          const finalKey = path ? `Replace_${path}_${key}` : `Replace_${key}`;
-          templateData[finalKey] = obj[key];
-          // Count valid, non-placeholder replacements
-          if (obj[key] && typeof obj[key] === 'string' && !obj[key].startsWith('[extracted_') && obj[key] !== 'N/A' && obj[key] !== '') {
-            replacementCount++;
-          }
-        }
-      }
-    }
-    flatten(data);
-
-    doc.setData(templateData);
+  async ({ templateFileName, data }) => {
+    const templatesDir = path.join(process.cwd(), 'src', 'lib', 'templates');
+    const templatePath = path.join(templatesDir, templateFileName);
 
     try {
-      doc.render();
-    } catch (error: any) {
-      console.error('Docxtemplater error:', error);
-      if (error.properties && error.properties.errors) {
-        error.properties.errors.forEach((err: any) => {
-          console.error('Template Error Details:', err.properties);
+        const buffer = await fs.readFile(templatePath);
+        const zip = new PizZip(buffer);
+
+        const doc = new Docxtemplater(zip, {
+          paragraphLoop: true,
+          linebreaks: true,
+          parser: parser,
+          delimiters: {
+            start: '[',
+            end: ']',
+          },
+          nullGetter: () => "", // Return empty string for missing values
         });
-      }
-      throw new Error('Failed to render the document. Check template placeholders and data structure.');
+        
+        const templateData: { [key:string]: any } = {};
+        let replacementCount = 0;
+
+        // Flatten the nested data object for simple replacements
+        function flatten(obj: any, path: string = '') {
+          for (const key in obj) {
+            if (key === 'comparableSales' && Array.isArray(obj[key])) {
+                templateData['comparableSales'] = obj[key];
+                if(obj[key].length > 0) replacementCount++;
+                continue;
+            }
+
+            // Keep TermText keys at the top level
+            if(key.startsWith('TermText_')) {
+                templateData[key] = obj[key];
+                if (obj[key] && obj[key] !== 'N/A' && obj[key] !== '') {
+                    replacementCount++;
+                }
+                continue;
+            }
+
+            if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+              flatten(obj[key], path ? `${path}_${key}`: key);
+            } else {
+              const finalKey = path ? `Replace_${path}_${key}` : `Replace_${key}`;
+              templateData[finalKey] = obj[key];
+              // Count valid, non-placeholder replacements
+              if (obj[key] && typeof obj[key] === 'string' && !obj[key].startsWith('[extracted_') && obj[key] !== 'N/A' && obj[key] !== '') {
+                replacementCount++;
+              }
+            }
+          }
+        }
+        flatten(data);
+
+        doc.setData(templateData);
+
+        try {
+          doc.render();
+        } catch (error: any) {
+          console.error('Docxtemplater error:', error);
+          if (error.properties && error.properties.errors) {
+            error.properties.errors.forEach((err: any) => {
+              console.error('Template Error Details:', err.properties);
+            });
+          }
+          throw new Error('Failed to render the document. Check template placeholders and data structure.');
+        }
+
+        const outputBuffer = doc.getZip().generate({
+          type: 'nodebuffer',
+          compression: 'DEFLATE',
+        });
+
+        const outputBase64 = outputBuffer.toString('base64');
+        const outputDataUri = `data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${outputBase64}`;
+
+        return {
+          generatedDocxDataUri: outputDataUri,
+          replacementsCount: replacementCount,
+        };
+    } catch (error: any) {
+        console.error(`Error reading template file ${templateFileName}:`, error);
+        if(error.code === 'ENOENT') {
+            throw new Error(`Template file "${templateFileName}" not found on the server.`);
+        }
+        throw new Error(`Failed to read or process the template file.`);
     }
-
-    const outputBuffer = doc.getZip().generate({
-      type: 'nodebuffer',
-      compression: 'DEFLATE',
-    });
-
-    const outputBase64 = outputBuffer.toString('base64');
-    const outputDataUri = `data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${outputBase64}`;
-
-    return {
-      generatedDocxDataUri: outputDataUri,
-      replacementsCount: replacementCount,
-    };
   }
 );
