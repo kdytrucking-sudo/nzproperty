@@ -36,24 +36,29 @@ const prepareTemplateData = (data: any) => {
     function flatten(obj: any, path: string = '') {
         for (const key in obj) {
             if (obj.hasOwnProperty(key)) {
-                if (key === 'comparableSales' && Array.isArray(obj[key])) {
+                 if (key === 'comparableSales' && Array.isArray(obj[key])) {
                     templateData['comparableSales'] = obj[key];
                     if (obj[key].length > 0) replacementCount++;
                     continue;
                 }
+                
+                // Directly map global content keys
                 if (key.startsWith('TermText_')) {
-                    templateData[key] = obj[key];
+                    templateData[key.replace('TermText_', 'Replace_')] = obj[key];
                     if (obj[key]) replacementCount++;
                     continue;
                 }
 
                 if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+                    // For nested objects, pass the key as part of the path
                     flatten(obj[key], path ? `${path}_${key}` : key);
                 } else {
                     const finalKey = path ? `${path}_${key}` : key;
-                    templateData[finalKey] = obj[key];
-                    if (obj[key] && typeof obj[key] === 'string' && !obj[key].startsWith('[') && obj[key] !== 'N/A' && obj[key] !== '') {
-                        replacementCount++;
+                    // Prepend "Replace_" to all flattened keys
+                    templateData[`Replace_${finalKey.replace(/\s+/g, '_')}`] = obj[key];
+                    
+                    if (obj[key] && typeof obj[key] === 'string' && obj[key].trim() !== '' && obj[key] !== 'N/A') {
+                       replacementCount++;
                     }
                 }
             }
@@ -96,7 +101,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
         });
         
         const { templateData, replacementCount } = prepareTemplateData(data);
-
+        
         doc.setData(templateData);
 
         try {
