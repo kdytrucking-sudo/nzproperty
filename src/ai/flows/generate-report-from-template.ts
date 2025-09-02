@@ -39,25 +39,27 @@ const prepareTemplateData = (data: any) => {
     // 1. Process PDF-extracted data based on json-structure.json mapping
     Object.keys(initialJsonStructure).forEach(sectionKey => {
         const section = initialJsonStructure[sectionKey as keyof typeof initialJsonStructure];
-        Object.keys(section).forEach(fieldKey => {
-            const placeholder = section[fieldKey as keyof typeof section];
-            if (typeof placeholder === 'string' && placeholder.startsWith('[extracted_')) {
-                // e.g., "[extracted_Strengths]" -> "Replace_Strengths"
-                const templateKey = placeholder.replace('[extracted_', '').replace(']', '');
-                const dataValue = data?.[sectionKey]?.[fieldKey];
-                if (dataValue) {
-                  templateData[`Replace_${templateKey}`] = dataValue;
-                  if (typeof dataValue === 'string' && dataValue.trim() !== '' && dataValue !== 'N/A') {
-                      replacementCount++;
-                  }
+        const dataSection = data?.[sectionKey];
+
+        if (dataSection) {
+            Object.keys(section).forEach(fieldKey => {
+                const placeholder = section[fieldKey as keyof typeof section];
+                if (typeof placeholder === 'string' && placeholder.startsWith('[extracted_')) {
+                    const templateKey = placeholder.replace('[extracted_', 'Replace_').replace(']', '');
+                    const dataValue = dataSection[fieldKey];
+                    if (dataValue) {
+                      templateData[templateKey] = dataValue;
+                      if (typeof dataValue === 'string' && dataValue.trim() !== '' && dataValue !== 'N/A') {
+                          replacementCount++;
+                      }
+                    }
                 }
-            }
-        });
+            });
+        }
     });
     
     // 2. Process global content from manage-content page
     contentFields.forEach(field => {
-        // e.g., "Replace_NZEconomic"
         const templateKey = field.templateKey.replace(/\[|\]/g, ''); 
         const contentValue = (globalContent as Record<string, string>)[field.name as keyof typeof globalContent];
         if (contentValue) {
@@ -72,7 +74,8 @@ const prepareTemplateData = (data: any) => {
     if (data.comparableSales && Array.isArray(data.comparableSales)) {
         templateData['comparableSales'] = data.comparableSales;
         if(data.comparableSales.length > 0) {
-            replacementCount += data.comparableSales.length * Object.keys(data.comparableSales[0]).length;
+             // count each field in each sale object
+            replacementCount += data.comparableSales.reduce((acc: number, sale: any) => acc + Object.keys(sale).length, 0);
         };
     }
     
@@ -99,7 +102,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     try {
         const buffer = await fs.readFile(templatePath);
         const zip = new PizZip(buffer);
-
+        
         const doc = new Docxtemplater(zip, {
           paragraphLoop: true,
           linebreaks: true,
@@ -107,7 +110,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
             start: '[',
             end: ']',
           },
-          nullGetter: () => "", // Return empty string for missing values
+          nullGetter: () => "", // Return empty string for missing values to avoid errors
         });
         
         const { templateData, replacementCount } = prepareTemplateData(data);
@@ -115,14 +118,16 @@ const generateReportFromTemplateFlow = ai.defineFlow(
         doc.setData(templateData);
 
         try {
+          // This is where the magic happens.
           doc.render();
         } catch (error: any) {
-          console.error('Docxtemplater error:', error);
+          console.error('Docxtemplater rendering error:', error);
           if (error.properties && error.properties.errors) {
             error.properties.errors.forEach((err: any) => {
               console.error('Template Error Details:', err.properties);
             });
           }
+          // The generic error is re-thrown to be caught by the final catch block.
           throw new Error('Failed to render the document. Check template placeholders and data structure.');
         }
 
@@ -143,6 +148,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
         if(error.code === 'ENOENT') {
             throw new Error(`Template file "${templateFileName}" not found on the server.`);
         }
+        // This is the generic error catch-all.
         throw new Error(`Failed to read or process the template file.`);
     }
   }
