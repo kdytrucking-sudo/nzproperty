@@ -37,21 +37,20 @@ const prepareTemplateData = (data: any) => {
     let replacementCount = 0;
 
     // 1. Process PDF-extracted data based on json-structure.json mapping
-    for (const section of Object.keys(initialJsonStructure)) {
-        const sectionFields = initialJsonStructure[section as keyof typeof initialJsonStructure];
-        for (const fieldName of Object.keys(sectionFields)) {
-            const placeholder = sectionFields[fieldName as keyof typeof sectionFields];
+    Object.keys(initialJsonStructure).forEach(sectionKey => {
+        const section = initialJsonStructure[sectionKey as keyof typeof initialJsonStructure];
+        Object.keys(section).forEach(fieldKey => {
+            const placeholder = section[fieldKey as keyof typeof section];
             if (typeof placeholder === 'string' && placeholder.startsWith('[extracted_')) {
                 const templateKey = placeholder.replace('[extracted_', 'Replace_').replace(']', '');
-                const dataValue = data[section]?.[fieldName];
+                const dataValue = data?.[sectionKey]?.[fieldKey];
                 templateData[templateKey] = dataValue;
-
                 if (dataValue && typeof dataValue === 'string' && dataValue.trim() !== '' && dataValue !== 'N/A') {
                     replacementCount++;
                 }
             }
-        }
-    }
+        });
+    });
     
     // 2. Process global content from manage-content page
     contentFields.forEach(field => {
@@ -64,7 +63,6 @@ const prepareTemplateData = (data: any) => {
     });
 
     // 3. Process comparableSales as a loopable array for {#comparableSales} tag
-    // The placeholders inside the loop are {compAddress}, {compSaleDate} etc.
     if (data.comparableSales && Array.isArray(data.comparableSales)) {
         templateData['comparableSales'] = data.comparableSales;
         if(data.comparableSales.length > 0) replacementCount++; // Count the loop as one replacement
@@ -132,7 +130,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
           replacementsCount: replacementCount,
         };
     } catch (error: any) {
-        console.error(`Error reading template file ${templateFileName}:`, error);
+        console.error(`Error processing template file ${templateFileName}:`, error);
         if(error.code === 'ENOENT') {
             throw new Error(`Template file "${templateFileName}" not found on the server.`);
         }
