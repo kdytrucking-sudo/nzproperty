@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -315,5 +314,3 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     </Card>
   );
 }
-
-    
