@@ -126,10 +126,11 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     try {
         const templateReadyData = { ...values.data };
 
-        // Map the saved content to the template placeholders
+        // Map the saved content to the template placeholders using the key from manage-content page
         contentFields.forEach(field => {
-            if (globalContent[field.name]) {
-                templateReadyData[field.templateKey] = globalContent[field.name];
+            const contentKey = `TermText_${field.templateKey.replace(/\[|\]|Replace_/g, '')}`;
+            if (globalContent[field.name as keyof typeof globalContent]) {
+                templateReadyData[contentKey] = globalContent[field.name as keyof typeof globalContent];
             }
         });
 
