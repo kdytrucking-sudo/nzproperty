@@ -66,7 +66,7 @@ const prepareTemplateData = (data: any) => {
     contentFields.forEach(field => {
         // The key in the template is '[Replace_NZEconomic]', so the key for docxtemplater is 'Replace_NZEconomic'
         const templateKey = field.templateKey.replace(/\[|\]/g, ''); 
-        const contentValue = globalContent[field.name as keyof typeof globalContent];
+        const contentValue = (globalContent as Record<string, string>)[field.name as keyof typeof globalContent];
         templateData[templateKey] = contentValue;
          if (contentValue && contentValue.trim() !== '') {
             replacementCount++;
