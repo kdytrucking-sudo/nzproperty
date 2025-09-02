@@ -71,12 +71,12 @@ const prepareTemplateData = (data: any) => {
 
     // 3. Process comparableSales as a loopable array for {#comparableSales} tag
     if (data.comparableSales && Array.isArray(data.comparableSales)) {
-        templateData['comparableSales'] = data.comparableSales.map(sale => {
+        templateData['comparableSales'] = data.comparableSales.map((sale: any) => {
             const newSale: { [key: string]: any } = {};
             Object.keys(sale).forEach(key => {
                 const value = sale[key] || '';
                 newSale[key] = value;
-                 // We count replacements inside the loop
+                 // We count replacements inside the loop for each valid field
                 if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== 'N/A') {
                    replacementCount++;
                 }
@@ -128,14 +128,14 @@ const generateReportFromTemplateFlow = ai.defineFlow(
           // This is where the magic happens.
           doc.render();
         } catch (error: any) {
-          console.error('Docxtemplater rendering error:', error);
+          console.error('Docxtemplater rendering error:', JSON.stringify(error, null, 2));
+          let errorMessage = 'Failed to render the document due to a template error.';
           if (error.properties && error.properties.errors) {
-            error.properties.errors.forEach((err: any) => {
-              console.error('Template Error Details:', err.properties);
-            });
+            const firstError = error.properties.errors[0];
+            errorMessage += ` Details: ${firstError.properties.explanation} (ID: ${firstError.id})`;
           }
-          // The generic error is re-thrown to be caught by the final catch block.
-          throw new Error('Failed to render the document. Check template placeholders and data structure.');
+          // The detailed error is re-thrown to be caught by the final catch block.
+          throw new Error(errorMessage);
         }
 
         const outputBuffer = doc.getZip().generate({
@@ -156,7 +156,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
             throw new Error(`Template file "${templateFileName}" not found on the server.`);
         }
         // This is the generic error catch-all.
-        throw new Error(`Failed to read or process the template file.`);
+        throw new Error(error.message || `Failed to read or process the template file.`);
     }
   }
 );
