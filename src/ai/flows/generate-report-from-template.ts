@@ -36,35 +36,25 @@ const prepareTemplateData = (data: any) => {
     const templateData: { [key: string]: any } = {};
     let replacementCount = 0;
 
-    // Helper to recursively process the JSON structure and map data.
-    const processExtractedData = (structure: any, dataAtPath: any) => {
-        if (!structure || !dataAtPath) return;
+    // 1. Process PDF-extracted data based on json-structure.json mapping
+    for (const section of Object.keys(initialJsonStructure)) {
+        const sectionFields = initialJsonStructure[section as keyof typeof initialJsonStructure];
+        for (const fieldName of Object.keys(sectionFields)) {
+            const placeholder = sectionFields[fieldName as keyof typeof sectionFields];
+            if (typeof placeholder === 'string' && placeholder.startsWith('[extracted_')) {
+                const templateKey = placeholder.replace('[extracted_', 'Replace_').replace(']', '');
+                const dataValue = data[section]?.[fieldName];
+                templateData[templateKey] = dataValue;
 
-        Object.keys(structure).forEach(key => {
-            const structureValue = structure[key];
-            const dataValue = dataAtPath[key];
-
-            if (typeof structureValue === 'object' && structureValue !== null && !Array.isArray(structureValue)) {
-                // For nested objects (like 'Property', 'DIY'), recurse deeper
-                processExtractedData(structureValue, dataValue);
-            } else if (typeof structureValue === 'string' && structureValue.startsWith('[extracted_')) {
-                // This is a field to be replaced.
-                // Transform placeholder from '[extracted_XXXX]' to 'Replace_XXXX'
-                const placeholder = structureValue.replace('[extracted_', 'Replace_').replace(']', '');
-                templateData[placeholder] = dataValue;
                 if (dataValue && typeof dataValue === 'string' && dataValue.trim() !== '' && dataValue !== 'N/A') {
                     replacementCount++;
                 }
             }
-        });
-    };
-
-    // 1. Process PDF-extracted data based on json-structure.json mapping
-    processExtractedData(initialJsonStructure, data);
-
+        }
+    }
+    
     // 2. Process global content from manage-content page
     contentFields.forEach(field => {
-        // The key in the template is '[Replace_NZEconomic]', so the key for docxtemplater is 'Replace_NZEconomic'
         const templateKey = field.templateKey.replace(/\[|\]/g, ''); 
         const contentValue = (globalContent as Record<string, string>)[field.name as keyof typeof globalContent];
         templateData[templateKey] = contentValue;
@@ -74,8 +64,7 @@ const prepareTemplateData = (data: any) => {
     });
 
     // 3. Process comparableSales as a loopable array for {#comparableSales} tag
-    // The placeholders inside the loop are {compAddress}, {compSaleDate} etc., NOT {Replace_compAddress}
-    // So we pass the array as is.
+    // The placeholders inside the loop are {compAddress}, {compSaleDate} etc.
     if (data.comparableSales && Array.isArray(data.comparableSales)) {
         templateData['comparableSales'] = data.comparableSales;
         if(data.comparableSales.length > 0) replacementCount++; // Count the loop as one replacement
