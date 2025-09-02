@@ -42,10 +42,11 @@ const prepareTemplateData = (data: any) => {
         Object.keys(section).forEach(fieldKey => {
             const placeholder = section[fieldKey as keyof typeof section];
             if (typeof placeholder === 'string' && placeholder.startsWith('[extracted_')) {
-                const templateKey = placeholder.replace('extracted_', 'Replace_').replace(/\[|\]/g, '');
+                // e.g., "[extracted_Strengths]" -> "Replace_Strengths"
+                const templateKey = placeholder.replace('[extracted_', '').replace(']', '');
                 const dataValue = data?.[sectionKey]?.[fieldKey];
                 if (dataValue) {
-                  templateData[templateKey] = dataValue;
+                  templateData[`Replace_${templateKey}`] = dataValue;
                   if (typeof dataValue === 'string' && dataValue.trim() !== '' && dataValue !== 'N/A') {
                       replacementCount++;
                   }
@@ -56,6 +57,7 @@ const prepareTemplateData = (data: any) => {
     
     // 2. Process global content from manage-content page
     contentFields.forEach(field => {
+        // e.g., "Replace_NZEconomic"
         const templateKey = field.templateKey.replace(/\[|\]/g, ''); 
         const contentValue = (globalContent as Record<string, string>)[field.name as keyof typeof globalContent];
         if (contentValue) {
@@ -69,7 +71,9 @@ const prepareTemplateData = (data: any) => {
     // 3. Process comparableSales as a loopable array for {#comparableSales} tag
     if (data.comparableSales && Array.isArray(data.comparableSales)) {
         templateData['comparableSales'] = data.comparableSales;
-        if(data.comparableSales.length > 0) replacementCount++; // Count the loop as one replacement
+        if(data.comparableSales.length > 0) {
+            replacementCount += data.comparableSales.length * Object.keys(data.comparableSales[0]).length;
+        };
     }
     
     return { templateData, replacementCount };
