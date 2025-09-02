@@ -1,12 +1,13 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, type Control } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import * as React from 'react';
@@ -20,6 +21,54 @@ const formSchema = z.object({
   Disclosure: z.array(z.string()),
   MarketComment: z.array(z.string()),
 });
+
+type CommentaryFieldArrayProps = {
+    control: Control<CommentaryOptionsData>;
+    name: keyof CommentaryOptionsData;
+    label: string;
+    description: string;
+};
+
+function CommentaryFieldArray({ control, name, label, description }: CommentaryFieldArrayProps) {
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name,
+    });
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>{label}</CardTitle>
+                <CardDescription>{description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {fields.map((field, index) => (
+                    <FormField
+                        key={field.id}
+                        control={control}
+                        name={`${name}.${index}`}
+                        render={({ field }) => (
+                            <FormItem>
+                                <div className="flex items-center gap-2">
+                                    <FormControl>
+                                        <Textarea placeholder={`Option ${index + 1}`} {...field} className="font-mono"/>
+                                    </FormControl>
+                                    <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                ))}
+                <Button type="button" variant="outline" size="sm" onClick={() => append('')}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Option
+                </Button>
+            </CardContent>
+        </Card>
+    );
+}
 
 export default function ManageCommentaryPage() {
   const { toast } = useToast();
@@ -71,59 +120,20 @@ export default function ManageCommentaryPage() {
       setIsSaving(false);
     }
   }
-
-  const renderFieldArray = (name: keyof CommentaryOptionsData, label: string) => {
-    const { fields, append, remove } = useFieldArray({
-      control: form.control,
-      name,
-    });
-
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{label}</CardTitle>
-          <CardDescription>
-            Manage the options for the <code className="bg-muted px-1 rounded-sm">[{name}]</code> commentary section. The first option will be the default.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {fields.map((field, index) => (
-            <FormField
-              key={field.id}
-              control={form.control}
-              name={`${name}.${index}`}
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-2">
-                    <FormControl>
-                      <Textarea placeholder={`Option ${index + 1}`} {...field} className="font-mono"/>
-                    </FormControl>
-                    <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          ))}
-          <Button type="button" variant="outline" size="sm" onClick={() => append('')}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add Option
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  };
   
   if (isLoading) {
     return (
         <div className="space-y-8">
-            <Skeleton className="h-10 w-1/3" />
-            <Skeleton className="h-6 w-2/3" />
-            <div className="space-y-6">
+            <header>
+                <Skeleton className="h-10 w-1/3" />
+                <Skeleton className="mt-2 h-6 w-2/3" />
+            </header>
+            <main className="space-y-6">
                 <Skeleton className="h-64 w-full" />
                 <Skeleton className="h-64 w-full" />
-            </div>
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-64 w-full" />
+            </main>
         </div>
     )
   }
@@ -142,10 +152,30 @@ export default function ManageCommentaryPage() {
       <main>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSave)} className="space-y-6">
-            {renderFieldArray('PreviousSale', 'Previous Sale Commentary')}
-            {renderFieldArray('ContractSale', 'Contract Sale Commentary')}
-            {renderFieldArray('Disclosure', 'Disclosure Commentary')}
-            {renderFieldArray('MarketComment', 'Market Comment Commentary')}
+            <CommentaryFieldArray 
+                control={form.control}
+                name="PreviousSale"
+                label="Previous Sale Commentary"
+                description="Manage options for the [PreviousSale] section. The first option is the default."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="ContractSale"
+                label="Contract Sale Commentary"
+                description="Manage options for the [ContractSale] section. The first option is the default."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="Disclosure"
+                label="Disclosure Commentary"
+                description="Manage options for the [Disclosure] section. The first option is the default."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="MarketComment"
+                label="Market Comment Commentary"
+                description="Manage options for the [MarketComment] section. The first option is the default."
+            />
             
             <div className="flex justify-end">
               <Button type="submit" disabled={isSaving}>
