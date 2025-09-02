@@ -1,28 +1,26 @@
 {
-  "Brief": {
-    "PrincipalUse": "[extracted_PrincipalUse]",
-    "PropertyAddress": "[extracted_PropertyAddress]",
-    "DateofValuation": "[extracted_DateofValuation]",
-    "PreparedFor": "[extracted_PreparedFor]",
-    "PurposeofValuation": "[extracted_PurposeofValuation]",
-    "TypeofProperty": "[extracted_TypeofProperty]",
-    "LandArea": "[extracted_LandArea]",
-    "Zoning": "[extracted_Zoning]",
-    "ValuerName": "[extracted_ValuerName]",
-    "propertyType": "[extracted_property_type]"
+  "DIY": {
+    "SWOT Analysis Strengths": "[extracted_Strengths]",
+    "SWOT Analysis Weaknesses": "[extracted_Weaknesses]",
+    "Location Description": "[extracted_LocationDescription]"
   },
-  "propertyDetails": {
-    "address": "[extracted_address]",
-    "legalDescription": "[extracted_legal_description]",
-    "ownerName": "[extracted_owner_name]",
-    "landArea": "[extracted_land_area]",
-    "floorArea": "[extracted_floor_area]",
-    "currentCV": "[extracted_current_CV]",
-    "lastSaleDate": "[extracted_last_sale_date]",
-    "lastSalePrice": "[extracted_last_sale_price]",
-    "zoning": "[extracted_zoning]",
-    "propertyType": "[extracted_property_type]"
+  "Property": {
+    "Property Address": "[extracted_Address]",
+    "Prepared For": "[extracted_PreparedFor]",
+    "Land Area": "[extracted_LandArea]",
+    "Title": "[extracted_Title]",
+    "Zoning": "[extracted_Zoning]",
+    "Property Brief Description": "[extracted_PropertySummary]",
+    "Title Interestes": "[extracted_TitleInterests]",
+    "Title Owner": "[extracted_TitleOwner]"
+  },
+  "Valuation": {
+    "Principal Use": "[extracted_PrincipalUse]",
+    "Date of Valuation": "[extracted_DateofValuation]",
+    "VOS Order No": "[extracted_VOSOrderNo]",
+    "Client/Borrower": "[extracted_Client]",
+    "Special Assumptions": "[extracted_Assumptions]",
+    "Date of Preparation": "[extracted_DateofPreparation]",
+    "Date of Inspection": "[extracted_DateofInspection]"
   }
-
-
 }
