@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, FilePlus2, Trash2 } from 'lucide-react';
 import * as React from 'react';
-import { useTemplates, type Template } from '@/hooks/use-templates.tsx';
+import { useTemplates, fileToTemplate } from '@/hooks/use-templates.tsx';
 import {
   Table,
   TableBody,
@@ -14,11 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 export default function ManageTemplatesPage() {
   const { toast } = useToast();
-  const { templates, addTemplate, removeTemplate } = useTemplates();
+  const { templates, addTemplate, removeTemplate, isLoaded } = useTemplates();
   const [isUploading, setIsUploading] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -27,25 +28,11 @@ export default function ManageTemplatesPage() {
     if (file) {
       if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
         setIsUploading(true);
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const dataUri = e.target?.result as string;
-          const newTemplate: Template = {
-            id: `template-${Date.now()}`,
-            name: file.name,
-            dataUri: dataUri,
-            file: file,
-          };
-          addTemplate(newTemplate);
-          toast({ title: 'Template Uploaded', description: `"${file.name}" has been added.` });
-          setIsUploading(false);
-        };
-        reader.onerror = (err) => {
-            console.error(err);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not read the file.' });
+        fileToTemplate(file, (newTemplate) => {
+            addTemplate(newTemplate);
+            toast({ title: 'Template Uploaded', description: `"${file.name}" has been added.` });
             setIsUploading(false);
-        }
-        reader.readAsDataURL(file);
+        });
       } else {
         toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload a .docx file.' });
       }
@@ -63,7 +50,7 @@ export default function ManageTemplatesPage() {
           Manage Templates
         </h1>
         <p className="text-muted-foreground">
-          Upload and manage your .docx report templates. Placeholders like [Replace_placeholder] will be replaced with data.
+          Upload and manage your .docx report templates. These are saved in your browser for future use.
         </p>
       </header>
 
@@ -94,7 +81,13 @@ export default function ManageTemplatesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {templates.length === 0 ? (
+                  {!isLoaded ? (
+                     <TableRow>
+                        <TableCell colSpan={2} className="h-24">
+                           <Skeleton className="h-6 w-1/2" />
+                        </TableCell>
+                    </TableRow>
+                  ) : templates.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={2} className="h-24 text-center text-muted-foreground">
                         No templates uploaded yet.
