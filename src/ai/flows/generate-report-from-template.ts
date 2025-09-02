@@ -45,9 +45,11 @@ const prepareTemplateData = (data: any) => {
             const dataValue = dataAtPath[key];
 
             if (typeof structureValue === 'object' && structureValue !== null && !Array.isArray(structureValue)) {
+                // For nested objects (like 'Property', 'DIY'), recurse deeper
                 processExtractedData(structureValue, dataValue);
             } else if (typeof structureValue === 'string' && structureValue.startsWith('[extracted_')) {
-                // Transform [extracted_XXXX] to Replace_XXXX
+                // This is a field to be replaced.
+                // Transform placeholder from '[extracted_XXXX]' to 'Replace_XXXX'
                 const placeholder = structureValue.replace('[extracted_', 'Replace_').replace(']', '');
                 templateData[placeholder] = dataValue;
                 if (dataValue && typeof dataValue === 'string' && dataValue.trim() !== '' && dataValue !== 'N/A') {
@@ -62,7 +64,8 @@ const prepareTemplateData = (data: any) => {
 
     // 2. Process global content from manage-content page
     contentFields.forEach(field => {
-        const templateKey = field.templateKey.replace(/\[|\]/g, ''); // Remove brackets to get "Replace_NZEconomic"
+        // The key in the template is '[Replace_NZEconomic]', so the key for docxtemplater is 'Replace_NZEconomic'
+        const templateKey = field.templateKey.replace(/\[|\]/g, ''); 
         const contentValue = globalContent[field.name as keyof typeof globalContent];
         templateData[templateKey] = contentValue;
          if (contentValue && contentValue.trim() !== '') {
@@ -71,9 +74,11 @@ const prepareTemplateData = (data: any) => {
     });
 
     // 3. Process comparableSales as a loopable array for {#comparableSales} tag
+    // The placeholders inside the loop are {compAddress}, {compSaleDate} etc., NOT {Replace_compAddress}
+    // So we pass the array as is.
     if (data.comparableSales && Array.isArray(data.comparableSales)) {
         templateData['comparableSales'] = data.comparableSales;
-        if(data.comparableSales.length > 0) replacementCount++;
+        if(data.comparableSales.length > 0) replacementCount++; // Count the loop as one replacement
     }
     
     return { templateData, replacementCount };
