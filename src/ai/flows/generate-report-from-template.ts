@@ -14,7 +14,6 @@ import Docxtemplater from 'docxtemplater';
 import fs from 'fs/promises';
 import path from 'path';
 
-
 const GenerateReportInputSchema = z.object({
   templateFileName: z.string().describe('The file name of the .docx template stored on the server.'),
   data: z.any().describe('The JSON data to populate the template with.'),
@@ -29,25 +28,42 @@ const GenerateReportOutputSchema = z.object({
 });
 export type GenerateReportOutput = z.infer<typeof GenerateReportOutputSchema>;
 
-// Custom parser to handle different delimiters
-const parser = (tag: string) => {
-    return {
-        get(scope: any) {
-            // Allow for tags like [Name] and [Replace_Name]
-            if (tag.startsWith('Replace_')) {
-                const key = tag.substring(8);
-                return scope[key] || scope[tag];
+
+const prepareTemplateData = (data: any) => {
+    const templateData: { [key: string]: any } = {};
+    let replacementCount = 0;
+
+    function flatten(obj: any, path: string = '') {
+        for (const key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                if (key === 'comparableSales' && Array.isArray(obj[key])) {
+                    templateData['comparableSales'] = obj[key];
+                    if (obj[key].length > 0) replacementCount++;
+                    continue;
+                }
+                if (key.startsWith('TermText_')) {
+                    templateData[key] = obj[key];
+                    if (obj[key]) replacementCount++;
+                    continue;
+                }
+
+                if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+                    flatten(obj[key], path ? `${path}_${key}` : key);
+                } else {
+                    const finalKey = path ? `${path}_${key}` : key;
+                    templateData[finalKey] = obj[key];
+                    if (obj[key] && typeof obj[key] === 'string' && !obj[key].startsWith('[') && obj[key] !== 'N/A' && obj[key] !== '') {
+                        replacementCount++;
+                    }
+                }
             }
-             // Allow for tags like [TermText_Name]
-            if (tag.startsWith('TermText_')) {
-                 const key = tag.substring(9);
-                 return scope[tag] || scope[key];
-            }
-            // Fallback for simple tags like [Name]
-            return scope[tag];
-        },
-    };
+        }
+    }
+
+    flatten(data);
+    return { templateData, replacementCount };
 };
+
 
 export async function generateReportFromTemplate(
   input: GenerateReportInput
@@ -72,7 +88,6 @@ const generateReportFromTemplateFlow = ai.defineFlow(
         const doc = new Docxtemplater(zip, {
           paragraphLoop: true,
           linebreaks: true,
-          parser: parser,
           delimiters: {
             start: '[',
             end: ']',
@@ -80,40 +95,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
           nullGetter: () => "", // Return empty string for missing values
         });
         
-        const templateData: { [key:string]: any } = {};
-        let replacementCount = 0;
-
-        // Flatten the nested data object for simple replacements
-        function flatten(obj: any, path: string = '') {
-          for (const key in obj) {
-            if (key === 'comparableSales' && Array.isArray(obj[key])) {
-                templateData['comparableSales'] = obj[key];
-                if(obj[key].length > 0) replacementCount++;
-                continue;
-            }
-
-            // Keep TermText keys at the top level
-            if(key.startsWith('TermText_')) {
-                templateData[key] = obj[key];
-                if (obj[key] && obj[key] !== 'N/A' && obj[key] !== '') {
-                    replacementCount++;
-                }
-                continue;
-            }
-
-            if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-              flatten(obj[key], path ? `${path}_${key}`: key);
-            } else {
-              const finalKey = path ? `Replace_${path}_${key}` : `Replace_${key}`;
-              templateData[finalKey] = obj[key];
-              // Count valid, non-placeholder replacements
-              if (obj[key] && typeof obj[key] === 'string' && !obj[key].startsWith('[extracted_') && obj[key] !== 'N/A' && obj[key] !== '') {
-                replacementCount++;
-              }
-            }
-          }
-        }
-        flatten(data);
+        const { templateData, replacementCount } = prepareTemplateData(data);
 
         doc.setData(templateData);
 
