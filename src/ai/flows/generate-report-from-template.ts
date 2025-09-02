@@ -37,12 +37,15 @@ const prepareTemplateData = (data: any) => {
     const templateData: { [key: string]: any } = {};
     let replacementCount = 0;
 
-    const countReplacement = (value: any) => {
+    const countAndSetReplacement = (key: string, value: any) => {
         if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== 'N/A') {
+            templateData[key] = value;
             replacementCount++;
+        } else {
+             templateData[key] = '';
         }
     };
-
+    
     // 1. Process PDF-extracted data based on json-structure.json mapping
     Object.keys(initialJsonStructure).forEach(sectionKey => {
         const sectionSchema = initialJsonStructure[sectionKey as keyof typeof initialJsonStructure];
@@ -53,9 +56,8 @@ const prepareTemplateData = (data: any) => {
                 const placeholder = sectionSchema[fieldKey as keyof typeof sectionSchema];
                 if (typeof placeholder === 'string' && placeholder.startsWith('[extracted_')) {
                     const templateKey = placeholder.replace('[extracted_', 'Replace_').replace(']', '');
-                    const value = dataSection[fieldKey] || '';
-                    templateData[templateKey] = value;
-                    countReplacement(value);
+                    const value = dataSection[fieldKey];
+                    countAndSetReplacement(templateKey, value);
                 }
             });
         }
@@ -64,12 +66,20 @@ const prepareTemplateData = (data: any) => {
     // 2. Process global content from manage-content page
     contentFields.forEach(field => {
         const templateKey = field.templateKey.replace(/\[|\]/g, ''); 
-        const contentValue = (globalContent as Record<string, string>)[field.name as keyof typeof globalContent] || '';
-        templateData[templateKey] = contentValue;
-        countReplacement(contentValue);
+        const contentValue = (globalContent as Record<string, string>)[field.name as keyof typeof globalContent];
+        countAndSetReplacement(templateKey, contentValue);
     });
 
-    // 3. Process comparableSales as a loopable array for {#comparableSales} tag
+    // 3. Process the new commentary fields
+    if (data.commentary) {
+        Object.keys(data.commentary).forEach(key => {
+            const templateKey = `Replace_${key}`;
+            const value = data.commentary[key];
+            countAndSetReplacement(templateKey, value);
+        });
+    }
+
+    // 4. Process comparableSales as a loopable array for {#comparableSales} tag
     if (data.comparableSales && Array.isArray(data.comparableSales)) {
         templateData['comparableSales'] = data.comparableSales.map((sale: any) => {
             const newSale: { [key: string]: any } = {};
@@ -83,6 +93,8 @@ const prepareTemplateData = (data: any) => {
             });
             return newSale;
         });
+    } else {
+      templateData['comparableSales'] = [];
     }
     
     return { templateData, replacementCount };

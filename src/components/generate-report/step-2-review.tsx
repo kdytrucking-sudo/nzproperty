@@ -17,11 +17,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { generateReportFromTemplate } from '@/ai/flows/generate-report-from-template';
 import { listTemplates } from '@/ai/flows/list-templates';
 import initialJsonStructure from '@/lib/json-structure.json';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+
+const commentarySchema = z.object({
+    PreviousSale: z.string().optional(),
+    ContractSale: z.string().optional(),
+    Disclosure: z.string().optional(),
+    MarketComment: z.string().optional(),
+});
 
 // The main form schema
 const formSchema = z.object({
   templateFileName: z.string().min(1, 'A report template is required.'),
   data: z.any(), // We use z.any() because the structure is now fully dynamic.
+  commentary: commentarySchema,
 });
 
 type Step2ReviewProps = {
@@ -87,6 +96,25 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
     );
 };
 
+const commentaryOptions = {
+    PreviousSale: [
+        { id: 'ps1', label: 'There are no sales listed for the property within the last three years.' },
+        { id: 'ps2', label: 'Last sold in ... for $.... Comment on relevance of the previous sale price.' },
+    ],
+    ContractSale: [
+        { id: 'cs1', label: 'To the best of our knowledge, we are not aware of any current contract for sale on the property.' },
+        { id: 'cs2', label: "Property is currently listed OR aware of sale don't know price OR aware, price is ........" },
+        { id: 'cs3', label: 'Have viewed S&P – no unusual or onerous clauses.' },
+    ],
+    Disclosure: [
+        { id: 'd1', label: 'We have not been provided with a pre-contract disclosure statement, we assume one will be made available prior to any sale and that it will not contain any adverse information that will affect the value of the property.' },
+        { id: 'd2_unique', label: 'We have been provided with a pre-contract disclosure statement which we have reviewed and note that it does not appear to contain any adverse information that would affect the value of the property.' },
+    ],
+    MarketComment: [
+        { id: 'mc1', label: 'The housing market outlook remains mixed, with cautious optimism driven by increased mortgage pre-approvals and improving auction clearance rates. Expected OCR cuts may boost buyer eligibility, while investors benefit from tax reforms and equity growth. However, rising unemployment poses a risk, potentially leading to more forced sales. House prices are projected to grow moderately, contingent on stable employment and controlled construction costs. As such, a moderate level of risk remains.' },
+    ]
+};
+
 
 export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2ReviewProps) {
   const { toast } = useToast();
@@ -114,6 +142,12 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     defaultValues: {
       templateFileName: '',
       data: extractedData,
+      commentary: {
+        PreviousSale: commentaryOptions.PreviousSale[0].label,
+        ContractSale: commentaryOptions.ContractSale[0].label,
+        Disclosure: commentaryOptions.Disclosure[0].label,
+        MarketComment: commentaryOptions.MarketComment[0].label,
+      }
     },
   });
 
@@ -135,9 +169,10 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     }
 
     try {
+        const fullData = { ...values.data, commentary: values.commentary };
         const result = await generateReportFromTemplate({
             templateFileName: values.templateFileName,
-            data: values.data, // Pass the entire data object
+            data: fullData, // Pass the entire data object
         });
 
         toast({
@@ -199,13 +234,14 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
             />
             
             <Tabs defaultValue={defaultTab}>
-               <TabsList className="grid w-full grid-cols-1 md:grid-cols-4">
+               <TabsList className="grid w-full grid-cols-1 md:grid-cols-5">
                  {tabKeys.map(key => (
                     <TabsTrigger key={key} value={key}>
                         {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                     </TabsTrigger>
                  ))}
                  {extractedData.comparableSales && <TabsTrigger value="comparableSales">Comparables</TabsTrigger>}
+                 <TabsTrigger value="commentary">Commentary</TabsTrigger>
               </TabsList>
               
                {tabKeys.map(key => (
@@ -224,7 +260,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                             <FormField control={form.control} name={`data.comparableSales.${index}.compSaleDate`} render={({ field }) => (<FormItem><FormLabel>Sale Date</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                             <FormField control={form.control} name={`data.comparableSales.${index}.compSalePrice`} render={({ field }) => (<FormItem><FormLabel>Sale Price</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                             <FormField control={form.control} name={`data.comparableSales.${index}.compLandArea`} render={({ field }) => (<FormItem><FormLabel>Land Area</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name={`data.comparableSales.${index}.compFloorArea`} render={({ field }) => (<FormItem><FormLabel>Floor Area</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name={`data.comparableSales.${index}.compFloorArea`} render={({ field }) => (<FormItem><FormLabel>Floor Area</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormMessage /></FormItem>)} />
                         </div>
                         <Button type="button" variant="destructive" size="icon" className="absolute right-2 top-2 h-7 w-7" onClick={() => remove(index)}>
                             <Trash2 className="h-4 w-4" />
@@ -237,6 +273,89 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     </div>
                 </TabsContent>
               )}
+
+              <TabsContent value="commentary" className="space-y-6 pt-4">
+                <FormField
+                    control={form.control}
+                    name="commentary.PreviousSale"
+                    render={({ field }) => (
+                        <FormItem className="space-y-3">
+                            <FormLabel>Previous Sale <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_PreviousSale]</code></FormLabel>
+                            <FormControl>
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2">
+                                    {commentaryOptions.PreviousSale.map(option => (
+                                        <FormItem key={option.id} className="flex items-center space-x-3 space-y-0">
+                                            <FormControl><RadioGroupItem value={option.label} /></FormControl>
+                                            <FormLabel className="font-normal">{option.label}</FormLabel>
+                                        </FormItem>
+                                    ))}
+                                </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="commentary.ContractSale"
+                    render={({ field }) => (
+                        <FormItem className="space-y-3">
+                             <FormLabel>Contract Sale <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_ContractSale]</code></FormLabel>
+                            <FormControl>
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2">
+                                    {commentaryOptions.ContractSale.map(option => (
+                                        <FormItem key={option.id} className="flex items-center space-x-3 space-y-0">
+                                            <FormControl><RadioGroupItem value={option.label} /></FormControl>
+                                            <FormLabel className="font-normal">{option.label}</FormLabel>
+                                        </FormItem>
+                                    ))}
+                                </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="commentary.Disclosure"
+                    render={({ field }) => (
+                        <FormItem className="space-y-3">
+                             <FormLabel>Disclosure <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_Disclosure]</code></FormLabel>
+                            <FormControl>
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2">
+                                    {commentaryOptions.Disclosure.map(option => (
+                                        <FormItem key={option.id} className="flex items-center space-x-3 space-y-0">
+                                            <FormControl><RadioGroupItem value={option.label} /></FormControl>
+                                            <FormLabel className="font-normal">{option.label}</FormLabel>
+                                        </FormItem>
+                                    ))}
+                                </RadioGroup>
+                            </FormControl>
+                             <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="commentary.MarketComment"
+                    render={({ field }) => (
+                        <FormItem className="space-y-3">
+                             <FormLabel>Market Comment <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_MarketComment]</code></FormLabel>
+                            <FormControl>
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2">
+                                    {commentaryOptions.MarketComment.map(option => (
+                                        <FormItem key={option.id} className="flex items-center space-x-3 space-y-0">
+                                            <FormControl><RadioGroupItem value={option.label} /></FormControl>
+                                            <FormLabel className="font-normal">{option.label}</FormLabel>
+                                        </FormItem>
+                                    ))}
+                                </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+              </TabsContent>
             </Tabs>
 
             <div className="flex justify-between">
