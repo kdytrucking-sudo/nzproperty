@@ -36,9 +36,8 @@ const prepareTemplateData = (data: any) => {
     const templateData: { [key: string]: any } = {};
     let replacementCount = 0;
 
-    // Helper to count non-empty replacements
     const countReplacement = (value: any) => {
-        if (typeof value === 'string' && value.trim() !== '' && value.trim() !== 'N/A') {
+        if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== 'N/A') {
             replacementCount++;
         }
     };
@@ -48,16 +47,17 @@ const prepareTemplateData = (data: any) => {
         const sectionSchema = initialJsonStructure[sectionKey as keyof typeof initialJsonStructure];
         const dataSection = data?.[sectionKey];
 
-        Object.keys(sectionSchema).forEach(fieldKey => {
-            const placeholder = sectionSchema[fieldKey as keyof typeof sectionSchema];
-            if (typeof placeholder === 'string' && placeholder.startsWith('[extracted_')) {
-                const templateKey = placeholder.replace('[extracted_', 'Replace_').replace(']', '');
-                // Safely get the value from the submitted data
-                const value = dataSection?.[fieldKey] || '';
-                templateData[templateKey] = value;
-                countReplacement(value);
-            }
-        });
+        if (dataSection) {
+             Object.keys(sectionSchema).forEach(fieldKey => {
+                const placeholder = sectionSchema[fieldKey as keyof typeof sectionSchema];
+                if (typeof placeholder === 'string' && placeholder.startsWith('[extracted_')) {
+                    const templateKey = placeholder.replace('[extracted_', 'Replace_').replace(']', '');
+                    const value = dataSection[fieldKey] || '';
+                    templateData[templateKey] = value;
+                    countReplacement(value);
+                }
+            });
+        }
     });
     
     // 2. Process global content from manage-content page
@@ -72,8 +72,8 @@ const prepareTemplateData = (data: any) => {
     if (data.comparableSales && Array.isArray(data.comparableSales)) {
         templateData['comparableSales'] = data.comparableSales;
         if(data.comparableSales.length > 0) {
-             // count each field in each sale object
-            replacementCount += data.comparableSales.reduce((acc: number, sale: any) => acc + Object.values(sale).filter(v => typeof v === 'string' && v.trim() !== '' && v.trim() !== 'N/A').length, 0);
+            replacementCount += data.comparableSales.reduce((acc: number, sale: any) => 
+                acc + Object.values(sale).filter(v => v && typeof v === 'string' && v.trim() !== '' && v.trim() !== 'N/A').length, 0);
         };
     }
     
