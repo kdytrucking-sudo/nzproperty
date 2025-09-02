@@ -115,7 +115,6 @@ const commentaryOptions = {
     ]
 };
 
-
 export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2ReviewProps) {
   const { toast } = useToast();
   const [templates, setTemplates] = React.useState<string[]>([]);
