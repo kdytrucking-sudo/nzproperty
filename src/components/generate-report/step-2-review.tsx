@@ -15,9 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import * as React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { generateReportFromTemplate } from '@/ai/flows/generate-report-from-template';
-import { contentFields } from '@/app/(app)/manage-content/page';
-import globalContent from '@/lib/global-content.json';
 import { listTemplates } from '@/ai/flows/list-templates';
+import initialJsonStructure from '@/lib/json-structure.json';
 
 // The main form schema
 const formSchema = z.object({
@@ -31,29 +30,37 @@ type Step2ReviewProps = {
   onBack: () => void;
 };
 
-// Define which fields should always be textareas
-const textAreaFields = [
-    'data.DIY.SWOT Analysis Strengths',
-    'data.DIY.SWOT Analysis Weaknesses',
-    'data.DIY.Location Description',
-    'data.Property.Property Brief Description'
-];
+// Helper to get the template tag for a given field from the JSON structure
+const getTemplateTag = (structureValue: any): string | null => {
+    if (typeof structureValue === 'string' && structureValue.startsWith('[extracted_')) {
+        return structureValue.replace('[extracted_', '[Replace_');
+    }
+    return null;
+}
 
 // Helper to render form fields for a given object in the data
-const renderFormSection = (form: any, path: string, data: any) => {
-    if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+const renderFormSection = (form: any, path: string, data: any, structure: any) => {
+    if (typeof data !== 'object' || data === null || Array.isArray(data) || typeof structure !== 'object' || structure === null) {
         return null;
     }
 
     const keys = Object.keys(data);
-    const isGrid = keys.length > 2;
+
+    const textAreaFields = [
+      'data.DIY.SWOT Analysis Strengths',
+      'data.DIY.SWOT Analysis Weaknesses',
+      'data.DIY.Location Description',
+      'data.Property.Property Brief Description'
+    ];
 
     return (
-        <div className={isGrid ? "grid grid-cols-1 gap-4 md:grid-cols-2" : "space-y-4"}>
+        <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
             {keys.map((key) => {
                 const fieldPath = `${path}.${key}`;
-                const isTextArea = textAreaFields.includes(fieldPath);
-                const FormComponent = isTextArea ? Textarea : Input;
+                const structureValue = structure[key];
+
+                const templateTag = getTemplateTag(structureValue);
+                const FormComponent = textAreaFields.includes(fieldPath) ? Textarea : Input;
 
                 return (
                     <FormField
@@ -61,10 +68,15 @@ const renderFormSection = (form: any, path: string, data: any) => {
                         control={form.control}
                         name={fieldPath}
                         render={({ field }) => (
-                            <FormItem className={isTextArea && isGrid ? 'md:col-span-2' : ''}>
-                                <FormLabel>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</FormLabel>
+                            <FormItem className={FormComponent === Textarea ? 'md:col-span-2' : ''}>
+                                <div className="flex items-center justify-between">
+                                    <FormLabel>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</FormLabel>
+                                    {templateTag && (
+                                       <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{templateTag}</code>
+                                    )}
+                                </div>
                                 <FormControl>
-                                    <FormComponent {...field} {...(isTextArea ? { rows: 4 } : {})} />
+                                    <FormComponent {...field} {...(FormComponent === Textarea ? { rows: 4 } : {})} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -87,7 +99,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
             const templateList = await listTemplates();
             setTemplates(templateList);
             if (templateList.length > 0) {
-                // Set default value for the form
                 form.setValue('templateFileName', templateList[0]);
             }
         } catch (error: any) {
@@ -95,6 +106,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         }
     }
     fetchTemplates();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -110,8 +122,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     name: 'data.comparableSales',
   });
   
-  // Get the top-level keys from the data to create tabs (excluding comparables)
-  const tabKeys = Object.keys(extractedData).filter(key => key !== 'comparableSales' && typeof extractedData[key] === 'object' && !Array.isArray(extractedData[key]));
+  const tabKeys = Object.keys(initialJsonStructure);
   const defaultTab = tabKeys.length > 0 ? tabKeys[0] : 'comparableSales';
   
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -124,20 +135,9 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     }
 
     try {
-        const templateReadyData = { ...values.data };
-
-        // Map the saved content to the template placeholders using the key from manage-content page
-        contentFields.forEach(field => {
-            const contentKey = `TermText_${field.templateKey.replace(/\[|\]|Replace_/g, '')}`;
-            if (globalContent[field.name as keyof typeof globalContent]) {
-                templateReadyData[contentKey] = globalContent[field.name as keyof typeof globalContent];
-            }
-        });
-
-
         const result = await generateReportFromTemplate({
             templateFileName: values.templateFileName,
-            data: templateReadyData,
+            data: values.data, // Pass the entire data object
         });
 
         toast({
@@ -179,7 +179,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a .docx template to use..." />
-                      </SelectTrigger>
+                      </Trigger>
                     </FormControl>
                     <SelectContent>
                       {templates.length === 0 ? (
@@ -199,7 +199,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
             />
             
             <Tabs defaultValue={defaultTab}>
-               <TabsList className="grid w-full grid-cols-1 md:grid-cols-3">
+               <TabsList className="grid w-full grid-cols-1 md:grid-cols-4">
                  {tabKeys.map(key => (
                     <TabsTrigger key={key} value={key}>
                         {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
@@ -210,7 +210,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
               
                {tabKeys.map(key => (
                   <TabsContent key={key} value={key} className="space-y-4 pt-4">
-                    {renderFormSection(form, `data.${key}`, form.getValues(`data.${key}`))}
+                    {renderFormSection(form, `data.${key}`, form.getValues(`data.${key}`), initialJsonStructure[key as keyof typeof initialJsonStructure])}
                   </TabsContent>
                ))}
 
@@ -237,25 +237,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     </div>
                 </TabsContent>
               )}
-
-                {/* Render other top-level string fields */}
-                {Object.keys(extractedData).filter(key => typeof extractedData[key] === 'string').map(key => (
-                    <FormField
-                        key={key}
-                        control={form.control}
-                        name={`data.${key}`}
-                        render={({ field }) => (
-                        <FormItem className="pt-4">
-                            <FormLabel>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</FormLabel>
-                            <FormControl>
-                            <Textarea {...field} rows={4} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                ))}
-
             </Tabs>
 
             <div className="flex justify-between">
