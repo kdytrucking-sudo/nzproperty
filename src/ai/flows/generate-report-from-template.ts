@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview This file defines a Genkit flow for generating a report from a Word template.
@@ -70,11 +71,18 @@ const prepareTemplateData = (data: any) => {
 
     // 3. Process comparableSales as a loopable array for {#comparableSales} tag
     if (data.comparableSales && Array.isArray(data.comparableSales)) {
-        templateData['comparableSales'] = data.comparableSales;
-        if(data.comparableSales.length > 0) {
-            replacementCount += data.comparableSales.reduce((acc: number, sale: any) => 
-                acc + Object.values(sale).filter(v => v && typeof v === 'string' && v.trim() !== '' && v.trim() !== 'N/A').length, 0);
-        };
+        templateData['comparableSales'] = data.comparableSales.map(sale => {
+            const newSale: { [key: string]: any } = {};
+            Object.keys(sale).forEach(key => {
+                const value = sale[key] || '';
+                newSale[key] = value;
+                 // We count replacements inside the loop
+                if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== 'N/A') {
+                   replacementCount++;
+                }
+            });
+            return newSale;
+        });
     }
     
     return { templateData, replacementCount };
@@ -152,3 +160,4 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     }
   }
 );
+
