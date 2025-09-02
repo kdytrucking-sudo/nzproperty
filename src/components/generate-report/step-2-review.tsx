@@ -16,7 +16,8 @@ import * as React from 'react';
 import { useTemplates } from '@/hooks/use-templates.tsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { generateReportFromTemplate } from '@/ai/flows/generate-report-from-template';
-import { contentFields, contentStorageKey } from '@/app/(app)/manage-content/page';
+import { contentFields } from '@/app/(app)/manage-content/page';
+import globalContent from '@/lib/global-content.json';
 
 // The main form schema
 const formSchema = z.object({
@@ -103,16 +104,12 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     }
 
     try {
-        // Load global content from localStorage
-        const savedContentRaw = localStorage.getItem(contentStorageKey);
-        const savedContent = savedContentRaw ? JSON.parse(savedContentRaw) : {};
-        
         const templateReadyData = { ...values.data };
 
         // Map the saved content to the template placeholders
         contentFields.forEach(field => {
-            if (savedContent[field.name]) {
-                templateReadyData[field.templateKey] = savedContent[field.name];
+            if (globalContent[field.name]) {
+                templateReadyData[field.templateKey] = globalContent[field.name];
             }
         });
 

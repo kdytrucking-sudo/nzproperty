@@ -10,8 +10,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import * as React from 'react';
-
-export const contentStorageKey = 'globalReportContent';
+import initialContent from '@/lib/global-content.json';
+import { saveGlobalContent } from '@/ai/flows/save-global-content';
 
 const formSchema = z.object({
   nzEconomicOverview: z.string(),
@@ -37,47 +37,31 @@ export const contentFields: { name: keyof ContentFormData; label: string, placeh
 export default function ManageContentPage() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = React.useState(false);
-  const [isLoaded, setIsLoaded] = React.useState(false);
 
   const form = useForm<ContentFormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      nzEconomicOverview: '',
-      globalEconomicOverview: '',
-      residentialMarket: '',
-      recentMarketDirection: '',
-      marketVolatility: '',
-      localEconomyImpact: '',
-    },
+    defaultValues: initialContent,
   });
 
-  // Load from localStorage on mount
-  React.useEffect(() => {
-    const savedContent = localStorage.getItem(contentStorageKey);
-    if (savedContent) {
-      try {
-        const parsedContent = JSON.parse(savedContent);
-        form.reset(parsedContent);
-      } catch (e) {
-        console.error("Failed to parse saved content", e);
-      }
+  async function onSave(values: ContentFormData) {
+    setIsSaving(true);
+    try {
+        await saveGlobalContent(values);
+        toast({
+            title: 'Content Saved',
+            description: 'Your global content blocks have been updated.',
+        });
+    } catch (error: any) {
+        console.error('Failed to save content:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Save Failed',
+            description: error.message,
+        });
+    } finally {
+        setIsSaving(false);
     }
-    setIsLoaded(true);
-  }, [form]);
-
-  // Autosave to localStorage on change
-  React.useEffect(() => {
-    if (!isLoaded) return;
-
-    const subscription = form.watch((values) => {
-      setIsSaving(true);
-      localStorage.setItem(contentStorageKey, JSON.stringify(values));
-      // Simulate a small delay for saving feedback
-      setTimeout(() => setIsSaving(false), 500);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [form, isLoaded]);
+  }
 
   return (
     <div className="space-y-8">
@@ -86,62 +70,55 @@ export default function ManageContentPage() {
           Manage Global Content
         </h1>
         <p className="text-muted-foreground">
-          Edit and save reusable content for your reports. Changes are saved automatically.
+          Edit and save reusable content for your reports.
         </p>
       </header>
 
       <main>
-        <Card>
-          <CardHeader>
-            <CardTitle>Report Content Blocks</CardTitle>
-            <CardDescription>
-              This content can be dynamically inserted into your report templates using the specified placeholders.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form className="space-y-6">
-                {contentFields.map((item) => (
-                    <FormField
-                    key={item.name}
-                    control={form.control}
-                    name={item.name}
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex items-center justify-between">
-                          <FormLabel>{item.label}</FormLabel>
-                          <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[{item.templateKey}]</code>
-                        </div>
-                        <FormControl>
-                          <Textarea
-                            placeholder={item.placeholder}
-                            className="min-h-[150px] font-mono"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ))}
-                
-                <div className="flex justify-end items-center h-10">
-                  {isSaving && (
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </div>
-                  )}
-                   {!isSaving && isLoaded && (
-                     <div className="flex items-center text-sm text-muted-foreground">
-                        All changes saved.
-                    </div>
-                   )}
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSave)} className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Report Content Blocks</CardTitle>
+                <CardDescription>
+                  This content can be dynamically inserted into your report templates using the specified placeholders.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <div className="space-y-6">
+                    {contentFields.map((item) => (
+                        <FormField
+                        key={item.name}
+                        control={form.control}
+                        name={item.name}
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex items-center justify-between">
+                              <FormLabel>{item.label}</FormLabel>
+                              <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[{item.templateKey}]</code>
+                            </div>
+                            <FormControl>
+                              <Textarea
+                                placeholder={item.placeholder}
+                                className="min-h-[150px] font-mono"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ))}
+                  </div>
+              </CardContent>
+            </Card>
+             <div className="flex justify-end">
+                  <Button type="submit" disabled={isSaving}>
+                      {isSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Save Changes'}
+                  </Button>
+              </div>
+          </form>
+        </Form>
       </main>
     </div>
   );
