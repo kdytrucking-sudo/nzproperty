@@ -74,7 +74,9 @@ export function Step1Input({ onDataExtracted }: Step1InputProps) {
 
       const result: PropertyData = await extractPropertyData(input);
       
-      result.propertyDetails.address = values.address;
+      if (result && result.Property) {
+        result.Property['Property Address'] = values.address;
+      }
 
       toast({
         title: 'Data Extraction Successful',
