@@ -47,6 +47,25 @@ const getTemplateTag = (structureValue: any): string | null => {
     return null;
 }
 
+const commentaryOptions = {
+    PreviousSale: [
+        { id: 'ps1', label: 'There are no sales listed for the property within the last three years.' },
+        { id: 'ps2', label: 'Last sold in ... for $.... Comment on relevance of the previous sale price.' },
+    ],
+    ContractSale: [
+        { id: 'cs1', label: 'To the best of our knowledge, we are not aware of any current contract for sale on the property.' },
+        { id: 'cs2', label: "Property is currently listed OR aware of sale don't know price OR aware, price is ........" },
+        { id: 'cs3', label: 'Have viewed S&P – no unusual or onerous clauses.' },
+    ],
+    Disclosure: [
+        { id: 'd1', label: 'We have not been provided with a pre-contract disclosure statement, we assume one will be made available prior to any sale and that it will not contain any adverse information that will affect the value of the property.' },
+        { id: 'd2_unique', label: 'We have been provided with a pre-contract disclosure statement which we have reviewed and note that it does not appear to contain any adverse information that would affect the value of the property.' },
+    ],
+    MarketComment: [
+        { id: 'mc1', label: 'The housing market outlook remains mixed, with cautious optimism driven by increased mortgage pre-approvals and improving auction clearance rates. Expected OCR cuts may boost buyer eligibility, while investors benefit from tax reforms and equity growth. However, rising unemployment poses a risk, potentially leading to more forced sales. House prices are projected to grow moderately, contingent on stable employment and controlled construction costs. As such, a moderate level of risk remains.' },
+    ]
+};
+
 // Helper to render form fields for a given object in the data
 const renderFormSection = (form: any, path: string, data: any, structure: any) => {
     if (typeof data !== 'object' || data === null || Array.isArray(data) || typeof structure !== 'object' || structure === null) {
@@ -94,25 +113,6 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
             })}
         </div>
     );
-};
-
-const commentaryOptions = {
-    PreviousSale: [
-        { id: 'ps1', label: 'There are no sales listed for the property within the last three years.' },
-        { id: 'ps2', label: 'Last sold in ... for $.... Comment on relevance of the previous sale price.' },
-    ],
-    ContractSale: [
-        { id: 'cs1', label: 'To the best of our knowledge, we are not aware of any current contract for sale on the property.' },
-        { id: 'cs2', label: "Property is currently listed OR aware of sale don't know price OR aware, price is ........" },
-        { id: 'cs3', label: 'Have viewed S&P – no unusual or onerous clauses.' },
-    ],
-    Disclosure: [
-        { id: 'd1', label: 'We have not been provided with a pre-contract disclosure statement, we assume one will be made available prior to any sale and that it will not contain any adverse information that will affect the value of the property.' },
-        { id: 'd2_unique', label: 'We have been provided with a pre-contract disclosure statement which we have reviewed and note that it does not appear to contain any adverse information that would affect the value of the property.' },
-    ],
-    MarketComment: [
-        { id: 'mc1', label: 'The housing market outlook remains mixed, with cautious optimism driven by increased mortgage pre-approvals and improving auction clearance rates. Expected OCR cuts may boost buyer eligibility, while investors benefit from tax reforms and equity growth. However, rising unemployment poses a risk, potentially leading to more forced sales. House prices are projected to grow moderately, contingent on stable employment and controlled construction costs. As such, a moderate level of risk remains.' },
-    ]
 };
 
 export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2ReviewProps) {
