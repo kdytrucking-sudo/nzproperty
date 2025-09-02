@@ -46,8 +46,9 @@ const renderFormSection = (form: any, path: string, data: any) => {
             {keys.map((key) => {
                 const fieldPath = `${path}.${key}`;
                 const fieldValue = form.getValues(fieldPath);
-                // Render textarea for longer strings, otherwise use input
-                const isTextArea = typeof fieldValue === 'string' && (fieldValue.length > 80 || fieldValue.includes('\n'));
+                
+                // Render Textarea if the placeholder value starts with [textarea_
+                const isTextArea = typeof fieldValue === 'string' && fieldValue.startsWith('[textarea_');
                 const FormComponent = isTextArea ? Textarea : Input;
 
                 return (
@@ -59,7 +60,7 @@ const renderFormSection = (form: any, path: string, data: any) => {
                             <FormItem className={isTextArea && isGrid ? 'md:col-span-2' : ''}>
                                 <FormLabel>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</FormLabel>
                                 <FormControl>
-                                    <FormComponent {...field} />
+                                    <FormComponent {...field} {...(isTextArea ? { rows: 4 } : {})} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

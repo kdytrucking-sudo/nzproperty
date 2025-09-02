@@ -1,8 +1,8 @@
 {
   "DIY": {
-    "SWOT Analysis Strengths": "[extracted_Strengths]",
-    "SWOT Analysis Weaknesses": "[extracted_Weaknesses]",
-    "Location Description": "[extracted_LocationDescription]"
+    "SWOT Analysis Strengths": "[textarea_extracted_Strengths]",
+    "SWOT Analysis Weaknesses": "[textarea_extracted_Weaknesses]",
+    "Location Description": "[textarea_extracted_LocationDescription]"
   },
   "Property": {
     "Property Address": "[extracted_Address]",
@@ -10,7 +10,7 @@
     "Land Area": "[extracted_LandArea]",
     "Title": "[extracted_Title]",
     "Zoning": "[extracted_Zoning]",
-    "Property Brief Description": "[extracted_PropertySummary]",
+    "Property Brief Description": "[textarea_extracted_PropertySummary]",
     "Title Interestes": "[extracted_TitleInterests]",
     "Title Owner": "[extracted_TitleOwner]"
   },
