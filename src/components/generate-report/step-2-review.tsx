@@ -179,7 +179,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a .docx template to use..." />
-                      </Trigger>
+                      </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {templates.length === 0 ? (
