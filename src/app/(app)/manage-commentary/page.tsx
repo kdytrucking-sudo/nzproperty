@@ -4,7 +4,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, PlusCircle, Trash2, ShieldX, Save } from 'lucide-react';
 import { useForm, useFieldArray, type Control } from 'react-hook-form';
-import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
@@ -12,16 +11,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import * as React from 'react';
 import { saveCommentaryOptions } from '@/ai/flows/save-commentary-options';
-import { getCommentaryOptions, type CommentaryOptionsData } from '@/ai/flows/get-commentary-options';
+import { getCommentaryOptions } from '@/ai/flows/get-commentary-options';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
-const formSchema = z.object({
-  PreviousSale: z.array(z.string()),
-  ContractSale: z.array(z.string()),
-  Disclosure: z.array(z.string()),
-  MarketComment: z.array(z.string()),
-});
+import type { CommentaryOptionsData } from '@/lib/commentary-schema';
+import { CommentaryOptionsSchema } from '@/lib/commentary-schema';
 
 type CommentaryFieldArrayProps = {
     control: Control<CommentaryOptionsData>;
@@ -78,7 +72,7 @@ export default function ManageCommentaryPage() {
   const [initialData, setInitialData] = React.useState<CommentaryOptionsData | null>(null);
 
   const form = useForm<CommentaryOptionsData>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(CommentaryOptionsSchema),
     defaultValues: {
       PreviousSale: [],
       ContractSale: [],

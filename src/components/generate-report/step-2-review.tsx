@@ -20,7 +20,8 @@ import { listTemplates } from '@/ai/flows/list-templates';
 import { generateReportFromTemplate } from '@/ai/flows/generate-report-from-template';
 import type { PropertyData } from '@/lib/types';
 import initialJsonStructure from '@/lib/json-structure.json';
-import { getCommentaryOptions, type CommentaryOptionsData } from '@/ai/flows/get-commentary-options';
+import { getCommentaryOptions } from '@/ai/flows/get-commentary-options';
+import type { CommentaryOptionsData } from '@/lib/commentary-schema';
 
 const commentarySchema = z.object({
   PreviousSale: z.string().optional(),

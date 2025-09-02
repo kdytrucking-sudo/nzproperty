@@ -7,15 +7,8 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import fs from 'fs/promises';
 import path from 'path';
+import { CommentaryOptionsSchema, type CommentaryOptionsData } from '@/lib/commentary-schema';
 
-export const CommentaryOptionsSchema = z.object({
-  PreviousSale: z.array(z.string()),
-  ContractSale: z.array(z.string()),
-  Disclosure: z.array(z.string()),
-  MarketComment: z.array(z.string()),
-});
-
-export type CommentaryOptionsData = z.infer<typeof CommentaryOptionsSchema>;
 
 export async function saveCommentaryOptions(input: CommentaryOptionsData): Promise<void> {
   return saveCommentaryOptionsFlow(input);
