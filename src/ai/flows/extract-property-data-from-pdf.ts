@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Extracts property data from uploaded PDFs using Gemini API and Google Cloud Vision API for OCR.
+ * @fileOverview Extracts property data from uploaded PDFs using Gemini API.
  *
  * - extractPropertyData - A function that handles the extraction of property data from PDFs.
  * - ExtractPropertyDataInput - The input type for the extractPropertyData function.
@@ -75,11 +75,6 @@ export async function extractPropertyData(input: ExtractPropertyDataInput): Prom
         const promptsJson = await fs.readFile(promptsPath, 'utf-8');
         const prompts = JSON.parse(promptsJson);
 
-        // TODO: Actually implement PDF extraction. For now, we are returning mock data based on the schema.
-        // This is a placeholder for actual PDF text extraction logic.
-        const propertyTitleText = "Mock extracted text from property title PDF.";
-        const briefInformationText = "Mock extracted text from brief info PDF.";
-        
         const finalPrompt = `${prompts.user_prompt}
 ---
 **${prompts.extraction_hints_title}**
@@ -90,32 +85,30 @@ ${prompts.extraction_hints}
 ${jsonFormat}
 \`\`\`
 ---
-**PDF Document Content (Text Form):**
+**Documents to Analyze:**
 
-**File 1 (Property Title):**
-{{{propertyTitleText}}}
+**Document 1 (Property Title):**
+{{media url=propertyTitlePdfDataUri}}
 
-**File 2 (Brief Information):**
-{{{briefInformationText}}}
+**Document 2 (Brief Information):**
+{{media url=briefInformationPdfDataUri}}
 `;
 
         const prompt = ai.definePrompt({
             name: 'extractPropertyDataPrompt',
             system: prompts.system_prompt,
-            input: {schema: z.object({
-                propertyTitleText: z.string(),
-                briefInformationText: z.string(),
-            })},
+            input: {schema: ExtractPropertyDataInputSchema },
             output: {schema: outputSchema},
             prompt: finalPrompt,
         });
 
-        const { output } = await prompt({
-            propertyTitleText,
-            briefInformationText,
-        });
+        const { output } = await prompt(flowInput);
 
-        return output!;
+        if (!output) {
+          throw new Error('AI failed to extract data. The output was empty.');
+        }
+
+        return output;
     }
   );
 
