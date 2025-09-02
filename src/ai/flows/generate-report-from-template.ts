@@ -30,6 +30,26 @@ const GenerateReportOutputSchema = z.object({
 });
 export type GenerateReportOutput = z.infer<typeof GenerateReportOutputSchema>;
 
+// Custom parser to handle different delimiters
+const parser = (tag: string) => {
+    return {
+        get(scope: any) {
+            // Allow for tags like [Name] and [Replace_Name]
+            if (tag.startsWith('Replace_')) {
+                const key = tag.substring(8);
+                return scope[key] || scope[tag];
+            }
+             // Allow for tags like [TermText_Name]
+            if (tag.startsWith('TermText_')) {
+                 const key = tag.substring(9);
+                 return scope[tag] || scope[key];
+            }
+            // Fallback for simple tags like [Name]
+            return scope[tag];
+        },
+    };
+};
+
 export async function generateReportFromTemplate(
   input: GenerateReportInput
 ): Promise<GenerateReportOutput> {
@@ -52,20 +72,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
-      // Custom parser to handle [Replace_...] and other tags.
-      parser: (tag) => {
-        return {
-          get(scope, context) {
-            if (tag.startsWith('Replace_')) {
-                return scope[tag];
-            }
-            if (tag === 'comparableSales') {
-                return scope.comparableSales;
-            }
-            return scope[tag];
-          },
-        };
-      },
+      parser: parser,
       delimiters: {
         start: '[',
         end: ']',
@@ -76,8 +83,8 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     const templateData: { [key:string]: any } = {};
     let replacementCount = 0;
 
-    // Flatten the nested data object and prefix keys with "Replace_"
-    function flatten(obj: any) {
+    // Flatten the nested data object for simple replacements
+    function flatten(obj: any, path: string = '') {
       for (const key in obj) {
         if (key === 'comparableSales' && Array.isArray(obj[key])) {
             templateData['comparableSales'] = obj[key];
@@ -85,10 +92,19 @@ const generateReportFromTemplateFlow = ai.defineFlow(
             continue;
         }
 
+        // Keep TermText keys at the top level
+        if(key.startsWith('TermText_')) {
+            templateData[key] = obj[key];
+            if (obj[key] && obj[key] !== 'N/A' && obj[key] !== '') {
+                replacementCount++;
+            }
+            continue;
+        }
+
         if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-          flatten(obj[key]);
+          flatten(obj[key], path ? `${path}_${key}`: key);
         } else {
-          const finalKey = `Replace_${key}`;
+          const finalKey = path ? `Replace_${path}_${key}` : `Replace_${key}`;
           templateData[finalKey] = obj[key];
           // Count valid, non-placeholder replacements
           if (obj[key] && typeof obj[key] === 'string' && !obj[key].startsWith('[extracted_') && obj[key] !== 'N/A' && obj[key] !== '') {

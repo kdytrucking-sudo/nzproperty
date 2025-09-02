@@ -11,61 +11,82 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import * as React from 'react';
 
+export const contentStorageKey = 'globalReportContent';
+
 const formSchema = z.object({
-  economicUpdate: z.string(),
-  marketTrends: z.string(),
-  regionalAnalysis: z.string(),
-  legalDisclaimer: z.string(),
-  companyBoilerplate: z.string(),
+  nzEconomicOverview: z.string(),
+  globalEconomicOverview: z.string(),
+  residentialMarket: z.string(),
+  recentMarketDirection: z.string(),
+  marketVolatility: z.string(),
+  localEconomyImpact: z.string(),
 });
 
-const contentFields = [
-    { name: "economicUpdate", label: "Economic Dynamics", placeholder: "Enter the latest economic updates relevant to the property market..." },
-    { name: "marketTrends", label: "Market Trends", placeholder: "Describe current market trends, such as price movements, demand, and supply..." },
-    { name: "regionalAnalysis", label: "Regional Analysis", placeholder: "Provide analysis on the specific region of the property..." },
-    { name: "legalDisclaimer", label: "Legal Disclaimer", placeholder: "Enter the standard legal disclaimer for valuation reports..." },
-    { name: "companyBoilerplate", label: "Company Boilerplate", placeholder: "Enter your company's standard information or about section..." },
+type ContentFormData = z.infer<typeof formSchema>;
+
+export const contentFields: { name: keyof ContentFormData; label: string, placeholder: string, templateKey: string }[] = [
+    { name: "nzEconomicOverview", label: "New Zealand Economy Overview", placeholder: "Enter New Zealand Economy Overview...", templateKey: "TermText_NZEconomic" },
+    { name: "globalEconomicOverview", label: "Global Economic Overview", placeholder: "Enter Global Economic Overview...", templateKey: "TermText_GlobalEconomic" },
+    { name: "residentialMarket", label: "Residential Market", placeholder: "Enter Residential Market details...", templateKey: "TermText_ResidentialMarket" },
+    { name: "recentMarketDirection", label: "Recent Market Direction", placeholder: "Enter Recent Market Direction...", templateKey: "TermText_RecentMarketDirection" },
+    { name: "marketVolatility", label: "Market Volatility", placeholder: "Enter Market Volatility information...", templateKey: "TermText_MarketVolatility" },
+    { name: "localEconomyImpact", label: "Local Economy Impact", placeholder: "Enter Local Economy Impact analysis...", templateKey: "TermText_LocalEconomyImpact" },
 ] as const;
 
 
 export default function ManageContentPage() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isLoaded, setIsLoaded] = React.useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<ContentFormData>({
     resolver: zodResolver(formSchema),
-    // In a real app, you would fetch these default values from a database (e.g., Firestore)
     defaultValues: {
-      economicUpdate: '',
-      marketTrends: '',
-      regionalAnalysis: '',
-      legalDisclaimer: '',
-      companyBoilerplate: '',
+      nzEconomicOverview: '',
+      globalEconomicOverview: '',
+      residentialMarket: '',
+      recentMarketDirection: '',
+      marketVolatility: '',
+      localEconomyImpact: '',
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsSaving(true);
-    console.log('Saving content:', values);
+  // Load from localStorage on mount
+  React.useEffect(() => {
+    const savedContent = localStorage.getItem(contentStorageKey);
+    if (savedContent) {
+      try {
+        const parsedContent = JSON.parse(savedContent);
+        form.reset(parsedContent);
+      } catch (e) {
+        console.error("Failed to parse saved content", e);
+      }
+    }
+    setIsLoaded(true);
+  }, [form]);
 
-    // Simulate saving to a database
-    await new Promise(resolve => setTimeout(resolve, 1500));
+  // Autosave to localStorage on change
+  React.useEffect(() => {
+    if (!isLoaded) return;
 
-    toast({
-      title: 'Content Saved',
-      description: 'Your changes have been successfully saved.',
+    const subscription = form.watch((values) => {
+      setIsSaving(true);
+      localStorage.setItem(contentStorageKey, JSON.stringify(values));
+      // Simulate a small delay for saving feedback
+      setTimeout(() => setIsSaving(false), 500);
     });
-    setIsSaving(false);
-  }
+
+    return () => subscription.unsubscribe();
+  }, [form, isLoaded]);
 
   return (
     <div className="space-y-8">
        <header>
         <h1 className="font-headline text-3xl font-bold text-foreground">
-          Manage Content
+          Manage Global Content
         </h1>
         <p className="text-muted-foreground">
-          Edit and save regularly updated content for your reports.
+          Edit and save reusable content for your reports. Changes are saved automatically.
         </p>
       </header>
 
@@ -74,12 +95,12 @@ export default function ManageContentPage() {
           <CardHeader>
             <CardTitle>Report Content Blocks</CardTitle>
             <CardDescription>
-              This content can be dynamically inserted into your report templates.
+              This content can be dynamically inserted into your report templates using the specified placeholders.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form className="space-y-6">
                 {contentFields.map((item) => (
                     <FormField
                     key={item.name}
@@ -87,11 +108,14 @@ export default function ManageContentPage() {
                     name={item.name}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{item.label}</FormLabel>
+                        <div className="flex items-center justify-between">
+                          <FormLabel>{item.label}</FormLabel>
+                          <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[{item.templateKey}]</code>
+                        </div>
                         <FormControl>
                           <Textarea
                             placeholder={item.placeholder}
-                            className="min-h-[120px]"
+                            className="min-h-[150px] font-mono"
                             {...field}
                           />
                         </FormControl>
@@ -101,17 +125,18 @@ export default function ManageContentPage() {
                   />
                 ))}
                 
-                <div className="flex justify-end">
-                  <Button type="submit" disabled={isSaving}>
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      'Save Changes'
-                    )}
-                  </Button>
+                <div className="flex justify-end items-center h-10">
+                  {isSaving && (
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </div>
+                  )}
+                   {!isSaving && isLoaded && (
+                     <div className="flex items-center text-sm text-muted-foreground">
+                        All changes saved.
+                    </div>
+                   )}
                 </div>
               </form>
             </Form>
