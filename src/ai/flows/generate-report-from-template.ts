@@ -13,6 +13,7 @@ import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import fs from 'fs/promises';
 import path from 'path';
+import initialJsonStructure from '@/lib/json-structure.json';
 
 const GenerateReportInputSchema = z.object({
   templateFileName: z.string().describe('The file name of the .docx template stored on the server.'),
@@ -28,30 +29,34 @@ const GenerateReportOutputSchema = z.object({
 });
 export type GenerateReportOutput = z.infer<typeof GenerateReportOutputSchema>;
 
-
+// This function prepares the data for docxtemplater based on the user's logic.
 const prepareTemplateData = (data: any) => {
     const templateData: { [key: string]: any } = {};
     let replacementCount = 0;
 
-    function flattenAndPrefix(obj: any, path: string = '') {
-        Object.keys(obj).forEach(key => {
-            const newPath = path ? `${path}_${key}` : key;
-            if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-                flattenAndPrefix(obj[key], newPath);
-            } else {
-                const finalKey = `Replace_${newPath.replace(/\s+/g, '_')}`;
-                templateData[finalKey] = obj[key];
-                if (obj[key] && typeof obj[key] === 'string' && obj[key].trim() !== '' && obj[key] !== 'N/A') {
+    // Helper function to recursively process the JSON structure and map data.
+    const processData = (structure: any, dataAtPath: any, path: string = '') => {
+        if (!structure || !dataAtPath) return;
+
+        Object.keys(structure).forEach(key => {
+            const currentPath = path ? `${path}.${key}` : key;
+            const structureValue = structure[key];
+            const dataValue = dataAtPath[key];
+
+            if (typeof structureValue === 'object' && structureValue !== null && !Array.isArray(structureValue)) {
+                processData(structureValue, dataValue, currentPath);
+            } else if (typeof structureValue === 'string' && structureValue.startsWith('[extracted_')) {
+                const placeholder = structureValue.replace('[extracted_', 'Replace_').replace(']', '');
+                templateData[placeholder] = dataValue;
+                if (dataValue && typeof dataValue === 'string' && dataValue.trim() !== '' && dataValue !== 'N/A') {
                     replacementCount++;
                 }
             }
         });
-    }
+    };
 
-    // Process PDF-extracted data: flatten and add 'Replace_' prefix
-    if (data.DIY) flattenAndPrefix(data.DIY, 'DIY');
-    if (data.Property) flattenAndPrefix(data.Property, 'Property');
-    if (data.Valuation) flattenAndPrefix(data.Valuation, 'Valuation');
+    // Process PDF-extracted data based on json-structure.json mapping
+    processData(initialJsonStructure, data);
 
     // Process comparableSales as a loopable array
     if (data.comparableSales && Array.isArray(data.comparableSales)) {
@@ -59,7 +64,7 @@ const prepareTemplateData = (data: any) => {
         if(data.comparableSales.length > 0) replacementCount++;
     }
 
-    // Process global content: use keys directly
+    // Process global content: use keys directly as they are already mapped
     Object.keys(data).forEach(key => {
         if (key.startsWith('TermText_')) {
             const templateKey = key.replace('TermText_', 'Replace_');
@@ -69,10 +74,9 @@ const prepareTemplateData = (data: any) => {
             }
         }
     });
-
+    
     return { templateData, replacementCount };
 };
-
 
 export async function generateReportFromTemplate(
   input: GenerateReportInput
