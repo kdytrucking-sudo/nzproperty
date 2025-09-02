@@ -42,11 +42,13 @@ const prepareTemplateData = (data: any) => {
         Object.keys(section).forEach(fieldKey => {
             const placeholder = section[fieldKey as keyof typeof section];
             if (typeof placeholder === 'string' && placeholder.startsWith('[extracted_')) {
-                const templateKey = placeholder.replace('[extracted_', 'Replace_').replace(']', '');
+                const templateKey = placeholder.replace('extracted_', 'Replace_').replace(/\[|\]/g, '');
                 const dataValue = data?.[sectionKey]?.[fieldKey];
-                templateData[templateKey] = dataValue;
-                if (dataValue && typeof dataValue === 'string' && dataValue.trim() !== '' && dataValue !== 'N/A') {
-                    replacementCount++;
+                if (dataValue) {
+                  templateData[templateKey] = dataValue;
+                  if (typeof dataValue === 'string' && dataValue.trim() !== '' && dataValue !== 'N/A') {
+                      replacementCount++;
+                  }
                 }
             }
         });
@@ -56,9 +58,11 @@ const prepareTemplateData = (data: any) => {
     contentFields.forEach(field => {
         const templateKey = field.templateKey.replace(/\[|\]/g, ''); 
         const contentValue = (globalContent as Record<string, string>)[field.name as keyof typeof globalContent];
-        templateData[templateKey] = contentValue;
-         if (contentValue && contentValue.trim() !== '') {
-            replacementCount++;
+        if (contentValue) {
+            templateData[templateKey] = contentValue;
+            if (contentValue.trim() !== '') {
+                replacementCount++;
+            }
         }
     });
 
@@ -70,6 +74,7 @@ const prepareTemplateData = (data: any) => {
     
     return { templateData, replacementCount };
 };
+
 
 export async function generateReportFromTemplate(
   input: GenerateReportInput
