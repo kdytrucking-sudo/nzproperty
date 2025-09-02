@@ -36,38 +36,36 @@ const prepareTemplateData = (data: any) => {
     const templateData: { [key: string]: any } = {};
     let replacementCount = 0;
 
+    // Helper to count non-empty replacements
+    const countReplacement = (value: any) => {
+        if (typeof value === 'string' && value.trim() !== '' && value.trim() !== 'N/A') {
+            replacementCount++;
+        }
+    };
+
     // 1. Process PDF-extracted data based on json-structure.json mapping
     Object.keys(initialJsonStructure).forEach(sectionKey => {
-        const section = initialJsonStructure[sectionKey as keyof typeof initialJsonStructure];
+        const sectionSchema = initialJsonStructure[sectionKey as keyof typeof initialJsonStructure];
         const dataSection = data?.[sectionKey];
 
-        if (dataSection) {
-            Object.keys(section).forEach(fieldKey => {
-                const placeholder = section[fieldKey as keyof typeof section];
-                if (typeof placeholder === 'string' && placeholder.startsWith('[extracted_')) {
-                    const templateKey = placeholder.replace('[extracted_', 'Replace_').replace(']', '');
-                    const dataValue = dataSection[fieldKey];
-                    if (dataValue) {
-                      templateData[templateKey] = dataValue;
-                      if (typeof dataValue === 'string' && dataValue.trim() !== '' && dataValue !== 'N/A') {
-                          replacementCount++;
-                      }
-                    }
-                }
-            });
-        }
+        Object.keys(sectionSchema).forEach(fieldKey => {
+            const placeholder = sectionSchema[fieldKey as keyof typeof sectionSchema];
+            if (typeof placeholder === 'string' && placeholder.startsWith('[extracted_')) {
+                const templateKey = placeholder.replace('[extracted_', 'Replace_').replace(']', '');
+                // Safely get the value from the submitted data
+                const value = dataSection?.[fieldKey] || '';
+                templateData[templateKey] = value;
+                countReplacement(value);
+            }
+        });
     });
     
     // 2. Process global content from manage-content page
     contentFields.forEach(field => {
         const templateKey = field.templateKey.replace(/\[|\]/g, ''); 
-        const contentValue = (globalContent as Record<string, string>)[field.name as keyof typeof globalContent];
-        if (contentValue) {
-            templateData[templateKey] = contentValue;
-            if (contentValue.trim() !== '') {
-                replacementCount++;
-            }
-        }
+        const contentValue = (globalContent as Record<string, string>)[field.name as keyof typeof globalContent] || '';
+        templateData[templateKey] = contentValue;
+        countReplacement(contentValue);
     });
 
     // 3. Process comparableSales as a loopable array for {#comparableSales} tag
@@ -75,7 +73,7 @@ const prepareTemplateData = (data: any) => {
         templateData['comparableSales'] = data.comparableSales;
         if(data.comparableSales.length > 0) {
              // count each field in each sale object
-            replacementCount += data.comparableSales.reduce((acc: number, sale: any) => acc + Object.keys(sale).length, 0);
+            replacementCount += data.comparableSales.reduce((acc: number, sale: any) => acc + Object.values(sale).filter(v => typeof v === 'string' && v.trim() !== '' && v.trim() !== 'N/A').length, 0);
         };
     }
     
@@ -110,7 +108,8 @@ const generateReportFromTemplateFlow = ai.defineFlow(
             start: '[',
             end: ']',
           },
-          nullGetter: () => "", // Return empty string for missing values to avoid errors
+          // Return empty string for missing values to avoid errors
+          nullGetter: () => "", 
         });
         
         const { templateData, replacementCount } = prepareTemplateData(data);
