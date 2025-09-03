@@ -65,7 +65,7 @@ const prepareTemplateData = (data: any) => {
 
     // Add Instructed By manually as it's not in the original JSON structure for replacement
     if (data?.Valuation?.['Instructed By']) {
-        countAndSetReplacement('Replace_InstructedBy', data.Valuation['Instructed By']);
+        countAndSetReplacement('Replace_ InstructedBy', data.Valuation['Instructed By']);
     }
     
     // 2. Process global content from manage-content page
@@ -189,5 +189,3 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     }
   }
 );
-
-    
