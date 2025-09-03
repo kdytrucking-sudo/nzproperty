@@ -38,8 +38,10 @@ const prepareTemplateData = (data: any) => {
     let replacementCount = 0;
 
     const processValue = (value: any): string | string[] => {
+      // If the value is a string and contains newlines, split it into an array.
+      // Docxtemplater, with paragraphLoop: true, will create a hard return (new paragraph) for each array item.
       if (typeof value === 'string' && value.includes('\n')) {
-        return value.split('\n');
+        return value.split('\n').map(line => line.trim());
       }
       return value;
     };
@@ -146,10 +148,10 @@ const generateReportFromTemplateFlow = ai.defineFlow(
         const zip = new PizZip(buffer);
         
         const doc = new Docxtemplater(zip, {
-          // paragraphLoop enables you to loop over paragraphs
+          // paragraphLoop enables you to loop over paragraphs. When a placeholder
+          // is replaced by an array, it will create a new paragraph for each item.
           paragraphLoop: true,
-          // The linebreaks option converts '\n' to hard returns in a simple placeholder
-          // but we are handling it manually for more control.
+          // linebreaks must be false when using paragraphLoop for this behavior.
           linebreaks: false, 
           delimiters: {
             start: '[',
