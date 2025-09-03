@@ -1,9 +1,4 @@
 {
-  "DIY": {
-    "SWOT Analysis Strengths": "[extracted_Strengths]",
-    "SWOT Analysis Weaknesses": "[extracted_Weaknesses]",
-    "Location Description": "[extracted_LocationDescription]"
-  },
   "Property": {
     "Property Address": "[extracted_Address]",
     "Prepared For": "[extracted_PreparedFor]",
@@ -16,11 +11,17 @@
   },
   "Valuation": {
     "Principal Use": "[extracted_PrincipalUse]",
+    "Instructed By": "[Replace_ InstructedBy]",
     "Date of Valuation": "[extracted_DateofValuation]",
     "VOS Order No": "[extracted_VOSOrderNo]",
     "Client/Borrower": "[extracted_Client]",
     "Special Assumptions": "[extracted_Assumptions]",
     "Date of Preparation": "[extracted_DateofPreparation]",
     "Date of Inspection": "[extracted_DateofInspection]"
+  },
+  "DIY": {
+    "SWOT Analysis Strengths": "[extracted_Strengths]",
+    "SWOT Analysis Weaknesses": "[extracted_Weaknesses]",
+    "Location Description": "[extracted_LocationDescription]"
   }
 }

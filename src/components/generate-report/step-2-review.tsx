@@ -55,7 +55,10 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
     'data.DIY.SWOT Analysis Strengths',
     'data.DIY.SWOT Analysis Weaknesses',
     'data.DIY.Location Description',
-    'data.Property.Property Brief Description'
+    'data.Property.Property Brief Description',
+    'data.Property.Zoning',
+    'data.Property.Title Interestes',
+    'data.Valuation.Special Assumptions'
   ];
 
   return (
@@ -64,7 +67,7 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
         const fieldPath = `${path}.${key}`;
         const structureValue = structure[key];
         const templateTag = (typeof structureValue === 'string' && structureValue.startsWith('[extracted_'))
-          ? structureValue.replace('[extracted_', '[Replace_')
+          ? structureValue.replace('[extracted_', '[Replace_').replace(']', '')
           : null;
         const FormComponent = textAreaFields.includes(fieldPath) ? Textarea : Input;
 
@@ -78,7 +81,7 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
                 <div className="flex items-center justify-between">
                   <FormLabel>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</FormLabel>
                   {templateTag && (
-                    <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{templateTag}</code>
+                    <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[{templateTag}]</code>
                   )}
                 </div>
                 <FormControl>
@@ -360,3 +363,5 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     </Card>
   );
 }
+
+    
