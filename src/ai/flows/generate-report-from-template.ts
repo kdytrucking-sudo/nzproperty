@@ -39,7 +39,12 @@ const prepareTemplateData = (data: any) => {
 
     const countAndSetReplacement = (key: string, value: any) => {
         if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== 'N/A') {
-            templateData[key] = value;
+            // Check for newlines and split into an array for paragraph loops
+            if (value.includes('\n')) {
+                 templateData[key] = value.split('\n').map(line => ({ value: line }));
+            } else {
+                templateData[key] = value;
+            }
             replacementCount++;
         } else {
              templateData[key] = '';
@@ -140,7 +145,9 @@ const generateReportFromTemplateFlow = ai.defineFlow(
         
         const doc = new Docxtemplater(zip, {
           paragraphLoop: true,
-          linebreaks: true,
+          // The linebreaks option is what converts '\n' to soft returns.
+          // We will handle newlines manually to create hard returns (new paragraphs).
+          linebreaks: false, 
           delimiters: {
             start: '[',
             end: ']',
