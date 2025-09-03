@@ -37,18 +37,9 @@ const prepareTemplateData = (data: any) => {
     const templateData: { [key: string]: any } = {};
     let replacementCount = 0;
 
-    const processValue = (value: any): string => {
-      if (typeof value === 'string' && value.includes('\n')) {
-        // This is the raw XML for a hard paragraph break in DOCX.
-        // It closes the current text run, paragraph, and starts a new one.
-        return value.replace(/\n/g, '</w:t></w:r></w:p><w:p><w:r><w:t>');
-      }
-      return value;
-    };
-    
     const countAndSetReplacement = (key: string, value: any) => {
         if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== 'N/A') {
-            templateData[key] = processValue(value);
+            templateData[key] = value;
             replacementCount++;
         } else {
              templateData[key] = '';
@@ -148,24 +139,13 @@ const generateReportFromTemplateFlow = ai.defineFlow(
         const zip = new PizZip(buffer);
         
         const doc = new Docxtemplater(zip, {
-          // This tells docxtemplater to treat the placeholder as raw XML,
-          // allowing us to inject the paragraph break tags.
-          parser: (tag) => {
-            if (tag === '.') {
-              return {
-                get(scope: any) { return scope; },
-              };
-            }
-            return {
-              get(scope: any) {
-                return scope[tag];
-              },
-            };
-          },
           delimiters: {
             start: '[',
             end: ']',
           },
+          // This is the key setting. It tells docxtemplater to replace
+          // newline characters (\n) with paragraph breaks (hard returns) in Word.
+          linebreaks: true,
           // Return empty string for missing values to avoid errors
           nullGetter: () => "", 
         });
