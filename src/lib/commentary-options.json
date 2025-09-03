@@ -1,12 +1,24 @@
 {
   "PreviousSale": [
-    "There are no sales listed for the property within the last three years."
+    "There are no sales listed for the property within the last three years.  ",
+    "last sold in … for $.... Comment on relevance of the previous sale price."
   ],
   "ContractSale": [
-    "To the best of our knowledge, we are not aware of any current contract for sale on the property."
+    "To the best of our knowledge, we are not aware of any current contract for sale on the property. Or… property is currently listed OR aware of sale don’t know price OR aware, price is  ……..",
+    "have viewed S&P – no unusual or onerous clauses. We have been provided with a copy of the Agreement for Sale and Purchase of Real Estate dated 14 July 2025, which recorded the property sold at $890,000 including GST. "
   ],
-  "SuppliedDocumentation": [],
+  "SuppliedDocumentation": [
+    "In undertaking this valuation we have been supplied with copies of the following documents:\n•\tA copy of the Agreement for Sale and Purchase of Real Estate dated on 14 July 2025.\n",
+    "In undertaking this valuation we have not been supplied with any additional information or documentation of significant relevance"
+  ],
   "RecentOrProvided": [],
-  "LIM": [],
-  "PC78": []
+  "LIM": [
+    "We have not been provided with or obtained a copy of the Land Information Report (LIM) for the subject property.  We have assumed there are no outstanding issues or requisitions",
+    "We have been supplied with a Land Information Report (LIM) for the subject property dated…..  The LIM report records …"
+  ],
+  "PC78": [
+    "Under the proposed zone – Plan Change 78, the property ",
+    "Under the proposed zone – Plan Change 78, the property …"
+  ],
+  "OperativeZone": []
 }

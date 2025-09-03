@@ -80,6 +80,7 @@ export default function ManageCommentaryPage() {
       RecentOrProvided: [],
       LIM: [],
       PC78: [],
+      OperativeZone: [],
     },
   });
 
@@ -148,6 +149,7 @@ export default function ManageCommentaryPage() {
                 <Skeleton className="h-64 w-full" />
                 <Skeleton className="h-64 w-full" />
                 <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-64 w-full" />
             </main>
         </div>
     )
@@ -202,6 +204,12 @@ export default function ManageCommentaryPage() {
                 name="PC78"
                 label="Plan Change 78: Intensification"
                 description="Manage options for the [Replace_PC78] section."
+            />
+            <CommentaryFieldArray 
+                control={form.control}
+                name="OperativeZone"
+                label="Operative Zone"
+                description="Manage options for the [Replace_Zone] section."
             />
              {isDirty && (
                  <div className="fixed bottom-6 right-6 z-50 w-full max-w-md">

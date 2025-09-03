@@ -79,10 +79,11 @@ const prepareTemplateData = (data: any) => {
         RecentOrProvided: 'Replace_RecentOrProvided',
         LIM: 'Replace_LIM',
         PC78: 'Replace_PC78',
+        OperativeZone: 'Replace_Zone',
       };
 
       Object.keys(data.commentary).forEach(key => {
-        const templateKey = placeholderMapping[key];
+        const templateKey = placeholderMapping[key as keyof typeof placeholderMapping];
         if (templateKey) {
             const value = data.commentary[key];
             countAndSetReplacement(templateKey, value);
