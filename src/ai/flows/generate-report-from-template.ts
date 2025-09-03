@@ -146,6 +146,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
             start: '[',
             end: ']',
           },
+          linebreaks: true, // This will convert \n to <w:br/> (soft return)
           // Return empty string for missing values to avoid errors
           nullGetter: () => "", 
         });
