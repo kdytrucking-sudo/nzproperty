@@ -41,6 +41,9 @@ const prepareTemplateData = (data: any) => {
         if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== 'N/A') {
             templateData[key] = value;
             replacementCount++;
+        } else if (Array.isArray(value)) {
+             templateData[key] = value;
+             replacementCount++; // Count the array as one replacement
         } else {
              templateData[key] = '';
         }
@@ -56,7 +59,12 @@ const prepareTemplateData = (data: any) => {
                 const placeholder = sectionSchema[fieldKey as keyof typeof sectionSchema];
                 if (typeof placeholder === 'string' && placeholder.startsWith('[extracted_')) {
                     const templateKey = placeholder.replace('[extracted_', 'Replace_').replace(']', '');
-                    const value = dataSection[fieldKey];
+                    let value = dataSection[fieldKey];
+                     if (typeof value === 'string' && value.includes('\n')) {
+                        // For hard returns (new paragraphs), we need to split the string into an array.
+                        // The `paragraphLoop: true` option in the renderer will handle this.
+                        value = value.split('\n').filter(line => line.trim() !== '');
+                    }
                     countAndSetReplacement(templateKey, value);
                 }
             });
@@ -71,7 +79,10 @@ const prepareTemplateData = (data: any) => {
     // 2. Process global content from manage-content page
     contentFields.forEach(field => {
         const templateKey = field.templateKey.replace(/\[|\]/g, ''); 
-        const contentValue = (globalContent as Record<string, string>)[field.name as keyof typeof globalContent];
+        let contentValue = (globalContent as Record<string, string>)[field.name as keyof typeof globalContent];
+        if (typeof contentValue === 'string' && contentValue.includes('\n')) {
+            contentValue = contentValue.split('\n').filter(line => line.trim() !== '');
+        }
         countAndSetReplacement(templateKey, contentValue);
     });
 
@@ -90,7 +101,10 @@ const prepareTemplateData = (data: any) => {
       Object.keys(data.commentary).forEach(key => {
         const templateKey = placeholderMapping[key as keyof typeof placeholderMapping];
         if (templateKey) {
-            const value = data.commentary[key];
+            let value = data.commentary[key];
+            if (typeof value === 'string' && value.includes('\n')) {
+                value = value.split('\n').filter(line => line.trim() !== '');
+            }
             countAndSetReplacement(templateKey, value);
         }
       });
@@ -143,9 +157,9 @@ const generateReportFromTemplateFlow = ai.defineFlow(
             start: '[',
             end: ']',
           },
-          // This is the key setting. It tells docxtemplater to replace
-          // newline characters (\n) with paragraph breaks (hard returns) in Word.
-          linebreaks: true,
+          // This is the key setting. It tells docxtemplater to create a new
+          // paragraph for each item in an array when replacing a placeholder.
+          paragraphLoop: true,
           // Return empty string for missing values to avoid errors
           nullGetter: () => "", 
         });
