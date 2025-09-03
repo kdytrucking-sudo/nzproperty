@@ -64,6 +64,11 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
   return (
     <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
       {keys.map((key) => {
+        // We handle 'Instructed By' manually below
+        if (key === 'Instructed By' && path === 'data.Valuation') {
+            return null;
+        }
+
         const fieldPath = `${path}.${key}`;
         const structureValue = structure[key];
         const templateTag = (typeof structureValue === 'string' && structureValue.startsWith('[extracted_'))
@@ -93,6 +98,25 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
           />
         );
       })}
+       {/* Manually add the "Instructed By" field to the Valuation tab */}
+      {path === 'data.Valuation' && (
+           <FormField
+            control={form.control}
+            name="data.Valuation.Instructed By"
+            render={({ field }) => (
+              <FormItem>
+                <div className="flex items-center justify-between">
+                  <FormLabel>Instructed By</FormLabel>
+                  <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_InstructedBy]</code>
+                </div>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+      )}
     </div>
   );
 };
