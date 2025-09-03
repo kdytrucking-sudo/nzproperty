@@ -37,9 +37,16 @@ const prepareTemplateData = (data: any) => {
     const templateData: { [key: string]: any } = {};
     let replacementCount = 0;
 
+    const processValue = (value: any): string | string[] => {
+      if (typeof value === 'string' && value.includes('\n')) {
+        return value.split('\n');
+      }
+      return value;
+    };
+    
     const countAndSetReplacement = (key: string, value: any) => {
         if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== 'N/A') {
-            templateData[key] = value;
+            templateData[key] = processValue(value);
             replacementCount++;
         } else {
              templateData[key] = '';
@@ -139,9 +146,11 @@ const generateReportFromTemplateFlow = ai.defineFlow(
         const zip = new PizZip(buffer);
         
         const doc = new Docxtemplater(zip, {
+          // paragraphLoop enables you to loop over paragraphs
           paragraphLoop: true,
-          // The linebreaks option converts '\n' to hard returns (new paragraphs).
-          linebreaks: true, 
+          // The linebreaks option converts '\n' to hard returns in a simple placeholder
+          // but we are handling it manually for more control.
+          linebreaks: false, 
           delimiters: {
             start: '[',
             end: ']',
