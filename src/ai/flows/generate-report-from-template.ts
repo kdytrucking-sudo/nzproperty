@@ -150,17 +150,18 @@ const generateReportFromTemplateFlow = ai.defineFlow(
         const doc = new Docxtemplater(zip, {
           // This tells docxtemplater to treat the placeholder as raw XML,
           // allowing us to inject the paragraph break tags.
-          parser: (tag) => ({
-            get: (scope) => {
-              if (tag === '.') {
-                  return scope;
-              }
-              return scope[tag];
-            },
-            getTags: () => ({
-              // This is a simplified getter that allows raw XML injection.
-            }),
-          }),
+          parser: (tag) => {
+            if (tag === '.') {
+              return {
+                get(scope: any) { return scope; },
+              };
+            }
+            return {
+              get(scope: any) {
+                return scope[tag];
+              },
+            };
+          },
           delimiters: {
             start: '[',
             end: ']',
