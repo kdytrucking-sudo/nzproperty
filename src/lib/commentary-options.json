@@ -1,18 +1,12 @@
 {
   "PreviousSale": [
-    "There are no sales listed for the property within the last three years.",
-    "Last sold in ... for $.... Comment on relevance of the previous sale price."
+    "There are no sales listed for the property within the last three years."
   ],
   "ContractSale": [
-    "To the best of our knowledge, we are not aware of any current contract for sale on the property.",
-    "Property is currently listed OR aware of sale don't know price OR aware, price is .......",
-    "Have viewed S&P – no unusual or onerous clauses."
+    "To the best of our knowledge, we are not aware of any current contract for sale on the property."
   ],
-  "Disclosure": [
-    "We have not been provided with a pre-contract disclosure statement, we assume one will be made available prior to any sale and that it will not contain any adverse information that will affect the value of the property.",
-    "We have been provided with a pre-contract disclosure statement which we have reviewed and note that it does not appear to contain any adverse information that would affect the value of the property."
-  ],
-  "MarketComment": [
-    "The housing market outlook remains mixed, with cautious optimism driven by increased mortgage pre-approvals and improving auction clearance rates. Expected OCR cuts may boost buyer eligibility, while investors benefit from tax reforms and equity growth. However, rising unemployment poses a risk, potentially leading to more forced sales. House prices are projected to grow moderately, contingent on stable employment and controlled construction costs. As such, a moderate level of risk remains."
-  ]
+  "SuppliedDocumentation": [],
+  "RecentOrProvided": [],
+  "LIM": [],
+  "PC78": []
 }

@@ -72,11 +72,22 @@ const prepareTemplateData = (data: any) => {
 
     // 3. Process the new commentary fields
     if (data.commentary) {
-        Object.keys(data.commentary).forEach(key => {
-            const templateKey = `Replace_${key}`;
+      const placeholderMapping: { [key: string]: string } = {
+        PreviousSale: 'Replace_PreviousSale',
+        ContractSale: 'Replace_ContractSale',
+        SuppliedDocumentation: 'Replace_SuppliedDoc',
+        RecentOrProvided: 'Replace_RecentOrProvided',
+        LIM: 'Replace_LIM',
+        PC78: 'Replace_PC78',
+      };
+
+      Object.keys(data.commentary).forEach(key => {
+        const templateKey = placeholderMapping[key];
+        if (templateKey) {
             const value = data.commentary[key];
             countAndSetReplacement(templateKey, value);
-        });
+        }
+      });
     }
 
     // 4. Process comparableSales as a loopable array for {#comparableSales} tag

@@ -76,8 +76,10 @@ export default function ManageCommentaryPage() {
     defaultValues: {
       PreviousSale: [],
       ContractSale: [],
-      Disclosure: [],
-      MarketComment: [],
+      SuppliedDocumentation: [],
+      RecentOrProvided: [],
+      LIM: [],
+      PC78: [],
     },
   });
 
@@ -144,6 +146,8 @@ export default function ManageCommentaryPage() {
                 <Skeleton className="h-64 w-full" />
                 <Skeleton className="h-64 w-full" />
                 <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-64 w-full" />
             </main>
         </div>
     )
@@ -166,26 +170,38 @@ export default function ManageCommentaryPage() {
             <CommentaryFieldArray 
                 control={form.control}
                 name="PreviousSale"
-                label="Previous Sale Commentary"
-                description="Manage options for the [PreviousSale] section. The first option is the default."
+                label="Previous Sale"
+                description="Manage options for the [Replace_PreviousSale] section."
             />
              <CommentaryFieldArray 
                 control={form.control}
                 name="ContractSale"
-                label="Contract Sale Commentary"
-                description="Manage options for the [ContractSale] section. The first option is the default."
+                label="Contract for Sale"
+                description="Manage options for the [Replace_ContractSale] section."
             />
              <CommentaryFieldArray 
                 control={form.control}
-                name="Disclosure"
-                label="Disclosure Commentary"
-                description="Manage options for the [Disclosure] section. The first option is the default."
+                name="SuppliedDocumentation"
+                label="Supplied Documentation"
+                description="Manage options for the [Replace_SuppliedDoc] section."
             />
              <CommentaryFieldArray 
                 control={form.control}
-                name="MarketComment"
-                label="Market Comment Commentary"
-                description="Manage options for the [MarketComment] section. The first option is the default."
+                name="RecentOrProvided"
+                label="Recent/Provided"
+                description="Manage options for the [Replace_RecentOrProvided] section."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="LIM"
+                label="Land Information Memorandum"
+                description="Manage options for the [Replace_LIM] section."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="PC78"
+                label="Plan Change 78: Intensification"
+                description="Manage options for the [Replace_PC78] section."
             />
              {isDirty && (
                  <div className="fixed bottom-6 right-6 z-50 w-full max-w-md">

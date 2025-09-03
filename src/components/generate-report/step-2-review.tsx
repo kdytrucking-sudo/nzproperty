@@ -26,8 +26,10 @@ import type { CommentaryOptionsData } from '@/lib/commentary-schema';
 const commentarySchema = z.object({
   PreviousSale: z.string().optional(),
   ContractSale: z.string().optional(),
-  Disclosure: z.string().optional(),
-  MarketComment: z.string().optional(),
+  SuppliedDocumentation: z.string().optional(),
+  RecentOrProvided: z.string().optional(),
+  LIM: z.string().optional(),
+  PC78: z.string().optional(),
 });
 
 const formSchema = z.object({
@@ -106,8 +108,10 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       commentary: {
         PreviousSale: '',
         ContractSale: '',
-        Disclosure: '',
-        MarketComment: '',
+        SuppliedDocumentation: '',
+        RecentOrProvided: '',
+        LIM: '',
+        PC78: '',
       }
     },
   });
@@ -135,8 +139,10 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         // Set default values for commentary radio groups
         form.setValue('commentary.PreviousSale', commentaryOpts.PreviousSale?.[0] || '');
         form.setValue('commentary.ContractSale', commentaryOpts.ContractSale?.[0] || '');
-        form.setValue('commentary.Disclosure', commentaryOpts.Disclosure?.[0] || '');
-        form.setValue('commentary.MarketComment', commentaryOpts.MarketComment?.[0] || '');
+        form.setValue('commentary.SuppliedDocumentation', commentaryOpts.SuppliedDocumentation?.[0] || '');
+        form.setValue('commentary.RecentOrProvided', commentaryOpts.RecentOrProvided?.[0] || '');
+        form.setValue('commentary.LIM', commentaryOpts.LIM?.[0] || '');
+        form.setValue('commentary.PC78', commentaryOpts.PC78?.[0] || '');
 
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load initial data', description: error.message });
@@ -198,16 +204,18 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         return <div className="text-center py-10 text-muted-foreground">Could not load commentary options. Please define them in the 'Manage Commentary' page.</div>
     }
     
-    const commentaryFields: { key: keyof CommentaryOptionsData, label: string }[] = [
-        { key: 'PreviousSale', label: 'Previous Sale' },
-        { key: 'ContractSale', label: 'Contract Sale' },
-        { key: 'Disclosure', label: 'Disclosure' },
-        { key: 'MarketComment', label: 'Market Comment' },
+    const commentaryFields: { key: keyof CommentaryOptionsData, label: string, placeholder: string }[] = [
+        { key: 'PreviousSale', label: 'Previous Sale', placeholder: 'Replace_PreviousSale' },
+        { key: 'ContractSale', label: 'Contract for Sale', placeholder: 'Replace_ContractSale' },
+        { key: 'SuppliedDocumentation', label: 'Supplied Documentation', placeholder: 'Replace_SuppliedDoc' },
+        { key: 'RecentOrProvided', label: 'Recent/Provided', placeholder: 'Replace_RecentOrProvided' },
+        { key: 'LIM', label: 'Land Information Memorandum', placeholder: 'Replace_LIM' },
+        { key: 'PC78', label: 'Plan Change 78: Intensification', placeholder: 'Replace_PC78' },
     ];
 
     return (
         <div className="space-y-6 pt-4">
-          {commentaryFields.map(({ key, label }) => {
+          {commentaryFields.map(({ key, label, placeholder }) => {
             const options = commentaryOptions[key] || [];
             return (
               <FormField
@@ -216,7 +224,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                 name={`commentary.${key}`}
                 render={({ field }) => (
                   <FormItem className="space-y-3">
-                    <FormLabel>{label} <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_{key}]</code></FormLabel>
+                    <FormLabel>{label} <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[{placeholder}]</code></FormLabel>
                     <FormControl>
                       <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col space-y-2">
                         {options.length > 0 ? (
