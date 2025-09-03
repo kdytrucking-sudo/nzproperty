@@ -37,11 +37,11 @@ const prepareTemplateData = (data: any) => {
     const templateData: { [key: string]: any } = {};
     let replacementCount = 0;
 
-    const processValue = (value: any): string | string[] => {
-      // If the value is a string and contains newlines, split it into an array.
-      // Docxtemplater, with paragraphLoop: true, will create a hard return (new paragraph) for each array item.
+    const processValue = (value: any): string => {
       if (typeof value === 'string' && value.includes('\n')) {
-        return value.split('\n').map(line => line.trim());
+        // This is the raw XML for a hard paragraph break in DOCX.
+        // It closes the current text run, paragraph, and starts a new one.
+        return value.replace(/\n/g, '</w:t></w:r></w:p><w:p><w:r><w:t>');
       }
       return value;
     };
@@ -148,11 +148,19 @@ const generateReportFromTemplateFlow = ai.defineFlow(
         const zip = new PizZip(buffer);
         
         const doc = new Docxtemplater(zip, {
-          // paragraphLoop enables you to loop over paragraphs. When a placeholder
-          // is replaced by an array, it will create a new paragraph for each item.
-          paragraphLoop: true,
-          // linebreaks must be false when using paragraphLoop for this behavior.
-          linebreaks: false, 
+          // This tells docxtemplater to treat the placeholder as raw XML,
+          // allowing us to inject the paragraph break tags.
+          parser: (tag) => ({
+            get: (scope) => {
+              if (tag === '.') {
+                  return scope;
+              }
+              return scope[tag];
+            },
+            getTags: () => ({
+              // This is a simplified getter that allows raw XML injection.
+            }),
+          }),
           delimiters: {
             start: '[',
             end: ']',
