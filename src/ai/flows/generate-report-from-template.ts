@@ -39,7 +39,12 @@ const prepareTemplateData = async (data: any) => {
 
     const countAndSetReplacement = (key: string, value: any) => {
         if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== 'N/A') {
-            templateData[key] = value;
+            // For multiline text, split into an array to create hard paragraph breaks
+            if (value.includes('\n')) {
+                templateData[key] = value.split('\n').filter(line => line.trim() !== '');
+            } else {
+                templateData[key] = value;
+            }
             replacementCount++;
         } else if (Array.isArray(value)) {
              templateData[key] = value;
@@ -152,29 +157,11 @@ const generateReportFromTemplateFlow = ai.defineFlow(
             start: '[',
             end: ']',
           },
+          // paragraphLoop is needed for arrays of strings to become paragraphs
+          paragraphLoop: true,
+          // linebreaks creates soft-breaks for single-line strings with \n
           linebreaks: true,
           nullGetter: () => "", 
-           // This parser will convert soft line breaks <w:br/> into hard paragraph breaks
-          parser: (tag) => {
-            return {
-              get(scope, context) {
-                if (tag === '.') {
-                  return scope;
-                }
-                if (context.scopePath.includes(tag)) {
-                  // This is a simple protection against infinite recursion
-                  return '';
-                }
-                const value = scope[tag];
-                if (value && typeof value === 'string') {
-                   // Replace newline characters with the XML for a new paragraph
-                   // This creates a "hard return"
-                   return value.replace(/\n/g, '</w:t></w:r></w:p><w:p><w:r><w:t>');
-                }
-                return value;
-              },
-            };
-          },
         });
         
         const { templateData, replacementCount } = await prepareTemplateData(data);
