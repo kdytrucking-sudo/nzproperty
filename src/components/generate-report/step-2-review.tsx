@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -244,7 +245,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         }
         
         setCommentaryOptions(commentaryOpts);
-        // Set default values for commentary radio groups
+        // Set default values for commentary textareas
         form.setValue('commentary.PreviousSale', commentaryOpts.PreviousSale?.[0] || '');
         form.setValue('commentary.ContractSale', commentaryOpts.ContractSale?.[0] || '');
         form.setValue('commentary.SuppliedDocumentation', commentaryOpts.SuppliedDocumentation?.[0] || '');
@@ -324,39 +325,48 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     ];
 
     return (
-        <div className="space-y-6 pt-4">
-          {commentaryFields.map(({ key, label, placeholder }) => {
-            const options = commentaryOptions[key] || [];
-            return (
+      <div className="space-y-6 pt-4">
+        {commentaryFields.map(({ key, label, placeholder }) => {
+          const options = commentaryOptions[key] || [];
+          return (
+            <div key={key} className="space-y-4 rounded-md border p-4">
+              <h3 className="font-medium">{label} <code className="ml-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[{placeholder}]</code></h3>
+              
+              {options.length > 0 ? (
+                <RadioGroup
+                  onValueChange={(value) => form.setValue(`commentary.${key}`, value)}
+                  defaultValue={options[0]}
+                  className="flex flex-col space-y-2"
+                >
+                  {options.map((option, index) => (
+                    <FormItem key={`${key}-${index}`} className="flex items-center space-x-3 space-y-0">
+                      <FormControl><RadioGroupItem value={option} /></FormControl>
+                      <FormLabel className="font-normal">{option.length > 100 ? `${option.substring(0, 100)}...` : option}</FormLabel>
+                    </FormItem>
+                  ))}
+                </RadioGroup>
+              ) : (
+                <p className="text-sm text-muted-foreground">No options defined for this category.</p>
+              )}
+
               <FormField
-                key={key}
                 control={form.control}
                 name={`commentary.${key}`}
                 render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel>{label} <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[{placeholder}]</code></FormLabel>
+                  <FormItem>
+                    <FormLabel className="sr-only">Editable Commentary</FormLabel>
                     <FormControl>
-                      <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col space-y-2">
-                        {options.length > 0 ? (
-                           options.map((option, index) => (
-                            <FormItem key={`${key}-${index}`} className="flex items-center space-x-3 space-y-0">
-                              <FormControl><RadioGroupItem value={option} /></FormControl>
-                              <FormLabel className="font-normal">{option}</FormLabel>
-                            </FormItem>
-                          ))
-                        ) : (
-                            <p className="text-sm text-muted-foreground">No options defined for this category.</p>
-                        )}
-                      </RadioGroup>
+                      <Textarea {...field} rows={6} className="mt-4 font-mono text-sm" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            )
-          })}
-        </div>
-      );
+            </div>
+          )
+        })}
+      </div>
+    );
   }
 
   const renderConstructionBriefSection = () => {
@@ -596,3 +606,5 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     </Card>
   );
 }
+
+    
