@@ -87,7 +87,7 @@ const prepareTemplateData = async (data: any) => {
         RecentOrProvided: 'Replace_RecentOrProvided',
         LIM: 'Replace_LIM',
         PC78: 'Replace_PC78',
-        OperativeZone: 'Replace_Zone',
+        OperativeZone: 'Replace_Zone'
       };
 
       Object.keys(data.commentary).forEach(key => {
