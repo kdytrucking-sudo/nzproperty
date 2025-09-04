@@ -100,17 +100,10 @@ const prepareTemplateData = async (data: any) => {
     }
     
     // 4. Process new construction brief content
-    try {
-        const briefFilePath = path.join(process.cwd(), 'src', 'lib', 'construction-brief.json');
-        const briefJsonString = await fs.readFile(briefFilePath, 'utf-8');
-        const briefData = JSON.parse(briefJsonString);
-        if (briefData.brief) {
-            countAndSetReplacement('Replace_ConstructionBrief', briefData.brief);
-        }
-    } catch (error) {
-        // If file doesn't exist or is empty, we just don't add the replacement.
-        console.log("Construction brief file not found or empty, skipping replacement.");
+    if (data.constructionBrief?.finalBrief) {
+        countAndSetReplacement('Replace_ConstructionBrief', data.constructionBrief.finalBrief);
     }
+
 
     // 5. Process comparableSales as a loopable array for {#comparableSales} tag
     if (data.comparableSales && Array.isArray(data.comparableSales)) {
@@ -159,8 +152,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
             start: '[',
             end: ']',
           },
-          linebreaks: true, // This will convert \n to <w:br/> (soft return)
-          // Return empty string for missing values to avoid errors
+          linebreaks: true,
           nullGetter: () => "", 
         });
         
