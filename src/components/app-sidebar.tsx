@@ -9,6 +9,7 @@ import {
   FileText,
   FileUp,
   MessageSquareQuote,
+  Construction,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -44,6 +45,11 @@ export function AppSidebar() {
       href: '/manage-commentary',
       label: 'Manage Commentary',
       icon: MessageSquareQuote,
+    },
+    {
+      href: '/construction-brief',
+      label: 'Construction Brief',
+      icon: Construction,
     },
     {
       href: '/manage-templates',

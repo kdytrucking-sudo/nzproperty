@@ -33,7 +33,7 @@ const GenerateReportOutputSchema = z.object({
 export type GenerateReportOutput = z.infer<typeof GenerateReportOutputSchema>;
 
 // This function prepares the data for docxtemplater based on the user's logic.
-const prepareTemplateData = (data: any) => {
+const prepareTemplateData = async (data: any) => {
     const templateData: { [key: string]: any } = {};
     let replacementCount = 0;
 
@@ -98,8 +98,21 @@ const prepareTemplateData = (data: any) => {
         }
       });
     }
+    
+    // 4. Process new construction brief content
+    try {
+        const briefFilePath = path.join(process.cwd(), 'src', 'lib', 'construction-brief.json');
+        const briefJsonString = await fs.readFile(briefFilePath, 'utf-8');
+        const briefData = JSON.parse(briefJsonString);
+        if (briefData.brief) {
+            countAndSetReplacement('Replace_ConstructionBrief', briefData.brief);
+        }
+    } catch (error) {
+        // If file doesn't exist or is empty, we just don't add the replacement.
+        console.log("Construction brief file not found or empty, skipping replacement.");
+    }
 
-    // 4. Process comparableSales as a loopable array for {#comparableSales} tag
+    // 5. Process comparableSales as a loopable array for {#comparableSales} tag
     if (data.comparableSales && Array.isArray(data.comparableSales)) {
         templateData['comparableSales'] = data.comparableSales.map((sale: any) => {
             const newSale: { [key: string]: any } = {};
@@ -151,7 +164,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
           nullGetter: () => "", 
         });
         
-        const { templateData, replacementCount } = prepareTemplateData(data);
+        const { templateData, replacementCount } = await prepareTemplateData(data);
         
         doc.setData(templateData);
 
