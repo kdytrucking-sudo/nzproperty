@@ -47,7 +47,6 @@ const interiorOptions = [
     { id: 'hard board', label: 'hard board' },
     { id: 'tile ceiling', label: 'tile ceiling' },
     { id: 'plaster ceiling', label: 'plaster ceiling' },
-    { id: 'or of similar linings.', label: 'or of similar linings.' },
 ];
 
 const formSchema = z.object({
@@ -107,19 +106,15 @@ export default function ConstructionBriefPage() {
 
         let secondSentence = 'The interior appears to be mostly timber framed with ';
         if (interior.length > 0) {
-            // Special handling for the last item which already contains a period.
-            const lastItem = interior[interior.length - 1];
-            if (lastItem.endsWith('.')) {
-                 secondSentence += interior.slice(0, -1).join(', ');
-                 if(interior.length > 1) {
-                    secondSentence += ' ' + lastItem;
-                 } else {
-                    secondSentence += lastItem;
-                 }
+            if (interior.length === 1) {
+                 secondSentence += interior[0];
             } else {
-                secondSentence += interior.join(', ') + '.';
+                const allButLast = interior.slice(0, -1).join(', ');
+                const last = interior[interior.length - 1];
+                secondSentence += `${allButLast} and ${last}`;
             }
         }
+        secondSentence += ' or of similar linings.';
 
         const fullBrief = `${firstSentence}\n${secondSentence}`;
         form.setValue('finalBrief', fullBrief);
