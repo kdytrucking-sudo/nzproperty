@@ -47,7 +47,7 @@ const interiorOptions = [
     { id: 'hard board', label: 'hard board' },
     { id: 'tile ceiling', label: 'tile ceiling' },
     { id: 'plaster ceiling', label: 'plaster ceiling' },
-    { id: 'or of similar linings', label: 'or of similar linings.' },
+    { id: 'or of similar linings.', label: 'or of similar linings.' },
 ];
 
 const formSchema = z.object({
@@ -94,9 +94,15 @@ export default function ConstructionBriefPage() {
     const generateBrief = () => {
         const { generalConstruction, interior } = form.getValues();
 
-        let firstSentence = 'General construction elements comprise what appears to be : ';
+        let firstSentence = 'General construction elements comprise what appears to be ';
         if (generalConstruction.length > 0) {
-            firstSentence += generalConstruction.join(', ') + '.';
+            if (generalConstruction.length === 1) {
+                firstSentence += generalConstruction[0] + '.';
+            } else {
+                const allButLast = generalConstruction.slice(0, -1).join(', ');
+                const last = generalConstruction[generalConstruction.length - 1];
+                firstSentence += `${allButLast} and ${last}.`;
+            }
         }
 
         let secondSentence = 'The interior appears to be mostly timber framed with ';
