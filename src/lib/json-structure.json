@@ -7,7 +7,8 @@
     "Zoning": "[extracted_Zoning]",
     "Property Brief Description": "[extracted_PropertySummary]",
     "Title Interestes": "[extracted_TitleInterests]",
-    "Title Owner": "[extracted_TitleOwner]"
+    "Title Owner": "[extracted_TitleOwner]",
+    "Title Brief": "[extracted_TitleBrief]"
   },
   "Valuation": {
     "Principal Use": "[extracted_PrincipalUse]",

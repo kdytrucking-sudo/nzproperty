@@ -58,7 +58,8 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
     'data.Property.Property Brief Description',
     'data.Property.Zoning',
     'data.Property.Title Interestes',
-    'data.Valuation.Special Assumptions'
+    'data.Valuation.Special Assumptions',
+    'data.Property.Title Brief',
   ];
 
   return (
