@@ -39,12 +39,7 @@ const prepareTemplateData = async (data: any) => {
 
     const countAndSetReplacement = (key: string, value: any) => {
         if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== 'N/A') {
-            // For multiline text, split into an array to create hard paragraph breaks
-            if (value.includes('\n')) {
-                templateData[key] = value.split('\n').filter(line => line.trim() !== '');
-            } else {
-                templateData[key] = value;
-            }
+            templateData[key] = value;
             replacementCount++;
         } else if (Array.isArray(value)) {
              templateData[key] = value;
@@ -157,8 +152,6 @@ const generateReportFromTemplateFlow = ai.defineFlow(
             start: '[',
             end: ']',
           },
-          // paragraphLoop is needed for arrays of strings to become paragraphs
-          paragraphLoop: true,
           // linebreaks creates soft-breaks for single-line strings with \n
           linebreaks: true,
           nullGetter: () => "", 
