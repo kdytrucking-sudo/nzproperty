@@ -154,6 +154,27 @@ const generateReportFromTemplateFlow = ai.defineFlow(
           },
           linebreaks: true,
           nullGetter: () => "", 
+           // This parser will convert soft line breaks <w:br/> into hard paragraph breaks
+          parser: (tag) => {
+            return {
+              get(scope, context) {
+                if (tag === '.') {
+                  return scope;
+                }
+                if (context.scopePath.includes(tag)) {
+                  // This is a simple protection against infinite recursion
+                  return '';
+                }
+                const value = scope[tag];
+                if (value && typeof value === 'string') {
+                   // Replace newline characters with the XML for a new paragraph
+                   // This creates a "hard return"
+                   return value.replace(/\n/g, '</w:t></w:r></w:p><w:p><w:r><w:t>');
+                }
+                return value;
+              },
+            };
+          },
         });
         
         const { templateData, replacementCount } = await prepareTemplateData(data);
