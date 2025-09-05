@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -25,6 +25,8 @@ import { getCommentaryOptions } from '@/ai/flows/get-commentary-options';
 import type { CommentaryOptionsData } from '@/lib/commentary-schema';
 import { Checkbox } from '@/components/ui/checkbox';
 import { convertNumberToWords } from '@/ai/flows/convert-number-to-words';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 const commentarySchema = z.object({
   PreviousSale: z.string().optional(),
@@ -47,6 +49,10 @@ const constructionBriefSchema = z.object({
 const marketValuationSchema = z.object({
   marketValue: z.string().optional(),
   marketValuation: z.string().optional(),
+  improvementsValueByValuer: z.string().optional(),
+  landValueByValuer: z.string().optional(),
+  chattelsValueByValuer: z.string().optional(),
+  marketValueByValuer: z.string().optional(),
 });
 
 const formSchema = z.object({
@@ -65,7 +71,7 @@ type Step2ReviewProps = {
 
 // Helper function to format number into currency
 const formatCurrency = (value: number | string) => {
-    const num = Number(value);
+    const num = Number(String(value).replace(/[^0-9.-]+/g,""));
     if (isNaN(num)) return '';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -75,14 +81,20 @@ const formatCurrency = (value: number | string) => {
     }).format(num);
 };
 
+const parseCurrency = (value: string | undefined): number => {
+    if (!value) return 0;
+    return Number(String(value).replace(/[^0-9.-]+/g,""));
+}
+
 // Market Valuation Tab Component
 function MarketValuationTab({ form }: { form: any }) {
   const { toast } = useToast();
   const [rawMarketValue, setRawMarketValue] = React.useState('');
   const [isUpdating, setIsUpdating] = React.useState(false);
-  const { setValue, watch } = form;
+  const [checkStatus, setCheckStatus] = React.useState<'unchecked' | 'equal' | 'error'>('unchecked');
+  const { setValue, watch, getValues } = form;
 
-  const { marketValue, marketValuation } = watch('marketValuation');
+  const { marketValuation } = watch();
 
   const handleUpdate = async () => {
     const numericValue = parseFloat(rawMarketValue);
@@ -99,12 +111,12 @@ function MarketValuationTab({ form }: { form: any }) {
     try {
       // 1. Format the currency string
       const formattedValue = formatCurrency(numericValue);
-      setValue('marketValuation.marketValue', formattedValue);
+      setValue('marketValuation.marketValue', formattedValue, { shouldDirty: true });
 
       // 2. Call AI flow to get the words
       const result = await convertNumberToWords({ number: numericValue });
       const fullValuationText = `${formattedValue}\n${result.words}`;
-      setValue('marketValuation.marketValuation', fullValuationText);
+      setValue('marketValuation.marketValuation', fullValuationText, { shouldDirty: true });
 
       toast({
         title: 'Update Successful',
@@ -122,6 +134,36 @@ function MarketValuationTab({ form }: { form: any }) {
     }
   };
 
+  const handleSumAndCheck = () => {
+    setCheckStatus('unchecked');
+    const { improvementsValueByValuer, landValueByValuer, chattelsValueByValuer } = getValues('marketValuation');
+
+    const improvements = parseCurrency(improvementsValueByValuer);
+    const land = parseCurrency(landValueByValuer);
+    const chattels = parseCurrency(chattelsValueByValuer);
+
+    if (isNaN(improvements) || isNaN(land) || isNaN(chattels)) {
+        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please ensure all values are valid numbers.' });
+        return;
+    }
+    
+    const total = improvements + land + chattels;
+
+    setValue('marketValuation.improvementsValueByValuer', formatCurrency(improvements), { shouldDirty: true });
+    setValue('marketValuation.landValueByValuer', formatCurrency(land), { shouldDirty: true });
+    setValue('marketValuation.chattelsValueByValuer', formatCurrency(chattels), { shouldDirty: true });
+    setValue('marketValuation.marketValueByValuer', formatCurrency(total), { shouldDirty: true });
+
+    const originalMarketValue = parseCurrency(getValues('marketValuation.marketValue'));
+
+    if (total === originalMarketValue) {
+        setCheckStatus('equal');
+    } else {
+        setCheckStatus('error');
+    }
+  };
+
+
   return (
     <div className="space-y-6 pt-4">
        <Card>
@@ -132,25 +174,24 @@ function MarketValuationTab({ form }: { form: any }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-            <div className="space-y-2">
-                <Label htmlFor="rawMarketValue">Market Valuation (Numbers Only)</Label>
-                <div className="flex items-center gap-2">
-                    <Input
-                        id="rawMarketValue"
-                        type="number"
-                        value={rawMarketValue}
-                        onChange={(e) => setRawMarketValue(e.target.value.replace(/[^0-9]/g, ''))}
-                        placeholder="e.g., 940000"
-                        className="max-w-xs"
-                    />
-                    <Button type="button" onClick={handleUpdate} disabled={isUpdating}>
-                        {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Update
-                    </Button>
-                </div>
-            </div>
-
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                    <Label htmlFor="rawMarketValue">Market Valuation (Numbers Only)</Label>
+                    <div className="flex items-center gap-2">
+                        <Input
+                            id="rawMarketValue"
+                            type="number"
+                            value={rawMarketValue}
+                            onChange={(e) => setRawMarketValue(e.target.value.replace(/[^0-9]/g, ''))}
+                            placeholder="e.g., 940000"
+                            className="max-w-xs"
+                        />
+                        <Button type="button" onClick={handleUpdate} disabled={isUpdating}>
+                            {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Update
+                        </Button>
+                    </div>
+                </div>
                  <FormField
                   control={form.control}
                   name="marketValuation.marketValue"
@@ -167,22 +208,117 @@ function MarketValuationTab({ form }: { form: any }) {
                       </FormItem>
                   )}
               />
-              <FormField
-                  control={form.control}
-                  name="marketValuation.marketValuation"
-                  render={({ field }) => (
-                      <FormItem>
-                           <div className="flex items-center justify-between">
-                              <FormLabel>Market Valuation (Full Text)</FormLabel>
-                              <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_MarketValuation]</code>
-                          </div>
-                          <FormControl>
-                              <Textarea {...field} rows={4} className="font-mono" placeholder="e.g., $940,000\nNine Hundred Forty Thousand Dollars" />
-                          </FormControl>
-                          <FormMessage />
-                      </FormItem>
-                  )}
-              />
+            </div>
+             <FormField
+                control={form.control}
+                name="marketValuation.marketValuation"
+                render={({ field }) => (
+                    <FormItem>
+                         <div className="flex items-center justify-between">
+                            <FormLabel>Market Valuation (Full Text)</FormLabel>
+                            <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_MarketValuation]</code>
+                        </div>
+                        <FormControl>
+                            <Textarea {...field} rows={4} className="font-mono" placeholder="e.g., $940,000\nNine Hundred Forty Thousand Dollars" />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+            <CardTitle>Valuation Breakdown</CardTitle>
+            <CardDescription>
+                Input the component values, then sum and check against the market value.
+            </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                    control={form.control}
+                    name="marketValuation.improvementsValueByValuer"
+                    render={({ field }) => (
+                        <FormItem>
+                            <div className="flex items-center justify-between">
+                                <FormLabel>Improvements Value</FormLabel>
+                                <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_ImprovementValueByValuer]</code>
+                            </div>
+                            <FormControl>
+                                <Input {...field} placeholder="Enter value..." />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="marketValuation.landValueByValuer"
+                    render={({ field }) => (
+                        <FormItem>
+                            <div className="flex items-center justify-between">
+                                <FormLabel>Land Value</FormLabel>
+                                <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_LandValueByValuer]</code>
+                            </div>
+                            <FormControl>
+                                <Input {...field} placeholder="Enter value..." />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="marketValuation.chattelsValueByValuer"
+                    render={({ field }) => (
+                        <FormItem>
+                             <div className="flex items-center justify-between">
+                                <FormLabel>Chattels</FormLabel>
+                                <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_ChattelsByValuer]</code>
+                            </div>
+                            <FormControl>
+                                <Input {...field} placeholder="Enter value..." />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
+            <Separator />
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                <FormField
+                    control={form.control}
+                    name="marketValuation.marketValueByValuer"
+                    render={({ field }) => (
+                        <FormItem>
+                            <div className="flex items-center justify-between">
+                                <FormLabel>Market Value</FormLabel>
+                                <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_MarketValueByValuer]</code>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <FormControl>
+                                    <Input {...field} readOnly placeholder="Sum of the above" />
+                                </FormControl>
+                                {checkStatus === 'equal' && (
+                                    <div className="flex items-center text-sm text-green-600 font-medium">
+                                        <CheckCircle className="h-4 w-4 mr-1"/> Equal
+                                    </div>
+                                )}
+                                 {checkStatus === 'error' && (
+                                    <div className="flex items-center text-sm text-red-600 font-medium">
+                                        <XCircle className="h-4 w-4 mr-1"/> Error
+                                    </div>
+                                )}
+                            </div>
+                           
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <Button type="button" onClick={handleSumAndCheck}>
+                    Sum & Check
+                </Button>
             </div>
         </CardContent>
       </Card>
@@ -299,6 +435,10 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       marketValuation: {
         marketValue: '',
         marketValuation: '',
+        improvementsValueByValuer: '',
+        landValueByValuer: '',
+        chattelsValueByValuer: '',
+        marketValueByValuer: '',
       }
     },
   });
@@ -427,7 +567,7 @@ ${secondSentence}`;
         ...values.data, 
         commentary: values.commentary, 
         constructionBrief: values.constructionBrief,
-        ...values.marketValuation,
+        marketValuation: values.marketValuation,
       };
       const result = await generateReportFromTemplate({
         templateFileName: values.templateFileName,
@@ -770,3 +910,5 @@ ${secondSentence}`;
     </Card>
   );
 }
+
+    
