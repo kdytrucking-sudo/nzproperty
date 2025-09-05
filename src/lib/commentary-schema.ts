@@ -8,8 +8,6 @@ export const CommentaryOptionsSchema = z.object({
   LIM: z.array(z.string()),
   PC78: z.array(z.string()),
   OperativeZone: z.array(z.string()),
-  ZoningOperative: z.array(z.string()),
-  ZoningPlanChange78: z.array(z.string()),
 });
 
 export type CommentaryOptionsData = z.infer<typeof CommentaryOptionsSchema>;
