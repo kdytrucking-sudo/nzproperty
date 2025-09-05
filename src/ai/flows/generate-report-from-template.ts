@@ -117,7 +117,7 @@ const prepareTemplateData = async (data: any) => {
 
   // 4) commentary
   if ((data as any)?.commentary) {
-    const map: Record<string, string | undefined> = {
+    const placeholderMapping: Record<string, string> = {
       PreviousSale: 'Replace_PreviousSale',
       ContractSale: 'Replace_ContractSale',
       SuppliedDocumentation: 'Replace_SuppliedDoc',
@@ -125,16 +125,11 @@ const prepareTemplateData = async (data: any) => {
       LIM: 'Replace_LIM',
       PC78: 'Replace_PC78',
       OperativeZone: 'Replace_Zone',
-      ZoningOperative: 'Replace_ZoningOperative',
-      ZoningPlanChange78: 'Replace_ZoningPlanChange78',
     };
-    Object.keys((data as any).commentary).forEach((k) => {
-      const templateKey = map[k as keyof typeof map];
+    Object.keys((data as any).commentary).forEach((key) => {
+      const templateKey = placeholderMapping[key];
       if (templateKey) {
-        countAndSetReplacement(templateKey, (data as any).commentary[k]);
-      } else {
-         // Also handle direct keys if no placeholder is defined, for Disclosure/MarketComment
-         countAndSetReplacement(k, (data as any).commentary[k]);
+        countAndSetReplacement(templateKey, (data as any).commentary[key]);
       }
     });
   }

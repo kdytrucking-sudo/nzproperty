@@ -33,8 +33,6 @@ const commentarySchema = z.object({
   LIM: z.string().optional(),
   PC78: z.string().optional(),
   OperativeZone: z.string().optional(),
-  ZoningOperative: z.string().optional(),
-  ZoningPlanChange78: z.string().optional(),
 });
 
 const constructionBriefSchema = z.object({
@@ -153,8 +151,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         LIM: '',
         PC78: '',
         OperativeZone: '',
-        ZoningOperative: '',
-        ZoningPlanChange78: '',
       },
       constructionBrief: {
         generalConstruction: [],
@@ -257,8 +253,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         form.setValue('commentary.LIM', commentaryOpts.LIM?.[0] || '');
         form.setValue('commentary.PC78', commentaryOpts.PC78?.[0] || '');
         form.setValue('commentary.OperativeZone', commentaryOpts.OperativeZone?.[0] || '');
-        form.setValue('commentary.ZoningOperative', commentaryOpts.ZoningOperative?.[0] || '');
-        form.setValue('commentary.ZoningPlanChange78', commentaryOpts.ZoningPlanChange78?.[0] || '');
 
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load initial data', description: error.message });
@@ -308,6 +302,9 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   }
 
   const renderCommentarySection = () => {
+    if (isLoadingInitialData) {
+        return <div className="text-center py-10 text-muted-foreground">Loading Commentary Options...</div>
+    }
     if (!commentaryOptions) {
         return <div className="text-center py-10 text-muted-foreground">Could not load commentary options. Please define them in the 'Manage Commentary' page.</div>
     }
@@ -320,8 +317,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         { key: 'LIM', label: 'Land Information Memorandum', placeholder: '[Replace_LIM]' },
         { key: 'PC78', label: 'Plan Change 78: Intensification', placeholder: '[Replace_PC78]' },
         { key: 'OperativeZone', label: 'Operative Zone', placeholder: '[Replace_Zone]' },
-        { key: 'ZoningOperative', label: 'Zoning Operative', placeholder: '[Replace_ZoningOperative]' },
-        { key: 'ZoningPlanChange78', label: 'Zoning Plan Change 78', placeholder: '[Replace_ZoningPlanChange78]' },
     ];
 
     return (
@@ -343,7 +338,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     {options.length > 0 ? (
                       <RadioGroup
                           onValueChange={field.onChange}
-                          value={field.value || ''}
+                          defaultValue={field.value}
                           className="flex flex-col space-y-2"
                         >
                           {options.map((option, index) => (
@@ -573,7 +568,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
                                 <FormField control={form.control} name={`data.comparableSales.${index}.compAddress`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                                 <FormField control={form.control} name={`data.comparableSales.${index}.compSaleDate`} render={({ field }) => (<FormItem><FormLabel>Sale Date</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name={`data.comparableSales.${index}.compSalePrice`} render={({ field }) => (<FormItem><FormLabel>Sale Price</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormMessage>)} />
+                                <FormField control={form.control} name={`data.comparableSales.${index}.compSalePrice`} render={({ field }) => (<FormItem><FormLabel>Sale Price</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                                 <FormField control={form.control} name={`data.comparableSales.${index}.compLandArea`} render={({ field }) => (<FormItem><FormLabel>Land Area</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                                 <FormField control={form.control} name={`data.comparableSales.${index}.compFloorArea`} render={({ field }) => (<FormItem><FormLabel>Floor Area</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                                 </div>

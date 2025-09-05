@@ -31,10 +31,11 @@ const getCommentaryOptionsFlow = ai.defineFlow(
         const defaultOptions: CommentaryOptionsData = {
             PreviousSale: [],
             ContractSale: [],
-            Disclosure: [],
-            MarketComment: [],
-            ZoningOperative: [],
-            ZoningPlanChange78: [],
+            SuppliedDocumentation: [],
+            RecentOrProvided: [],
+            LIM: [],
+            PC78: [],
+            OperativeZone: [],
         };
         const jsonFilePath = path.join(process.cwd(), 'src', 'lib', 'commentary-options.json');
         await fs.writeFile(jsonFilePath, JSON.stringify(defaultOptions, null, 2), 'utf-8');
