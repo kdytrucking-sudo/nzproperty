@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { browse, goTo, findBy, screenshot } from '@genkit-ai/web-extractor';
+import { browse, goTo, findBy, screenshot } from '@genkit-ai/googleai';
 
 const GetStatutoryValuationInputSchema = z.object({
   propertyAddress: z.string().describe('The property address to search for.'),
@@ -50,7 +50,7 @@ const getStatutoryValuationFlow = ai.defineFlow(
                     args: [propertyAddress],
                 }
             );
-
+             await new Promise(resolve => setTimeout(resolve, 500)); // Wait for autocomplete
             await findBy(
                 {
                     query: 'Show property rates and valuation',
@@ -60,13 +60,14 @@ const getStatutoryValuationFlow = ai.defineFlow(
                     action: 'click',
                 }
             );
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for page to load
 
             const screenshotData = await screenshot();
 
             const { output } = await ai.generate({
                 prompt: [
                     { media: { url: screenshotData } },
-                    { text: `From the screenshot, extract the "Land Value", "Value of improvements", and "Capital value" for the address: ${propertyAddress}. Return the extracted data as a JSON object with keys: landValueByWeb, improvementsValueByWeb, ratingValueByWeb.` }
+                    { text: `From the screenshot, extract the "Land Value", "Value of improvements", and "Capital value (rating valuation)". Return the extracted data as a JSON object with keys: landValueByWeb, improvementsValueByWeb, ratingValueByWeb.` }
                 ],
                 output: {
                     schema: GetStatutoryValuationOutputSchema,
