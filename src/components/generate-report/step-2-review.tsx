@@ -475,51 +475,88 @@ function ManualValuationTab({ form }: { form: any }) {
                 <CardHeader>
                     <CardTitle>Manual Valuation Retrieval</CardTitle>
                     <CardDescription>
-                        Follow these steps if the automated retrieval fails.
+                        Follow these steps if the automated retrieval fails or to use a specific page.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <Alert>
                         <AlertTitle>Step 1: Open Website & Find Property</AlertTitle>
                         <AlertDescription>
-                            <p>Open the council website, copy the address below, and search for the property. Once you are on the page showing the valuation details, copy the URL from your browser&apos;s address bar.</p>
+                            <p>Open the council website, copy the address below, and search for the property. Once you are on the page showing the valuation details, copy the URL from your browser's address bar.</p>
                             <div className="flex items-center gap-4 mt-4">
                                 <Button type="button" variant="outline" onClick={() => window.open(councilWebsite, '_blank')}>
                                     <ExternalLink className="mr-2 h-4 w-4" /> Open Council Website
+                                </Button>
+                                 <Button type="button" variant="secondary" onClick={handleCopyAddress} disabled={!propertyAddress}>
+                                    <Copy className="mr-2 h-4 w-4" /> Copy Address
                                 </Button>
                             </div>
                         </AlertDescription>
                     </Alert>
 
                      <Alert>
-                        <AlertTitle>Step 2: Copy Address</AlertTitle>
+                        <AlertTitle>Step 2: Extract Data from URL</AlertTitle>
                         <AlertDescription>
-                            <p className="text-sm font-medium p-3 bg-muted rounded-md my-2">
-                                {propertyAddress || 'N/A'}
-                            </p>
-                             <Button type="button" variant="secondary" onClick={handleCopyAddress} disabled={!propertyAddress}>
-                                <Copy className="mr-2 h-4 w-4" /> Copy Address
-                            </Button>
-                        </AlertDescription>
-                    </Alert>
-
-                     <Alert>
-                        <AlertTitle>Step 3: Extract Data from URL</AlertTitle>
-                        <AlertDescription>
-                            <p>Paste the final URL here and click extract. The results will be populated in the &quot;Statutory Valuation&quot; tab fields.</p>
+                            <p>Paste the final URL here and click extract. The results will be populated below.</p>
                             <div className="flex items-center gap-2 mt-4">
                                 <Input
                                     value={url}
                                     onChange={(e) => setUrl(e.target.value)}
                                     placeholder="https://... Paste URL here"
                                 />
-                                <Button type="button" onClick={handleExtract} disabled={isExtracting}>
+                                <Button type="button" onClick={handleExtract} disabled={isExtracting || !url}>
                                     {isExtracting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Extract from URL
                                 </Button>
                             </div>
                         </AlertDescription>
                     </Alert>
+
+                    <Separator />
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       <FormField
+                            control={form.control}
+                            name="statutoryValuation.landValueByWeb"
+                            render={({ field }) => (
+                                <FormItem>
+                                     <div className="flex items-center justify-between">
+                                        <FormLabel>Land Value</FormLabel>
+                                        <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_LandValueByWeb]</code>
+                                    </div>
+                                    <FormControl><Input {...field} readOnly /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="statutoryValuation.improvementsValueByWeb"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <div className="flex items-center justify-between">
+                                        <FormLabel>Value of Improvements</FormLabel>
+                                        <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_ValueOfImprovementsByWeb]</code>
+                                    </div>
+                                    <FormControl><Input {...field} readOnly /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="statutoryValuation.ratingValueByWeb"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <div className="flex items-center justify-between">
+                                        <FormLabel>Rating Valuation</FormLabel>
+                                        <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_RatingValueByWeb]</code>
+                                    </div>
+                                    <FormControl><Input {...field} readOnly /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
                 </CardContent>
             </Card>
         </div>
