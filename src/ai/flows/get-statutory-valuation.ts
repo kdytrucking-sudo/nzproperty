@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Retrieves statutory valuation data from the Auckland Council website.
+ * @fileOverview Retrieves statutory valuation data from the Auckland Council website using a Google Search Tool.
  *
  * - getStatutoryValuation - A function that takes a property address and returns valuation data.
  * - GetStatutoryValuationInput - The input type for the function.
@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { browse, goTo, findBy, screenshot } from '@genkit-ai/googleai';
+import axios from 'axios';
 
 const GetStatutoryValuationInputSchema = z.object({
   propertyAddress: z.string().describe('The property address to search for.'),
@@ -22,6 +22,53 @@ const GetStatutoryValuationOutputSchema = z.object({
   ratingValueByWeb: z.string().describe('The Capital Value (Rating Valuation) extracted from the website.'),
 });
 export type GetStatutoryValuationOutput = z.infer<typeof GetStatutoryValuationOutputSchema>;
+
+
+const getWebValuation = ai.defineTool(
+    {
+      name: 'getWebValuation',
+      description: 'Searches the Auckland Council website for a property\'s statutory valuation data using a property address. Returns the most relevant text snippets.',
+      inputSchema: GetStatutoryValuationInputSchema,
+      outputSchema: z.object({
+        snippets: z.array(z.string()).describe('Relevant text snippets from the search results.'),
+      }),
+    },
+    async ({ propertyAddress }) => {
+      const apiKey = process.env.GOOGLE_API_KEY;
+      const searchEngineId = process.env.SEARCH_ENGINE_ID;
+  
+      if (!apiKey || !searchEngineId) {
+        throw new Error('Google API Key or Search Engine ID is not configured.');
+      }
+  
+      const url = `https://www.googleapis.com/customsearch/v1`;
+      const params = {
+        key: apiKey,
+        cx: searchEngineId,
+        q: `${propertyAddress} valuation`,
+        siteSearch: 'aucklandcouncil.govt.nz',
+        siteSearchFilter: 'i', // i: include
+      };
+  
+      try {
+        const response = await axios.get(url, { params });
+        const items = response.data.items || [];
+        const snippets = items.map((item: any) => item.snippet || item.title).slice(0, 5); // Get top 5 snippets
+        return { snippets };
+      } catch (error: any) {
+        console.error('Google Custom Search API error:', error.response?.data || error.message);
+        throw new Error('Failed to perform web search.');
+      }
+    }
+);
+
+const valuationPrompt = ai.definePrompt({
+    name: 'extractValuationFromSnippets',
+    system: 'You are an expert data extractor. Analyze the provided text snippets from a website search and extract the required valuation figures. The values are typically prefixed with labels like "Land value", "Value of improvements", and "Capital value (rating valuation)". Return the data in the specified JSON format. If a value cannot be found, return "N/A".',
+    input: { schema: z.object({ propertyAddress: z.string(), snippets: z.array(z.string()) }) },
+    output: { schema: GetStatutoryValuationOutputSchema },
+    tools: [getWebValuation],
+});
 
 
 export async function getStatutoryValuation(
@@ -38,54 +85,16 @@ const getStatutoryValuationFlow = ai.defineFlow(
   },
   async ({ propertyAddress }) => {
     try {
-        const result = await browse(async () => {
-            await goTo('https://www.aucklandcouncil.govt.nz/property-rates-valuations/pages/find-property-rates-valuation.aspx');
-            await findBy(
-                {
-                    query: 'Enter a property address',
-                    role: 'searchbox',
-                },
-                {
-                    action: 'type',
-                    args: [propertyAddress],
-                }
-            );
-             await new Promise(resolve => setTimeout(resolve, 500)); // Wait for autocomplete
-            await findBy(
-                {
-                    query: 'Show property rates and valuation',
-                    role: 'button',
-                },
-                {
-                    action: 'click',
-                }
-            );
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for page to load
+      const { output } = await valuationPrompt({ propertyAddress, snippets: [] }, {
+        tools: [getWebValuation],
+        prompt: `Please use the getWebValuation tool to find the statutory valuation for the property at "${propertyAddress}" and extract the required values.`,
+      });
 
-            const screenshotData = await screenshot();
-
-            const { output } = await ai.generate({
-                prompt: [
-                    { media: { url: screenshotData } },
-                    { text: `From the screenshot, extract the "Land Value", "Value of improvements", and "Capital value (rating valuation)". Return the extracted data as a JSON object with keys: landValueByWeb, improvementsValueByWeb, ratingValueByWeb.` }
-                ],
-                output: {
-                    schema: GetStatutoryValuationOutputSchema,
-                },
-                model: 'googleai/gemini-2.5-flash-image-preview',
-            });
-            
-            if (!output) {
-                throw new Error('AI could not extract valuation data from the screenshot.');
-            }
-            return output;
-        });
-
-      if (!result) {
-        throw new Error('AI could not extract valuation data. The website might not have information for this address or the page structure has changed.');
+      if (!output) {
+        throw new Error('AI could not extract valuation data from the search results.');
       }
       
-      return GetStatutoryValuationOutputSchema.parse(result);
+      return GetStatutoryValuationOutputSchema.parse(output);
 
     } catch (error: any) {
         console.error("Error in getStatutoryValuationFlow:", error);
