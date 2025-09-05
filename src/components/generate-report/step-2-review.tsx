@@ -707,7 +707,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     />
 
                     <Tabs defaultValue={defaultTab}>
-                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-7">
+                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-6">
                         {tabKeys.map(key => (
                         <TabsTrigger key={key} value={key}>
                             {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
