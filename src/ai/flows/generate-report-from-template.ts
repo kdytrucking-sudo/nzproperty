@@ -72,19 +72,16 @@ const prepareTemplateData = async (data: any) => {
   let replacementCount = 0;
 
   const countAndSetReplacement = (key: string, value: any) => {
+    const normalizedValue = normalizeNewlines(value);
+    templateData[key] = normalizedValue;
+    // Only count non-empty, non-N/A strings as actual replacements
     if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== 'N/A') {
-      const normalizedValue = normalizeNewlines(value);
-      templateData[key] = normalizedValue;
       replacementCount++;
     } else if (Array.isArray(value)) {
-      templateData[key] = value;
-      replacementCount++; // 数组作为一次替换计数
+       // Count each item in the array if it contributes content
+       replacementCount += value.reduce((acc, sale) => acc + Object.values(sale).filter(v => v).length > 0 ? 1 : 0, 0);
     } else if (value !== undefined && value !== null && value !== '') {
-      const normalizedValue = normalizeNewlines(value);
-      templateData[key] = normalizedValue;
-      replacementCount++;
-    } else {
-      templateData[key] = '';
+       replacementCount++;
     }
   };
 
@@ -146,12 +143,11 @@ const prepareTemplateData = async (data: any) => {
       Object.keys(sale).forEach((k) => {
         const v = sale[k] ?? '';
         n[k] = normalizeNewlines(v);
-        if (typeof v === 'string' && v.trim() !== '' && v.trim() !== 'N/A') {
-          replacementCount++;
-        }
       });
       return n;
     });
+    // For arrays, the replacement count logic is now more granular inside countAndSetReplacement
+    countAndSetReplacement('comparableSales', (data as any).comparableSales);
   } else {
     templateData['comparableSales'] = [];
   }
@@ -185,6 +181,8 @@ const generateReportFromTemplateFlow = ai.defineFlow(
             end: ']',
           },
           linebreaks: true,
+          // This is the crucial fix: It ensures that any null or undefined values in the data
+          // are replaced with an empty string, preventing the engine from creating invalid XML.
           nullGetter: () => "", 
         });
         
@@ -194,6 +192,8 @@ const generateReportFromTemplateFlow = ai.defineFlow(
 
         try {
           doc.render();
+          // This call was removed in a previous step but is safe to keep.
+          // It handles intentional soft line breaks within the template data.
           convertSoftBreaksToHardParagraphs(doc.getZip());
         } catch (error: any) {
           console.error('Docxtemplater rendering error:', JSON.stringify(error, null, 2));
