@@ -229,7 +229,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       }
       secondSentence += ' or of similar linings.';
 
-      const fullBrief = `${firstSentence}\n${secondSentence}`;
+      const fullBrief = `${firstSentence}\\n${secondSentence}`;
       form.setValue('constructionBrief.finalBrief', fullBrief);
   };
 
@@ -350,8 +350,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                 render={({ field }) => (
                   <>
                     {options.length > 0 ? (
-                       <RadioGroup
-                          onValueChange={(value) => field.onChange(value)}
+                      <RadioGroup
+                          onValueChange={field.onChange}
                           value={field.value || ''}
                           className="flex flex-col space-y-2"
                         >
