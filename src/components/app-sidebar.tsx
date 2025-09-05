@@ -47,11 +47,6 @@ export function AppSidebar() {
       icon: MessageSquareQuote,
     },
     {
-      href: '/construction-brief',
-      label: 'Construction Brief',
-      icon: Construction,
-    },
-    {
       href: '/manage-templates',
       label: 'Manage Templates',
       icon: FileText,
