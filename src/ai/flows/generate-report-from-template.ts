@@ -127,8 +127,6 @@ const prepareTemplateData = async (data: any) => {
       OperativeZone: 'Replace_Zone',
       ZoningOperative: 'Replace_ZoningOperative',
       ZoningPlanChange78: 'Replace_ZoningPlanChange78',
-      Disclosure: 'Replace_Disclosure',
-      MarketComment: 'Replace_MarketComment',
     };
     Object.keys((data as any).commentary).forEach((k) => {
       const templateKey = map[k as keyof typeof map];
