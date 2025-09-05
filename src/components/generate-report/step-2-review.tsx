@@ -33,6 +33,8 @@ const commentarySchema = z.object({
   LIM: z.string().optional(),
   PC78: z.string().optional(),
   OperativeZone: z.string().optional(),
+  ZoningOperative: z.string().optional(),
+  ZoningPlanChange78: z.string().optional(),
 });
 
 const constructionBriefSchema = z.object({
@@ -151,6 +153,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         LIM: '',
         PC78: '',
         OperativeZone: '',
+        ZoningOperative: '',
+        ZoningPlanChange78: '',
       },
       constructionBrief: {
         generalConstruction: [],
@@ -253,6 +257,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         form.setValue('commentary.LIM', commentaryOpts.LIM?.[0] || '');
         form.setValue('commentary.PC78', commentaryOpts.PC78?.[0] || '');
         form.setValue('commentary.OperativeZone', commentaryOpts.OperativeZone?.[0] || '');
+        form.setValue('commentary.ZoningOperative', commentaryOpts.ZoningOperative?.[0] || '');
+        form.setValue('commentary.ZoningPlanChange78', commentaryOpts.ZoningPlanChange78?.[0] || '');
 
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load initial data', description: error.message });
@@ -322,12 +328,18 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         { key: 'LIM', label: 'Land Information Memorandum', placeholder: 'Replace_LIM' },
         { key: 'PC78', label: 'Plan Change 78: Intensification', placeholder: 'Replace_PC78' },
         { key: 'OperativeZone', label: 'Operative Zone', placeholder: 'Replace_Zone' },
+        { key: 'ZoningOperative', label: 'Zoning Operative', placeholder: 'Replace_ZoningOperative' },
+        { key: 'ZoningPlanChange78', label: 'Zoning Plan Change 78', placeholder: 'Replace_ZoningPlanChange78' },
     ];
 
     return (
       <div className="space-y-6 pt-4">
         {commentaryFields.map(({ key, label, placeholder }) => {
           const options = commentaryOptions[key] || [];
+          // Skip rendering if the key doesn't exist in commentaryOptions, it means it's not a valid key from the schema.
+          if (!commentaryOptions.hasOwnProperty(key)) {
+            return null;
+          }
           return (
             <div key={key} className="space-y-4 rounded-md border p-4">
               <h3 className="font-medium">{label} <code className="ml-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[{placeholder}]</code></h3>
@@ -335,7 +347,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
               {options.length > 0 ? (
                 <RadioGroup
                   onValueChange={(value) => form.setValue(`commentary.${key}`, value)}
-                  defaultValue={options[0]}
+                  defaultValue={form.getValues(`commentary.${key}`) || options[0]}
                   className="flex flex-col space-y-2"
                 >
                   {options.map((option, index) => (

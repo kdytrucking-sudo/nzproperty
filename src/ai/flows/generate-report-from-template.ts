@@ -18,6 +18,44 @@ import initialJsonStructure from '@/lib/json-structure.json';
 import globalContent from '@/lib/global-content.json';
 import { contentFields } from '@/lib/content-config';
 
+
+// 把各种换行统一成 \n，并把字面量 "\n" 变成真正换行
+const normalizeNewlines = (s: string) =>
+  typeof s === 'string'
+    ? s.replace(/\\n/g, '\n').replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+    : s;
+
+const convertSoftBreaksToHardParagraphs = (zip: any) => {
+  const targets = Object.keys(zip.files).filter((name) =>
+    /^word\/(document|header\d+|footer\d+|footnotes|endnotes)\.xml$/.test(name)
+  );
+
+  const PARAGRAPH_BLOCK = /<w:p\b[^>]*>[\s\S]*?<\/w:p>/g;
+  const SOFT_BREAK = /<w:br\b[^\/]*\/>/g;
+
+  targets.forEach((name) => {
+    const file = zip.file(name);
+    if (!file) return;
+
+    let xml = file.asText();
+    
+    let hasReplaced = false;
+
+    xml = xml.replace(PARAGRAPH_BLOCK, (pBlock) => {
+       if (SOFT_BREAK.test(pBlock)) {
+           hasReplaced = true;
+           return pBlock.replace(SOFT_BREAK, '</w:t></w:r></w:p><w:p><w:r><w:t>');
+       }
+       return pBlock;
+    });
+
+    if (hasReplaced) {
+        zip.file(name, xml);
+    }
+  });
+};
+
+
 const GenerateReportInputSchema = z.object({
   templateFileName: z.string().describe('The file name of the .docx template stored on the server.'),
   data: z.any().describe('The JSON data to populate the template with.'),
@@ -32,100 +70,101 @@ const GenerateReportOutputSchema = z.object({
 });
 export type GenerateReportOutput = z.infer<typeof GenerateReportOutputSchema>;
 
-// This function prepares the data for docxtemplater based on the user's logic.
 const prepareTemplateData = async (data: any) => {
-    const templateData: { [key: string]: any } = {};
-    let replacementCount = 0;
+  const templateData: Record<string, any> = {};
+  let replacementCount = 0;
 
-    const countAndSetReplacement = (key: string, value: any) => {
-        if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== 'N/A') {
-            templateData[key] = value;
-            replacementCount++;
-        } else if (Array.isArray(value)) {
-             templateData[key] = value;
-             replacementCount++; // Count the array as one replacement
-        } else {
-             templateData[key] = '';
-        }
-    };
-    
-    // 1. Process PDF-extracted data based on json-structure.json mapping
-    Object.keys(initialJsonStructure).forEach(sectionKey => {
-        const sectionSchema = initialJsonStructure[sectionKey as keyof typeof initialJsonStructure];
-        const dataSection = data?.[sectionKey];
-
-        if (dataSection) {
-             Object.keys(sectionSchema).forEach(fieldKey => {
-                const placeholder = sectionSchema[fieldKey as keyof typeof sectionSchema];
-                if (typeof placeholder === 'string' && placeholder.startsWith('[extracted_')) {
-                    const templateKey = placeholder.replace('[extracted_', 'Replace_').replace(']', '');
-                    let value = dataSection[fieldKey];
-                    countAndSetReplacement(templateKey, value);
-                }
-            });
-        }
-    });
-
-    // Add Instructed By manually as it's not in the original JSON structure for replacement
-    if (data?.Valuation?.['Instructed By']) {
-        countAndSetReplacement('Replace_ InstructedBy', data.Valuation['Instructed By']);
+  const countAndSetReplacement = (key: string, value: any) => {
+    if (typeof value === 'string') {
+       value = normalizeNewlines(value);
     }
     
-    // 2. Process global content from manage-content page
-    contentFields.forEach(field => {
-        const templateKey = field.templateKey.replace(/\[|\]/g, ''); 
-        let contentValue = (globalContent as Record<string, string>)[field.name as keyof typeof globalContent];
-        countAndSetReplacement(templateKey, contentValue);
+    if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== 'N/A') {
+      templateData[key] = value;
+      replacementCount++;
+    } else if (Array.isArray(value)) {
+      templateData[key] = value;
+      replacementCount++; // 数组作为一次替换计数
+    } else if (value !== undefined && value !== null && value !== '') {
+      templateData[key] = value;
+      replacementCount++;
+    } else {
+      templateData[key] = '';
+    }
+  };
+
+  // 1) 根据 initialJsonStructure 的映射填充
+  Object.keys(initialJsonStructure as Record<string, unknown>).forEach((sectionKey) => {
+    const sectionSchema = (initialJsonStructure as Record<string, any>)[sectionKey] ?? {};
+    const dataSection = (data as Record<string, any>)?.[sectionKey];
+
+    Object.keys(sectionSchema as Record<string, any>).forEach((fieldKey: string) => {
+      const placeholder = (sectionSchema as Record<string, any>)[fieldKey] as unknown;
+      if (typeof placeholder === 'string' && (placeholder as string).startsWith('[extracted_')) {
+        const templateKey = (placeholder as string).replace('[extracted_', 'Replace_').replace(']', '');
+        const value = dataSection?.[fieldKey];
+        countAndSetReplacement(templateKey, value);
+      }
     });
+  });
 
-    // 3. Process the new commentary fields
-    if (data.commentary) {
-      const placeholderMapping: { [key: string]: string } = {
-        PreviousSale: 'Replace_PreviousSale',
-        ContractSale: 'Replace_ContractSale',
-        SuppliedDocumentation: 'Replace_SuppliedDoc',
-        RecentOrProvided: 'Replace_RecentOrProvided',
-        LIM: 'Replace_LIM',
-        PC78: 'Replace_PC78',
-        OperativeZone: 'Replace_Zone'
-      };
+  // 2) Instructed By（原结构之外的补充）
+  if (data?.Valuation?.['Instructed By']) {
+    countAndSetReplacement('Replace_ InstructedBy', data.Valuation['Instructed By']);
+  }
 
-      Object.keys(data.commentary).forEach(key => {
-        const templateKey = placeholderMapping[key as keyof typeof placeholderMapping];
-        if (templateKey) {
-            let value = data.commentary[key];
-            countAndSetReplacement(templateKey, value);
+  // 3) 全局内容（manage-content）
+  contentFields.forEach((field) => {
+    const templateKey = field.templateKey.replace(/\[|\]/g, '');
+    const contentValue = (globalContent as Record<string, any>)[field.name as keyof typeof globalContent];
+    countAndSetReplacement(templateKey, contentValue);
+  });
+
+  // 4) commentary
+  if ((data as any)?.commentary) {
+    const map: Record<string, string> = {
+      PreviousSale: 'Replace_PreviousSale',
+      ContractSale: 'Replace_ContractSale',
+      SuppliedDocumentation: 'Replace_SuppliedDoc',
+      RecentOrProvided: 'Replace_RecentOrProvided',
+      LIM: 'Replace_LIM',
+      PC78: 'Replace_PC78',
+      OperativeZone: 'Replace_Zone',
+      ZoningOperative: 'Replace_ZoningOperative',
+      ZoningPlanChange78: 'Replace_ZoningPlanChange78',
+    };
+    Object.keys((data as any).commentary).forEach((k) => {
+      const templateKey = map[k];
+      if (templateKey) {
+        countAndSetReplacement(templateKey, (data as any).commentary[k]);
+      }
+    });
+  }
+
+  // 5) constructionBrief
+  if ((data as any)?.constructionBrief?.finalBrief) {
+    countAndSetReplacement('Replace_ConstructionBrief', (data as any).constructionBrief.finalBrief);
+  }
+
+  // 6) comparableSales
+  if (Array.isArray((data as any)?.comparableSales)) {
+    templateData['comparableSales'] = (data as any).comparableSales.map((sale: any) => {
+      const n: Record<string, any> = {};
+      Object.keys(sale).forEach((k) => {
+        const v = sale[k] ?? '';
+        n[k] = typeof v === 'string' ? normalizeNewlines(v) : v;
+        if (typeof v === 'string' && v.trim() !== '' && v.trim() !== 'N/A') {
+          replacementCount++;
         }
       });
-    }
-    
-    // 4. Process new construction brief content
-    if (data.constructionBrief?.finalBrief) {
-        countAndSetReplacement('Replace_ConstructionBrief', data.constructionBrief.finalBrief);
-    }
+      return n;
+    });
+  } else {
+    templateData['comparableSales'] = [];
+  }
 
-
-    // 5. Process comparableSales as a loopable array for {#comparableSales} tag
-    if (data.comparableSales && Array.isArray(data.comparableSales)) {
-        templateData['comparableSales'] = data.comparableSales.map((sale: any) => {
-            const newSale: { [key: string]: any } = {};
-            Object.keys(sale).forEach(key => {
-                const value = sale[key] || '';
-                newSale[key] = value;
-                 // We count replacements inside the loop for each valid field
-                if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== 'N/A') {
-                   replacementCount++;
-                }
-            });
-            return newSale;
-        });
-    } else {
-      templateData['comparableSales'] = [];
-    }
-    
-    return { templateData, replacementCount };
+  return { templateData, replacementCount };
 };
-
 
 export async function generateReportFromTemplate(
   input: GenerateReportInput
@@ -152,7 +191,6 @@ const generateReportFromTemplateFlow = ai.defineFlow(
             start: '[',
             end: ']',
           },
-          // linebreaks creates soft-breaks for single-line strings with \n
           linebreaks: true,
           nullGetter: () => "", 
         });
@@ -162,8 +200,8 @@ const generateReportFromTemplateFlow = ai.defineFlow(
         doc.setData(templateData);
 
         try {
-          // This is where the magic happens.
           doc.render();
+          convertSoftBreaksToHardParagraphs(doc.getZip());
         } catch (error: any) {
           console.error('Docxtemplater rendering error:', JSON.stringify(error, null, 2));
           let errorMessage = 'Failed to render the document due to a template error.';
@@ -171,7 +209,6 @@ const generateReportFromTemplateFlow = ai.defineFlow(
             const firstError = error.properties.errors[0];
             errorMessage += ` Details: ${firstError.properties.explanation} (ID: ${firstError.id})`;
           }
-          // The detailed error is re-thrown to be caught by the final catch block.
           throw new Error(errorMessage);
         }
 
@@ -192,7 +229,6 @@ const generateReportFromTemplateFlow = ai.defineFlow(
         if(error.code === 'ENOENT') {
             throw new Error(`Template file "${templateFileName}" not found on the server.`);
         }
-        // This is the generic error catch-all.
         throw new Error(error.message || `Failed to read or process the template file.`);
     }
   }
