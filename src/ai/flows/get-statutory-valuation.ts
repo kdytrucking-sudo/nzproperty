@@ -47,6 +47,7 @@ const getWebValuation = ai.defineTool(
         key: apiKey,
         cx: searchEngineId,
         q: `${propertyAddress} valuation site:aucklandcouncil.govt.nz`,
+        num: 5,
       };
   
       try {
@@ -55,7 +56,7 @@ const getWebValuation = ai.defineTool(
         if (items.length === 0) {
             return { snippets: [], error: `No results found for the address "${propertyAddress}".` };
         }
-        const snippets = items.map((item: any) => item.snippet || item.title).slice(0, 5); // Get top 5 snippets
+        const snippets = items.map((item: any) => item.snippet || item.title);
         return { snippets };
       } catch (error: any) {
         console.error('Google Custom Search API error:', error.response?.data || error.message);
