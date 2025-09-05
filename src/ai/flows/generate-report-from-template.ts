@@ -327,5 +327,3 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     }
   }
 );
-
-    

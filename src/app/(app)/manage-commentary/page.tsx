@@ -81,6 +81,8 @@ export default function ManageCommentaryPage() {
       LIM: [],
       PC78: [],
       OperativeZone: [],
+      ZoningOperative: [],
+      ZoningPlanChange78: [],
     },
   });
 
@@ -210,6 +212,18 @@ export default function ManageCommentaryPage() {
                 name="OperativeZone"
                 label="Operative Zone"
                 description="Manage options for the [Replace_Zone] section."
+            />
+            <CommentaryFieldArray 
+                control={form.control}
+                name="ZoningOperative"
+                label="Zoning Operative"
+                description="Manage options for the [Replace_ZoningOperative] section."
+            />
+            <CommentaryFieldArray 
+                control={form.control}
+                name="ZoningPlanChange78"
+                label="Zoning Plan Change 78"
+                description="Manage options for the [Replace_ZoningPlanChange78] section."
             />
              {isDirty && (
                  <div className="fixed bottom-6 right-6 z-50 w-full max-w-md">

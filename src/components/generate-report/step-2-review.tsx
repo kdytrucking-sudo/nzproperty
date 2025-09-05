@@ -32,6 +32,8 @@ const commentarySchema = z.object({
   LIM: z.string().optional(),
   PC78: z.string().optional(),
   OperativeZone: z.string().optional(),
+  ZoningOperative: z.string().optional(),
+  ZoningPlanChange78: z.string().optional(),
 });
 
 const constructionBriefSchema = z.object({
@@ -150,6 +152,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         LIM: '',
         PC78: '',
         OperativeZone: '',
+        ZoningOperative: '',
+        ZoningPlanChange78: '',
       },
       constructionBrief: {
         generalConstruction: [],
@@ -253,6 +257,8 @@ ${secondSentence}`;
         form.setValue('commentary.LIM', commentaryOpts.LIM?.[0] || '');
         form.setValue('commentary.PC78', commentaryOpts.PC78?.[0] || '');
         form.setValue('commentary.OperativeZone', commentaryOpts.OperativeZone?.[0] || '');
+        form.setValue('commentary.ZoningOperative', commentaryOpts.ZoningOperative?.[0] || '');
+        form.setValue('commentary.ZoningPlanChange78', commentaryOpts.ZoningPlanChange78?.[0] || '');
 
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load initial data', description: error.message });
@@ -317,6 +323,8 @@ ${secondSentence}`;
         { key: 'LIM', label: 'Land Information Memorandum', placeholder: '[Replace_LIM]' },
         { key: 'PC78', label: 'Plan Change 78: Intensification', placeholder: '[Replace_PC78]' },
         { key: 'OperativeZone', label: 'Operative Zone', placeholder: '[Replace_Zone]' },
+        { key: 'ZoningOperative', label: 'Zoning Operative', placeholder: '[Replace_ZoningOperative]' },
+        { key: 'ZoningPlanChange78', label: 'Zoning Plan Change 78', placeholder: '[Replace_ZoningPlanChange78]' },
     ];
 
     return (
