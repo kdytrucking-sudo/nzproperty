@@ -629,8 +629,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       }
       secondSentence += ' or of similar linings.';
 
-      const fullBrief = `${firstSentence}
-${secondSentence}`;
+      const fullBrief = `${firstSentence}\n${secondSentence}`;
       form.setValue('constructionBrief.finalBrief', fullBrief);
   };
 

@@ -58,7 +58,7 @@ export function AppSidebar() {
     },
     {
       href: '/json-editor',
-      label: 'JSON Editor',
+      label: 'AI Settings',
       icon: FileJson,
     },
   ];
