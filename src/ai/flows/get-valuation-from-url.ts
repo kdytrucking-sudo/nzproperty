@@ -1,16 +1,14 @@
 'use server';
 /**
- * @fileOverview A plant problem diagnosis AI agent.
+ * @fileOverview Retrieves statutory valuation data from a given URL.
  *
- * - diagnosePlant - A function that handles the plant diagnosis process.
- * - DiagnosePlantInput - The input type for the diagnosePlant function.
- * - DiagnosePlantOutput - The return type for the diagnosePlant function.
+ * - getValuationFromUrl - A function that takes a URL and returns valuation data.
+ * - GetValuationFromUrlInput - The input type for the function.
+ * - GetValuationFromUrlOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-import fs from 'fs/promises';
-import path from 'path';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const GetValuationFromUrlInputSchema = z.object({
   url: z.string().url().describe('The URL of the property valuation page.'),
@@ -25,8 +23,8 @@ const GetValuationFromUrlOutputSchema = z.object({
 export type GetValuationFromUrlOutput = z.infer<typeof GetValuationFromUrlOutputSchema>;
 
 const prompt = ai.definePrompt({
-    name: 'extractValuationFromUrl',
-    system: 'You are an expert data extractor. Analyze the provided text content from a website and extract the required valuation figures. The values are typically prefixed with labels like "Land value", "Value of improvements", and "Capital value (rating valuation)". Return the data in the specified JSON format. If a value cannot be found in the snippets, return "N/A" for that field.',
+    name: 'extractValuationFromUrlPrompt',
+    system: 'You are an expert data extractor. Analyze the provided text content from a website and extract the required valuation figures. The values are typically prefixed with labels like "Land value", "Value of improvements", and "Capital value (rating valuation)". Return the data in the specified JSON format. If a value cannot be found in the page content, return "N/A" for that field.',
     input: { schema: z.object({ url: z.string() }) },
     output: { schema: GetValuationFromUrlOutputSchema },
     prompt: `Please extract the valuation data from the content of the following URL: {{{url}}}`
@@ -47,6 +45,7 @@ const getValuationFromUrlFlow = ai.defineFlow(
   },
   async ({ url }) => {
     try {
+      // Note: The 'gemini-pro' model with a prompt including a URL will automatically fetch and analyze the URL's content.
       const { output } = await prompt({ url });
       
       if (!output) {

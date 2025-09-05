@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, PlusCircle, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, CheckCircle, XCircle, Copy, ExternalLink } from 'lucide-react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -27,6 +27,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { convertNumberToWords } from '@/ai/flows/convert-number-to-words';
 import { Separator } from '@/components/ui/separator';
 import { getStatutoryValuation } from '@/ai/flows/get-statutory-valuation';
+import { getValuationFromUrl } from '@/ai/flows/get-valuation-from-url';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 const commentarySchema = z.object({
   PreviousSale: z.string().optional(),
@@ -361,9 +363,9 @@ function StatutoryValuationTab({ form }: { form: any }) {
         <div className="space-y-6 pt-4">
             <Card>
                 <CardHeader>
-                    <CardTitle>Retrieve Statutory Valuation</CardTitle>
+                    <CardTitle>Retrieve Statutory Valuation (Automated)</CardTitle>
                     <CardDescription>
-                        Fetch valuation data from the Auckland Council website for the address below.
+                        Attempt to automatically fetch valuation data from the Auckland Council website. If this fails, please use the &quot;Manual Valuation&quot; tab.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -427,6 +429,103 @@ function StatutoryValuationTab({ form }: { form: any }) {
         </div>
     );
 }
+
+// Manual Valuation Tab Component
+function ManualValuationTab({ form }: { form: any }) {
+    const { toast } = useToast();
+    const [isExtracting, setIsExtracting] = React.useState(false);
+    const [url, setUrl] = React.useState('');
+    const { getValues, setValue } = form;
+    const councilWebsite = 'https://www.aucklandcouncil.govt.nz/property-rates-valuations/pages/find-property-rates-valuation.aspx';
+
+    const propertyAddress = getValues('data.Property.Property Address');
+
+    const handleCopyAddress = () => {
+        if (!propertyAddress) {
+            toast({ variant: 'destructive', title: 'Address Missing' });
+            return;
+        }
+        navigator.clipboard.writeText(propertyAddress);
+        toast({ title: 'Address Copied!', description: 'Please paste it into the search box on the council website.' });
+    };
+
+    const handleExtract = async () => {
+        if (!url || !URL.canParse(url)) {
+            toast({ variant: 'destructive', title: 'Invalid URL', description: 'Please paste a valid URL from the council website.' });
+            return;
+        }
+        setIsExtracting(true);
+        try {
+            const result = await getValuationFromUrl({ url });
+            setValue('statutoryValuation.landValueByWeb', result.landValueByWeb, { shouldDirty: true });
+            setValue('statutoryValuation.improvementsValueByWeb', result.improvementsValueByWeb, { shouldDirty: true });
+            setValue('statutoryValuation.ratingValueByWeb', result.ratingValueByWeb, { shouldDirty: true });
+            toast({ title: 'Success', description: 'Statutory valuation data has been extracted and populated.' });
+        } catch (error: any) {
+            console.error('Failed to extract from URL:', error);
+            toast({ variant: 'destructive', title: 'Extraction Failed', description: error.message });
+        } finally {
+            setIsExtracting(false);
+        }
+    };
+
+    return (
+        <div className="space-y-6 pt-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Manual Valuation Retrieval</CardTitle>
+                    <CardDescription>
+                        Follow these steps if the automated retrieval fails.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <Alert>
+                        <AlertTitle>Step 1: Open Website & Find Property</AlertTitle>
+                        <AlertDescription>
+                            <p>Open the council website, copy the address below, and search for the property. Once you are on the page showing the valuation details, copy the URL from your browser&apos;s address bar.</p>
+                            <div className="flex items-center gap-4 mt-4">
+                                <Button type="button" variant="outline" onClick={() => window.open(councilWebsite, '_blank')}>
+                                    <ExternalLink className="mr-2 h-4 w-4" /> Open Council Website
+                                </Button>
+                            </div>
+                        </AlertDescription>
+                    </Alert>
+
+                     <Alert>
+                        <AlertTitle>Step 2: Copy Address</AlertTitle>
+                        <AlertDescription>
+                            <p className="text-sm font-medium p-3 bg-muted rounded-md my-2">
+                                {propertyAddress || 'N/A'}
+                            </p>
+                             <Button type="button" variant="secondary" onClick={handleCopyAddress} disabled={!propertyAddress}>
+                                <Copy className="mr-2 h-4 w-4" /> Copy Address
+                            </Button>
+                        </AlertDescription>
+                    </Alert>
+
+                     <Alert>
+                        <AlertTitle>Step 3: Extract Data from URL</AlertTitle>
+                        <AlertDescription>
+                            <p>Paste the final URL here and click extract. The results will be populated in the &quot;Statutory Valuation&quot; tab fields.</p>
+                            <div className="flex items-center gap-2 mt-4">
+                                <Input
+                                    value={url}
+                                    onChange={(e) => setUrl(e.target.value)}
+                                    placeholder="https://... Paste URL here"
+                                />
+                                <Button type="button" onClick={handleExtract} disabled={isExtracting}>
+                                    {isExtracting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Extract from URL
+                                </Button>
+                            </div>
+                        </AlertDescription>
+                    </Alert>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
 
 const renderFormSection = (form: any, path: string, data: any, structure: any) => {
   if (typeof data !== 'object' || data === null || Array.isArray(data) || typeof structure !== 'object' || structure === null) {
@@ -942,7 +1041,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     />
 
                     <Tabs defaultValue={defaultTab}>
-                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-7">
+                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-8">
                         {tabKeys.map(key => (
                         <TabsTrigger key={key} value={key}>
                             {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
@@ -951,6 +1050,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                         {extractedData.comparableSales && <TabsTrigger value="comparableSales">Comparables</TabsTrigger>}
                         <TabsTrigger value="marketValuation">Market Valuation</TabsTrigger>
                         <TabsTrigger value="statutoryValuation">Statutory Valuation</TabsTrigger>
+                        <TabsTrigger value="manualValuation">Manual Valuation</TabsTrigger>
                         <TabsTrigger value="commentary">Commentary</TabsTrigger>
                         <TabsTrigger value="constructionBrief">Construction Brief</TabsTrigger>
                     </TabsList>
@@ -991,6 +1091,9 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     </TabsContent>
                     <TabsContent value="statutoryValuation">
                         <StatutoryValuationTab form={form} />
+                    </TabsContent>
+                    <TabsContent value="manualValuation">
+                        <ManualValuationTab form={form} />
                     </TabsContent>
                     <TabsContent value="commentary">
                         {renderCommentarySection()}
