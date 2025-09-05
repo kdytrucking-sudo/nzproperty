@@ -116,7 +116,8 @@ export default function ConstructionBriefPage() {
         }
         secondSentence += ' or of similar linings.';
 
-        const fullBrief = `${firstSentence}\n${secondSentence}`;
+        const fullBrief = `${firstSentence}
+${secondSentence}`;
         form.setValue('finalBrief', fullBrief);
     };
     
