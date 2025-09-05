@@ -98,7 +98,7 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
                 <div className="flex items-center justify-between">
                   <FormLabel>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</FormLabel>
                   {templateTag && (
-                    <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[{templateTag}]</code>
+                    <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{templateTag}</code>
                   )}
                 </div>
                 <FormControl>
@@ -229,7 +229,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       }
       secondSentence += ' or of similar linings.';
 
-      const fullBrief = `${firstSentence}\\n${secondSentence}`;
+      const fullBrief = `${firstSentence}\n${secondSentence}`;
       form.setValue('constructionBrief.finalBrief', fullBrief);
   };
 
@@ -308,28 +308,20 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   }
 
   const renderCommentarySection = () => {
-    if (isLoadingInitialData) {
-      return <div className="space-y-6 pt-4">
-        <Skeleton className="h-8 w-1/4"/>
-        <Skeleton className="h-20 w-full"/>
-        <Skeleton className="h-8 w-1/4"/>
-        <Skeleton className="h-20 w-full"/>
-      </div>
-    }
     if (!commentaryOptions) {
         return <div className="text-center py-10 text-muted-foreground">Could not load commentary options. Please define them in the 'Manage Commentary' page.</div>
     }
     
     const commentaryFields: { key: keyof CommentaryOptionsData, label: string, placeholder?: string }[] = [
-        { key: 'PreviousSale', label: 'Previous Sale', placeholder: 'Replace_PreviousSale' },
-        { key: 'ContractSale', label: 'Contract for Sale', placeholder: 'Replace_ContractSale' },
-        { key: 'SuppliedDocumentation', label: 'Supplied Documentation', placeholder: 'Replace_SuppliedDoc' },
-        { key: 'RecentOrProvided', label: 'Recent/Provided', placeholder: 'Replace_RecentOrProvided' },
-        { key: 'LIM', label: 'Land Information Memorandum', placeholder: 'Replace_LIM' },
-        { key: 'PC78', label: 'Plan Change 78: Intensification', placeholder: 'Replace_PC78' },
-        { key: 'OperativeZone', label: 'Operative Zone', placeholder: 'Replace_Zone' },
-        { key: 'ZoningOperative', label: 'Zoning Operative', placeholder: 'Replace_ZoningOperative' },
-        { key: 'ZoningPlanChange78', label: 'Zoning Plan Change 78', placeholder: 'Replace_ZoningPlanChange78' },
+        { key: 'PreviousSale', label: 'Previous Sale', placeholder: '[Replace_PreviousSale]' },
+        { key: 'ContractSale', label: 'Contract for Sale', placeholder: '[Replace_ContractSale]' },
+        { key: 'SuppliedDocumentation', label: 'Supplied Documentation', placeholder: '[Replace_SuppliedDoc]' },
+        { key: 'RecentOrProvided', label: 'Recent/Provided', placeholder: '[Replace_RecentOrProvided]' },
+        { key: 'LIM', label: 'Land Information Memorandum', placeholder: '[Replace_LIM]' },
+        { key: 'PC78', label: 'Plan Change 78: Intensification', placeholder: '[Replace_PC78]' },
+        { key: 'OperativeZone', label: 'Operative Zone', placeholder: '[Replace_Zone]' },
+        { key: 'ZoningOperative', label: 'Zoning Operative', placeholder: '[Replace_ZoningOperative]' },
+        { key: 'ZoningPlanChange78', label: 'Zoning Plan Change 78', placeholder: '[Replace_ZoningPlanChange78]' },
     ];
 
     return (
@@ -342,8 +334,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
           }
           return (
             <div key={key} className="space-y-4 rounded-md border p-4">
-              <h3 className="font-medium">{label} {placeholder && <code className="ml-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[{placeholder}]</code>}</h3>
-              
+              <h3 className="font-medium">{label} {placeholder && <code className="ml-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{placeholder}</code>}</h3>
               <FormField
                 control={form.control}
                 name={`commentary.${key}`}
@@ -519,100 +510,108 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <FormField
-              control={form.control}
-              name="templateFileName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Select Report Template</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a .docx template to use..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {isLoadingInitialData ? (
-                         <SelectItem value="loading" disabled>Loading templates...</SelectItem>
-                      ) : templates.length === 0 ? (
-                        <SelectItem value="no-templates" disabled>
-                          No templates found. Upload in 'Manage Templates'.
-                        </SelectItem>
-                      ) : (
-                        templates.map(templateName => (
-                          <SelectItem key={templateName} value={templateName}>{templateName}</SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {isLoadingInitialData ? (
+                <div className="space-y-6">
+                    <Skeleton className="h-10 w-1/3" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-64 w-full" />
+                </div>
+            ) : (
+                <>
+                    <FormField
+                    control={form.control}
+                    name="templateFileName"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Select Report Template</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a .docx template to use..." />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            {templates.length === 0 ? (
+                                <SelectItem value="no-templates" disabled>
+                                No templates found. Upload in 'Manage Templates'.
+                                </SelectItem>
+                            ) : (
+                                templates.map(templateName => (
+                                <SelectItem key={templateName} value={templateName}>{templateName}</SelectItem>
+                                ))
+                            )}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
 
-            <Tabs defaultValue={defaultTab}>
-              <TabsList className="grid w-full grid-cols-1 md:grid-cols-6">
-                {tabKeys.map(key => (
-                  <TabsTrigger key={key} value={key}>
-                    {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                  </TabsTrigger>
-                ))}
-                {extractedData.comparableSales && <TabsTrigger value="comparableSales">Comparables</TabsTrigger>}
-                <TabsTrigger value="commentary">Commentary</TabsTrigger>
-                <TabsTrigger value="constructionBrief">Construction Brief</TabsTrigger>
-              </TabsList>
+                    <Tabs defaultValue={defaultTab}>
+                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-6">
+                        {tabKeys.map(key => (
+                        <TabsTrigger key={key} value={key}>
+                            {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                        </TabsTrigger>
+                        ))}
+                        {extractedData.comparableSales && <TabsTrigger value="comparableSales">Comparables</TabsTrigger>}
+                        <TabsTrigger value="commentary">Commentary</TabsTrigger>
+                        <TabsTrigger value="constructionBrief">Construction Brief</TabsTrigger>
+                    </TabsList>
 
-              {tabKeys.map(key => (
-                <TabsContent key={key} value={key} className="space-y-4 pt-4">
-                  {renderFormSection(form, `data.${key}`, form.getValues(`data.${key}`), initialJsonStructure[key as keyof typeof initialJsonStructure])}
-                </TabsContent>
-              ))}
-
-              {extractedData.comparableSales && (
-                <TabsContent value="comparableSales" className="space-y-4 pt-4">
-                  <div className="space-y-6">
-                    {fields.map((field, index) => (
-                      <div key={field.id} className="relative rounded-md border p-4 pr-12">
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
-                          <FormField control={form.control} name={`data.comparableSales.${index}.compAddress`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name={`data.comparableSales.${index}.compSaleDate`} render={({ field }) => (<FormItem><FormLabel>Sale Date</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name={`data.comparableSales.${index}.compSalePrice`} render={({ field }) => (<FormItem><FormLabel>Sale Price</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormMessage>)} />
-                          <FormField control={form.control} name={`data.comparableSales.${index}.compLandArea`} render={({ field }) => (<FormItem><FormLabel>Land Area</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name={`data.comparableSales.${index}.compFloorArea`} render={({ field }) => (<FormItem><FormLabel>Floor Area</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                        <Button type="button" variant="destructive" size="icon" className="absolute right-2 top-2 h-7 w-7" onClick={() => remove(index)}>
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Remove Comparable</span>
-                        </Button>
-                      </div>
+                    {tabKeys.map(key => (
+                        <TabsContent key={key} value={key} className="space-y-4 pt-4">
+                        {renderFormSection(form, `data.${key}`, form.getValues(`data.${key}`), initialJsonStructure[key as keyof typeof initialJsonStructure])}
+                        </TabsContent>
                     ))}
-                    <Button type="button" variant="outline" size="sm" onClick={() => append({ compAddress: '', compSaleDate: '', compSalePrice: '', compLandArea: '', compFloorArea: '' })}>
-                      <PlusCircle className="mr-2 h-4 w-4" /> Add Comparable Sale
+
+                    {extractedData.comparableSales && (
+                        <TabsContent value="comparableSales" className="space-y-4 pt-4">
+                        <div className="space-y-6">
+                            {fields.map((field, index) => (
+                            <div key={field.id} className="relative rounded-md border p-4 pr-12">
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
+                                <FormField control={form.control} name={`data.comparableSales.${index}.compAddress`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name={`data.comparableSales.${index}.compSaleDate`} render={({ field }) => (<FormItem><FormLabel>Sale Date</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name={`data.comparableSales.${index}.compSalePrice`} render={({ field }) => (<FormItem><FormLabel>Sale Price</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormMessage>)} />
+                                <FormField control={form.control} name={`data.comparableSales.${index}.compLandArea`} render={({ field }) => (<FormItem><FormLabel>Land Area</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name={`data.comparableSales.${index}.compFloorArea`} render={({ field }) => (<FormItem><FormLabel>Floor Area</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                </div>
+                                <Button type="button" variant="destructive" size="icon" className="absolute right-2 top-2 h-7 w-7" onClick={() => remove(index)}>
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Remove Comparable</span>
+                                </Button>
+                            </div>
+                            ))}
+                            <Button type="button" variant="outline" size="sm" onClick={() => append({ compAddress: '', compSaleDate: '', compSalePrice: '', compLandArea: '', compFloorArea: '' })}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add Comparable Sale
+                            </Button>
+                        </div>
+                        </TabsContent>
+                    )}
+
+                    <TabsContent value="commentary">
+                        {renderCommentarySection()}
+                    </TabsContent>
+                    <TabsContent value="constructionBrief">
+                        {renderConstructionBriefSection()}
+                    </TabsContent>
+                    </Tabs>
+
+                    <div className="flex justify-between pt-4">
+                    <Button type="button" variant="outline" onClick={onBack}>
+                        Back
                     </Button>
-                  </div>
-                </TabsContent>
-              )}
-
-              <TabsContent value="commentary">
-                {renderCommentarySection()}
-              </TabsContent>
-              <TabsContent value="constructionBrief">
-                {renderConstructionBriefSection()}
-              </TabsContent>
-            </Tabs>
-
-            <div className="flex justify-between pt-4">
-              <Button type="button" variant="outline" onClick={onBack}>
-                Back
-              </Button>
-              <Button type="submit" disabled={isGenerating || templates.length === 0}>
-                {isGenerating ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</>
-                ) : (
-                  'Generate Final Report'
-                )}
-              </Button>
-            </div>
+                    <Button type="submit" disabled={isGenerating || templates.length === 0}>
+                        {isGenerating ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</>
+                        ) : (
+                        'Generate Final Report'
+                        )}
+                    </Button>
+                    </div>
+                </>
+            )}
           </form>
         </Form>
       </CardContent>
