@@ -231,24 +231,26 @@ const prepareTemplateData = async (data: any) => {
     countAndSetReplacement('Replace_ConstructionBrief', (data as any).constructionBrief.finalBrief);
   }
 
-  // 6) Market Valuation
-  if ((data as any)?.marketValuation?.marketValue) {
-    countAndSetReplacement('Replace_MarketValue', (data as any).marketValuation.marketValue);
-  }
-  if ((data as any)?.marketValuation?.marketValuation) {
-    countAndSetReplacement('Replace_MarketValuation', (data as any).marketValuation.marketValuation);
-  }
-  if ((data as any)?.marketValuation?.improvementsValueByValuer) {
-    countAndSetReplacement('Replace_ImprovementValueByValuer', (data as any).marketValuation.improvementsValueByValuer);
-  }
-  if ((data as any)?.marketValuation?.landValueByValuer) {
-    countAndSetReplacement('Replace_LandValueByValuer', (data as any).marketValuation.landValueByValuer);
-  }
-  if ((data as any)?.marketValuation?.chattelsValueByValuer) {
-    countAndSetReplacement('Replace_ChattelsByValuer', (data as any).marketValuation.chattelsValueByValuer);
-  }
-  if ((data as any)?.marketValuation?.marketValueByValuer) {
-    countAndSetReplacement('Replace_MarketValueByValuer', (data as any).marketValuation.marketValueByValuer);
+  // 6) marketValuation
+  if ((data as any)?.marketValuation) {
+    if ((data as any).marketValuation.marketValue) {
+        countAndSetReplacement('Replace_MarketValue', (data as any).marketValuation.marketValue);
+    }
+    if ((data as any).marketValuation.marketValuation) {
+        countAndSetReplacement('Replace_MarketValuation', (data as any).marketValuation.marketValuation);
+    }
+    if ((data as any).marketValuation.improvementsValueByValuer) {
+        countAndSetReplacement('Replace_ImprovementValueByValuer', (data as any).marketValuation.improvementsValueByValuer);
+    }
+    if ((data as any).marketValuation.landValueByValuer) {
+        countAndSetReplacement('Replace_LandValueByValuer', (data as any).marketValuation.landValueByValuer);
+    }
+    if ((data as any).marketValuation.chattelsValueByValuer) {
+        countAndSetReplacement('Replace_ChattelsByValuer', (data as any).marketValuation.chattelsValueByValuer);
+    }
+    if ((data as any).marketValuation.marketValueByValuer) {
+        countAndSetReplacement('Replace_MarketValueByValuer', (data as any).marketValuation.marketValueByValuer);
+    }
   }
 
   // 7) comparableSales
@@ -264,6 +266,13 @@ const prepareTemplateData = async (data: any) => {
     countAndSetReplacement('comparableSales', (data as any).comparableSales);
   } else {
     templateData['comparableSales'] = [];
+  }
+
+  // 8) statutoryValuation
+  if ((data as any)?.statutoryValuation) {
+    countAndSetReplacement('Replace_LandValueByWeb', (data as any).statutoryValuation.landValueByWeb);
+    countAndSetReplacement('Replace_ValueOfImprovementsByWeb', (data as any).statutoryValuation.improvementsValueByWeb);
+    countAndSetReplacement('Replace_RatingValueByWeb', (data as any).statutoryValuation.ratingValueByWeb);
   }
 
   return { templateData, replacementCount };
