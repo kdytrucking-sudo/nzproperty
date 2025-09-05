@@ -47,13 +47,18 @@ export function AppSidebar() {
       icon: MessageSquareQuote,
     },
     {
+      href: '/construction-brief',
+      label: 'Construction Brief',
+      icon: Construction,
+    },
+    {
       href: '/manage-templates',
       label: 'Manage Templates',
       icon: FileText,
     },
     {
       href: '/json-editor',
-      label: 'JSON Editor',
+      label: 'AI Settings',
       icon: FileJson,
     },
   ];
