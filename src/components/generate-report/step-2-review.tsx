@@ -124,41 +124,34 @@ function MarketValuationTab({ form }: { form: any }) {
 
   return (
     <div className="space-y-6 pt-4">
-      <Card>
+       <Card>
         <CardHeader>
-          <CardTitle>Enter Market Valuation</CardTitle>
+          <CardTitle>Market Valuation Generator</CardTitle>
           <CardDescription>
-            Enter a raw number and click "Update" to generate the formatted values for your report.
+            Enter a raw number to generate the formatted values for your report placeholders.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-            <div className="flex items-end gap-2">
-                <div className="flex-grow">
-                     <Label htmlFor="rawMarketValue">Market Valuation (Numbers Only)</Label>
+        <CardContent className="space-y-6">
+            <div className="space-y-2">
+                <Label htmlFor="rawMarketValue">Market Valuation (Numbers Only)</Label>
+                <div className="flex items-center gap-2">
                     <Input
                         id="rawMarketValue"
                         type="number"
                         value={rawMarketValue}
                         onChange={(e) => setRawMarketValue(e.target.value.replace(/[^0-9]/g, ''))}
                         placeholder="e.g., 940000"
+                        className="max-w-xs"
                     />
+                    <Button type="button" onClick={handleUpdate} disabled={isUpdating}>
+                        {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Update
+                    </Button>
                 </div>
-                <Button type="button" onClick={handleUpdate} disabled={isUpdating}>
-                    {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Update
-                </Button>
             </div>
-        </CardContent>
-      </Card>
-      <Card>
-          <CardHeader>
-              <CardTitle>Generated Values</CardTitle>
-              <CardDescription>
-                  These values will be used to replace placeholders in the report. You can edit them if needed.
-              </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-              <FormField
+
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                 <FormField
                   control={form.control}
                   name="marketValuation.marketValue"
                   render={({ field }) => (
@@ -190,7 +183,8 @@ function MarketValuationTab({ form }: { form: any }) {
                       </FormItem>
                   )}
               />
-          </CardContent>
+            </div>
+        </CardContent>
       </Card>
     </div>
   );
