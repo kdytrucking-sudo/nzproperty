@@ -19,11 +19,8 @@ import globalContent from '@/lib/global-content.json';
 import { contentFields } from '@/lib/content-config';
 
 
-// 把各种换行统一成 \n，并把字面量 "\n" 变成真正换行
-const normalizeNewlines = (s: string) =>
-  typeof s === 'string'
-    ? s.replace(/\\n/g, '\n').replace(/\r\n/g, '\n').replace(/\r/g, '\n')
-    : s;
+const normalizeNewlines = (s: any) =>
+  s ? s.toString().replace(/\\n/g, '\n').replace(/\r\n/g, '\n').replace(/\r/g, '\n') : '';
 
 const convertSoftBreaksToHardParagraphs = (zip: any) => {
   const targets = Object.keys(zip.files).filter((name) =>
@@ -75,18 +72,16 @@ const prepareTemplateData = async (data: any) => {
   let replacementCount = 0;
 
   const countAndSetReplacement = (key: string, value: any) => {
-    if (typeof value === 'string') {
-       value = normalizeNewlines(value);
-    }
-    
     if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== 'N/A') {
-      templateData[key] = value;
+      const normalizedValue = normalizeNewlines(value);
+      templateData[key] = normalizedValue;
       replacementCount++;
     } else if (Array.isArray(value)) {
       templateData[key] = value;
       replacementCount++; // 数组作为一次替换计数
     } else if (value !== undefined && value !== null && value !== '') {
-      templateData[key] = value;
+      const normalizedValue = normalizeNewlines(value);
+      templateData[key] = normalizedValue;
       replacementCount++;
     } else {
       templateData[key] = '';
@@ -110,7 +105,7 @@ const prepareTemplateData = async (data: any) => {
 
   // 2) Instructed By（原结构之外的补充）
   if (data?.Valuation?.['Instructed By']) {
-    countAndSetReplacement('Replace_ InstructedBy', data.Valuation['Instructed By']);
+    countAndSetReplacement('Replace_InstructedBy', data.Valuation['Instructed By']);
   }
 
   // 3) 全局内容（manage-content）
@@ -132,8 +127,8 @@ const prepareTemplateData = async (data: any) => {
       OperativeZone: 'Replace_Zone',
       ZoningOperative: 'Replace_ZoningOperative',
       ZoningPlanChange78: 'Replace_ZoningPlanChange78',
-      Disclosure: 'Replace_Disclosure', // placeholder if needed
-      MarketComment: 'Replace_MarketComment', // placeholder if needed
+      Disclosure: 'Replace_Disclosure',
+      MarketComment: 'Replace_MarketComment',
     };
     Object.keys((data as any).commentary).forEach((k) => {
       const templateKey = map[k as keyof typeof map];
@@ -157,7 +152,7 @@ const prepareTemplateData = async (data: any) => {
       const n: Record<string, any> = {};
       Object.keys(sale).forEach((k) => {
         const v = sale[k] ?? '';
-        n[k] = typeof v === 'string' ? normalizeNewlines(v) : v;
+        n[k] = normalizeNewlines(v);
         if (typeof v === 'string' && v.trim() !== '' && v.trim() !== 'N/A') {
           replacementCount++;
         }
