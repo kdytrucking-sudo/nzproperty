@@ -20,7 +20,7 @@ import { contentFields } from '@/lib/content-config';
 
 
 const normalizeNewlines = (s: any) =>
-  s ? s.toString().replace(/\\n/g, '\n').replace(/\r\n/g, '\n').replace(/\r/g, '\n') : '';
+  s ? s.toString().replace(/\r\n/g, '\n').replace(/\r/g, '\n') : '';
 
 const convertSoftBreaksToHardParagraphs = (zip: any) => {
   const targets = Object.keys(zip.files).filter((name) =>
@@ -181,8 +181,6 @@ const generateReportFromTemplateFlow = ai.defineFlow(
             end: ']',
           },
           linebreaks: true,
-          // This is the crucial fix: It ensures that any null or undefined values in the data
-          // are replaced with an empty string, preventing the engine from creating invalid XML.
           nullGetter: () => "", 
         });
         
@@ -192,8 +190,8 @@ const generateReportFromTemplateFlow = ai.defineFlow(
 
         try {
           doc.render();
-          // This call was removed in a previous step but is safe to keep.
-          // It handles intentional soft line breaks within the template data.
+          // This call handles soft line breaks within the template data, converting them
+          // to hard paragraph breaks to ensure document integrity.
           convertSoftBreaksToHardParagraphs(doc.getZip());
         } catch (error: any) {
           console.error('Docxtemplater rendering error:', JSON.stringify(error, null, 2));
