@@ -343,7 +343,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     return (
       <div className="space-y-6 pt-4">
         {commentaryFields.map(({ key, label, placeholder }) => {
-          const options = commentaryOptions[key] || [];
+          const options = commentaryOptions[key as keyof CommentaryOptionsData] || [];
           // Skip rendering if the key doesn't exist in commentaryOptions, it means it's not a valid key from the schema.
           if (!commentaryOptions.hasOwnProperty(key)) {
             return null;
@@ -352,43 +352,35 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
             <div key={key} className="space-y-4 rounded-md border p-4">
               <h3 className="font-medium">{label} {placeholder && <code className="ml-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[{placeholder}]</code>}</h3>
               
-              {options.length > 0 ? (
-                 <Controller
-                    control={form.control}
-                    name={`commentary.${key}`}
-                    render={({ field }) => (
-                      <RadioGroup
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          form.setValue(`commentary.${key}`, value);
-                        }}
-                        value={field.value || ''}
-                        className="flex flex-col space-y-2"
-                      >
-                        {options.map((option, index) => (
-                          <FormItem key={`${key}-${index}`} className="flex items-center space-x-3 space-y-0">
-                            <FormControl><RadioGroupItem value={option} /></FormControl>
-                            <FormLabel className="font-normal">{option.length > 100 ? `${option.substring(0, 100)}...` : option}</FormLabel>
-                          </FormItem>
-                        ))}
-                      </RadioGroup>
-                    )}
-                  />
-              ) : (
-                <p className="text-sm text-muted-foreground">No options defined for this category.</p>
-              )}
-
               <FormField
                 control={form.control}
                 name={`commentary.${key}`}
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="sr-only">Editable Commentary</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} rows={6} className="mt-4 font-mono text-sm" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <>
+                    {options.length > 0 ? (
+                       <RadioGroup
+                          onValueChange={(value) => field.onChange(value)}
+                          value={field.value || ''}
+                          className="flex flex-col space-y-2"
+                        >
+                          {options.map((option, index) => (
+                            <FormItem key={`${key}-${index}`} className="flex items-center space-x-3 space-y-0">
+                              <FormControl><RadioGroupItem value={option} /></FormControl>
+                              <FormLabel className="font-normal">{option.length > 100 ? `${option.substring(0, 100)}...` : option}</FormLabel>
+                            </FormItem>
+                          ))}
+                        </RadioGroup>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No options defined for this category.</p>
+                    )}
+                    <FormItem className="mt-4">
+                        <FormLabel className="sr-only">Editable Commentary for {label}</FormLabel>
+                        <FormControl>
+                            <Textarea {...field} rows={6} className="font-mono text-sm" />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                  </>
                 )}
               />
             </div>
