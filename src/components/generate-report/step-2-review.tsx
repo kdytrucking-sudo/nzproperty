@@ -27,7 +27,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { convertNumberToWords } from '@/ai/flows/convert-number-to-words';
 import { Separator } from '@/components/ui/separator';
 import { getStatutoryValuation } from '@/ai/flows/get-statutory-valuation';
-import { getValuationFromUrl } from '@/ai/flows/get-valuation-from-url';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 const commentarySchema = z.object({
@@ -346,7 +345,7 @@ function StatutoryValuationTab({ form }: { form: any }) {
 
         setIsFetching(true);
         try {
-            const result = await getStatutoryValuation({ propertyAddress: address });
+            const result = await getStatutoryValuation({ url: address });
             setValue('statutoryValuation.landValueByWeb', result.landValueByWeb, { shouldDirty: true });
             setValue('statutoryValuation.improvementsValueByWeb', result.improvementsValueByWeb, { shouldDirty: true });
             setValue('statutoryValuation.ratingValueByWeb', result.ratingValueByWeb, { shouldDirty: true });
@@ -456,7 +455,7 @@ function ManualValuationTab({ form }: { form: any }) {
         }
         setIsExtracting(true);
         try {
-            const result = await getValuationFromUrl({ url });
+            const result = await getStatutoryValuation({ url });
             setValue('statutoryValuation.landValueByWeb', result.landValueByWeb, { shouldDirty: true });
             setValue('statutoryValuation.improvementsValueByWeb', result.improvementsValueByWeb, { shouldDirty: true });
             setValue('statutoryValuation.ratingValueByWeb', result.ratingValueByWeb, { shouldDirty: true });
