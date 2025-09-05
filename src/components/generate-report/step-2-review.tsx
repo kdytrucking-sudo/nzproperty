@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import * as React from 'react';
@@ -226,7 +224,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       }
       secondSentence += ' or of similar linings.';
 
-      const fullBrief = `${firstSentence}\\n${secondSentence}`;
+      const fullBrief = `${firstSentence}\n${secondSentence}`;
       form.setValue('constructionBrief.finalBrief', fullBrief);
   };
 
@@ -614,4 +612,3 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     </Card>
   );
 }
-
