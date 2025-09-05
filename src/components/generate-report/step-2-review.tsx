@@ -28,8 +28,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 const commentarySchema = z.object({
   PreviousSale: z.string().optional(),
   ContractSale: z.string().optional(),
-  Disclosure: z.string().optional(),
-  MarketComment: z.string().optional(),
   SuppliedDocumentation: z.string().optional(),
   RecentOrProvided: z.string().optional(),
   LIM: z.string().optional(),
@@ -37,6 +35,8 @@ const commentarySchema = z.object({
   OperativeZone: z.string().optional(),
   ZoningOperative: z.string().optional(),
   ZoningPlanChange78: z.string().optional(),
+  Disclosure: z.string().optional(),
+  MarketComment: z.string().optional(),
 });
 
 const constructionBriefSchema = z.object({
@@ -150,8 +150,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       commentary: {
         PreviousSale: '',
         ContractSale: '',
-        Disclosure: '',
-        MarketComment: '',
         SuppliedDocumentation: '',
         RecentOrProvided: '',
         LIM: '',
@@ -159,6 +157,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         OperativeZone: '',
         ZoningOperative: '',
         ZoningPlanChange78: '',
+        Disclosure: '',
+        MarketComment: '',
       },
       constructionBrief: {
         generalConstruction: [],
@@ -256,8 +256,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         // Set default values for commentary textareas
         form.setValue('commentary.PreviousSale', commentaryOpts.PreviousSale?.[0] || '');
         form.setValue('commentary.ContractSale', commentaryOpts.ContractSale?.[0] || '');
-        form.setValue('commentary.Disclosure', commentaryOpts.Disclosure?.[0] || '');
-        form.setValue('commentary.MarketComment', commentaryOpts.MarketComment?.[0] || '');
         form.setValue('commentary.SuppliedDocumentation', commentaryOpts.SuppliedDocumentation?.[0] || '');
         form.setValue('commentary.RecentOrProvided', commentaryOpts.RecentOrProvided?.[0] || '');
         form.setValue('commentary.LIM', commentaryOpts.LIM?.[0] || '');
@@ -265,6 +263,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         form.setValue('commentary.OperativeZone', commentaryOpts.OperativeZone?.[0] || '');
         form.setValue('commentary.ZoningOperative', commentaryOpts.ZoningOperative?.[0] || '');
         form.setValue('commentary.ZoningPlanChange78', commentaryOpts.ZoningPlanChange78?.[0] || '');
+        form.setValue('commentary.Disclosure', commentaryOpts.Disclosure?.[0] || '');
+        form.setValue('commentary.MarketComment', commentaryOpts.MarketComment?.[0] || '');
 
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load initial data', description: error.message });
@@ -329,8 +329,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     const commentaryFields: { key: keyof CommentaryOptionsData, label: string, placeholder?: string }[] = [
         { key: 'PreviousSale', label: 'Previous Sale', placeholder: 'Replace_PreviousSale' },
         { key: 'ContractSale', label: 'Contract for Sale', placeholder: 'Replace_ContractSale' },
-        { key: 'Disclosure', label: 'Disclosure' },
-        { key: 'MarketComment', label: 'Market Comment' },
         { key: 'SuppliedDocumentation', label: 'Supplied Documentation', placeholder: 'Replace_SuppliedDoc' },
         { key: 'RecentOrProvided', label: 'Recent/Provided', placeholder: 'Replace_RecentOrProvided' },
         { key: 'LIM', label: 'Land Information Memorandum', placeholder: 'Replace_LIM' },
@@ -338,6 +336,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         { key: 'OperativeZone', label: 'Operative Zone', placeholder: 'Replace_Zone' },
         { key: 'ZoningOperative', label: 'Zoning Operative', placeholder: 'Replace_ZoningOperative' },
         { key: 'ZoningPlanChange78', label: 'Zoning Plan Change 78', placeholder: 'Replace_ZoningPlanChange78' },
+        { key: 'Disclosure', label: 'Disclosure' },
+        { key: 'MarketComment', label: 'Market Comment' },
     ];
 
     return (
@@ -353,18 +353,27 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
               <h3 className="font-medium">{label} {placeholder && <code className="ml-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[{placeholder}]</code>}</h3>
               
               {options.length > 0 ? (
-                <RadioGroup
-                  onValueChange={(value) => form.setValue(`commentary.${key}`, value)}
-                  defaultValue={form.getValues(`commentary.${key}`) || options[0]}
-                  className="flex flex-col space-y-2"
-                >
-                  {options.map((option, index) => (
-                    <FormItem key={`${key}-${index}`} className="flex items-center space-x-3 space-y-0">
-                      <FormControl><RadioGroupItem value={option} /></FormControl>
-                      <FormLabel className="font-normal">{option.length > 100 ? `${option.substring(0, 100)}...` : option}</FormLabel>
-                    </FormItem>
-                  ))}
-                </RadioGroup>
+                 <Controller
+                    control={form.control}
+                    name={`commentary.${key}`}
+                    render={({ field }) => (
+                      <RadioGroup
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          form.setValue(`commentary.${key}`, value);
+                        }}
+                        value={field.value || ''}
+                        className="flex flex-col space-y-2"
+                      >
+                        {options.map((option, index) => (
+                          <FormItem key={`${key}-${index}`} className="flex items-center space-x-3 space-y-0">
+                            <FormControl><RadioGroupItem value={option} /></FormControl>
+                            <FormLabel className="font-normal">{option.length > 100 ? `${option.substring(0, 100)}...` : option}</FormLabel>
+                          </FormItem>
+                        ))}
+                      </RadioGroup>
+                    )}
+                  />
               ) : (
                 <p className="text-sm text-muted-foreground">No options defined for this category.</p>
               )}
@@ -626,5 +635,3 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     </Card>
   );
 }
-
-    
