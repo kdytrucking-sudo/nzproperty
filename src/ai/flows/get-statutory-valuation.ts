@@ -47,7 +47,7 @@ const getWebValuation = ai.defineTool(
         key: apiKey,
         cx: searchEngineId,
         q: `${propertyAddress} valuation`,
-        siteSearch: '*.aucklandcouncil.govt.nz',
+        siteSearch: '*.aucklandcouncil.govt.nz'
       };
   
       try {
