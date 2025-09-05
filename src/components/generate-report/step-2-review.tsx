@@ -23,6 +23,7 @@ import initialJsonStructure from '@/lib/json-structure.json';
 import { getCommentaryOptions } from '@/ai/flows/get-commentary-options';
 import type { CommentaryOptionsData } from '@/lib/commentary-schema';
 import { Checkbox } from '@/components/ui/checkbox';
+import { convertNumberToWords } from '@/ai/flows/convert-number-to-words';
 
 const commentarySchema = z.object({
   PreviousSale: z.string().optional(),
@@ -42,11 +43,17 @@ const constructionBriefSchema = z.object({
     finalBrief: z.string(),
 });
 
+const marketValuationSchema = z.object({
+  marketValue: z.string().optional(),
+  marketValuation: z.string().optional(),
+});
+
 const formSchema = z.object({
   templateFileName: z.string().min(1, 'A report template is required.'),
   data: z.any(),
   commentary: commentarySchema,
   constructionBrief: constructionBriefSchema,
+  marketValuation: marketValuationSchema,
 });
 
 type Step2ReviewProps = {
@@ -54,6 +61,140 @@ type Step2ReviewProps = {
   onReportGenerated: (reportDataUri: string, replacementsCount: number) => void;
   onBack: () => void;
 };
+
+// Helper function to format number into currency
+const formatCurrency = (value: number | string) => {
+    const num = Number(value);
+    if (isNaN(num)) return '';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(num);
+};
+
+// Market Valuation Tab Component
+function MarketValuationTab({ form }: { form: any }) {
+  const { toast } = useToast();
+  const [rawMarketValue, setRawMarketValue] = React.useState('');
+  const [isUpdating, setIsUpdating] = React.useState(false);
+  const { setValue, watch } = form;
+
+  const { marketValue, marketValuation } = watch('marketValuation');
+
+  const handleUpdate = async () => {
+    const numericValue = parseFloat(rawMarketValue);
+    if (isNaN(numericValue) || numericValue <= 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Input',
+        description: 'Please enter a valid positive number for the market valuation.',
+      });
+      return;
+    }
+    
+    setIsUpdating(true);
+    try {
+      // 1. Format the currency string
+      const formattedValue = formatCurrency(numericValue);
+      setValue('marketValuation.marketValue', formattedValue);
+
+      // 2. Call AI flow to get the words
+      const result = await convertNumberToWords({ number: numericValue });
+      const fullValuationText = `${formattedValue}\n${result.words}`;
+      setValue('marketValuation.marketValuation', fullValuationText);
+
+      toast({
+        title: 'Update Successful',
+        description: 'Market value fields have been generated.',
+      });
+    } catch (error: any) {
+      console.error('Failed to convert number to words:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: error.message,
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 pt-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Enter Market Valuation</CardTitle>
+          <CardDescription>
+            Enter a raw number and click "Update" to generate the formatted values for your report.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+            <div className="flex items-end gap-2">
+                <div className="flex-grow">
+                     <Label htmlFor="rawMarketValue">Market Valuation (Numbers Only)</Label>
+                    <Input
+                        id="rawMarketValue"
+                        type="number"
+                        value={rawMarketValue}
+                        onChange={(e) => setRawMarketValue(e.target.value.replace(/[^0-9]/g, ''))}
+                        placeholder="e.g., 940000"
+                    />
+                </div>
+                <Button type="button" onClick={handleUpdate} disabled={isUpdating}>
+                    {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Update
+                </Button>
+            </div>
+        </CardContent>
+      </Card>
+      <Card>
+          <CardHeader>
+              <CardTitle>Generated Values</CardTitle>
+              <CardDescription>
+                  These values will be used to replace placeholders in the report. You can edit them if needed.
+              </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+              <FormField
+                  control={form.control}
+                  name="marketValuation.marketValue"
+                  render={({ field }) => (
+                      <FormItem>
+                          <div className="flex items-center justify-between">
+                              <FormLabel>Market Value</FormLabel>
+                              <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_MarketValue]</code>
+                          </div>
+                          <FormControl>
+                              <Input {...field} placeholder="e.g., $940,000" />
+                          </FormControl>
+                          <FormMessage />
+                      </FormItem>
+                  )}
+              />
+              <FormField
+                  control={form.control}
+                  name="marketValuation.marketValuation"
+                  render={({ field }) => (
+                      <FormItem>
+                           <div className="flex items-center justify-between">
+                              <FormLabel>Market Valuation (Full Text)</FormLabel>
+                              <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_MarketValuation]</code>
+                          </div>
+                          <FormControl>
+                              <Textarea {...field} rows={4} className="font-mono" placeholder="e.g., $940,000\nNine Hundred Forty Thousand Dollars" />
+                          </FormControl>
+                          <FormMessage />
+                      </FormItem>
+                  )}
+              />
+          </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 
 const renderFormSection = (form: any, path: string, data: any, structure: any) => {
   if (typeof data !== 'object' || data === null || Array.isArray(data) || typeof structure !== 'object' || structure === null) {
@@ -159,6 +300,10 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         generalConstruction: [],
         interior: [],
         finalBrief: '',
+      },
+      marketValuation: {
+        marketValue: '',
+        marketValuation: '',
       }
     },
   });
@@ -283,7 +428,12 @@ ${secondSentence}`;
     }
 
     try {
-      const fullData = { ...values.data, commentary: values.commentary, constructionBrief: values.constructionBrief };
+      const fullData = { 
+        ...values.data, 
+        commentary: values.commentary, 
+        constructionBrief: values.constructionBrief,
+        ...values.marketValuation,
+      };
       const result = await generateReportFromTemplate({
         templateFileName: values.templateFileName,
         data: fullData,
@@ -551,13 +701,14 @@ ${secondSentence}`;
                     />
 
                     <Tabs defaultValue={defaultTab}>
-                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-6">
+                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-7">
                         {tabKeys.map(key => (
                         <TabsTrigger key={key} value={key}>
                             {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                         </TabsTrigger>
                         ))}
                         {extractedData.comparableSales && <TabsTrigger value="comparableSales">Comparables</TabsTrigger>}
+                        <TabsTrigger value="marketValuation">Market Valuation</TabsTrigger>
                         <TabsTrigger value="commentary">Commentary</TabsTrigger>
                         <TabsTrigger value="constructionBrief">Construction Brief</TabsTrigger>
                     </TabsList>
@@ -593,6 +744,9 @@ ${secondSentence}`;
                         </TabsContent>
                     )}
 
+                    <TabsContent value="marketValuation">
+                        <MarketValuationTab form={form} />
+                    </TabsContent>
                     <TabsContent value="commentary">
                         {renderCommentarySection()}
                     </TabsContent>

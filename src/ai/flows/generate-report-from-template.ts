@@ -231,7 +231,15 @@ const prepareTemplateData = async (data: any) => {
     countAndSetReplacement('Replace_ConstructionBrief', (data as any).constructionBrief.finalBrief);
   }
 
-  // 6) comparableSales
+  // 6) Market Valuation
+  if ((data as any)?.marketValue) {
+    countAndSetReplacement('Replace_MarketValue', (data as any).marketValue);
+  }
+  if ((data as any)?.marketValuation) {
+    countAndSetReplacement('Replace_MarketValuation', (data as any).marketValuation);
+  }
+
+  // 7) comparableSales
   if (Array.isArray((data as any)?.comparableSales)) {
     templateData['comparableSales'] = (data as any).comparableSales.map((sale: Record<string, any>) => {
       const n: Record<string, any> = {};
