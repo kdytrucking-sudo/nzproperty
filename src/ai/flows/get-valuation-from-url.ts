@@ -24,10 +24,13 @@ export type GetValuationFromUrlOutput = z.infer<typeof GetValuationFromUrlOutput
 
 const prompt = ai.definePrompt({
     name: 'extractValuationFromUrlPrompt',
-    system: 'You are an expert data extractor. Analyze the provided text content from a website and extract the required valuation figures. The values are typically prefixed with labels like "Land value", "Value of improvements", and "Capital value (rating valuation)". Return the data in the specified JSON format. If a value cannot be found in the page content, return "N/A" for that field.',
     input: { schema: z.object({ url: z.string() }) },
     output: { schema: GetValuationFromUrlOutputSchema },
-    prompt: `Please extract the valuation data from the content of the following URL: {{{url}}}`
+    prompt: `You are an expert data extractor. Please extract the valuation data from the content of the following URL.
+The values are typically prefixed with labels like "Land value", "Value of improvements", and "Capital value (rating valuation)".
+Return the data in the specified JSON format. If a value cannot be found in the page content, return "N/A" for that field.
+
+URL to analyze: {{{url}}}`
 });
 
 
