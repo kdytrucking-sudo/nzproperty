@@ -232,11 +232,11 @@ const prepareTemplateData = async (data: any) => {
   }
 
   // 6) Market Valuation
-  if ((data as any)?.marketValue) {
-    countAndSetReplacement('Replace_MarketValue', (data as any).marketValue);
+  if ((data as any)?.marketValuation?.marketValue) {
+    countAndSetReplacement('Replace_MarketValue', (data as any).marketValuation.marketValue);
   }
-  if ((data as any)?.marketValuation) {
-    countAndSetReplacement('Replace_MarketValuation', (data as any).marketValuation);
+  if ((data as any)?.marketValuation?.marketValuation) {
+    countAndSetReplacement('Replace_MarketValuation', (data as any).marketValuation.marketValuation);
   }
   if ((data as any)?.marketValuation?.improvementsValueByValuer) {
     countAndSetReplacement('Replace_ImprovementValueByValuer', (data as any).marketValuation.improvementsValueByValuer);
@@ -347,5 +347,3 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     }
   }
 );
-
-    
