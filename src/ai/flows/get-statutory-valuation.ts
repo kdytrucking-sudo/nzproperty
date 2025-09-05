@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { browse } from '@genkit-ai/googleai';
+import { browse, goTo, findBy, screenshot } from '@genkit-ai/web-extractor';
 
 const GetStatutoryValuationInputSchema = z.object({
   propertyAddress: z.string().describe('The property address to search for.'),
@@ -23,7 +23,7 @@ const GetStatutoryValuationOutputSchema = z.object({
 });
 export type GetStatutoryValuationOutput = z.infer<typeof GetStatutoryValuationOutputSchema>;
 
-// This is the exported wrapper function that the client will call.
+
 export async function getStatutoryValuation(
   input: GetStatutoryValuationInput
 ): Promise<GetStatutoryValuationOutput> {
@@ -38,27 +38,53 @@ const getStatutoryValuationFlow = ai.defineFlow(
   },
   async ({ propertyAddress }) => {
     try {
-      const browseResult = await browse({
-        url: 'https://www.aucklandcouncil.govt.nz/property-rates-valuations/find-property-rates-valuation',
-        args: {
-            query: propertyAddress,
-            task: `Extract the "Land Value", "Value of Improvements", and "Capital Value (Rating Valuation)" for the address: ${propertyAddress}.`,
-            output: {
-                landValueByWeb: "Extracted Land Value",
-                improvementsValueByWeb: "Extracted Value of Improvements",
-                ratingValueByWeb: "Extracted Capital Value (Rating Valuation)"
+        const result = await browse(async () => {
+            await goTo('https://www.aucklandcouncil.govt.nz/property-rates-valuations/pages/find-property-rates-valuation.aspx');
+            await findBy(
+                {
+                    query: 'Enter a property address',
+                    role: 'searchbox',
+                },
+                {
+                    action: 'type',
+                    args: [propertyAddress],
+                }
+            );
+
+            await findBy(
+                {
+                    query: 'Show property rates and valuation',
+                    role: 'button',
+                },
+                {
+                    action: 'click',
+                }
+            );
+
+            const screenshotData = await screenshot();
+
+            const { output } = await ai.generate({
+                prompt: [
+                    { media: { url: screenshotData } },
+                    { text: `From the screenshot, extract the "Land Value", "Value of improvements", and "Capital value" for the address: ${propertyAddress}. Return the extracted data as a JSON object with keys: landValueByWeb, improvementsValueByWeb, ratingValueByWeb.` }
+                ],
+                output: {
+                    schema: GetStatutoryValuationOutputSchema,
+                },
+                model: 'googleai/gemini-2.5-flash-image-preview',
+            });
+            
+            if (!output) {
+                throw new Error('AI could not extract valuation data from the screenshot.');
             }
-        },
-      });
+            return output;
+        });
 
-      const { output } = browseResult;
-
-      if (!output) {
+      if (!result) {
         throw new Error('AI could not extract valuation data. The website might not have information for this address or the page structure has changed.');
       }
       
-      // Ensure the output matches the expected schema. Zod will throw if it doesn't.
-      return GetStatutoryValuationOutputSchema.parse(output);
+      return GetStatutoryValuationOutputSchema.parse(result);
 
     } catch (error: any) {
         console.error("Error in getStatutoryValuationFlow:", error);
