@@ -44,10 +44,9 @@ const constructionBriefSchema = z.object({
 
 const marketValuationSchema = z.object({
     marketValue: z.string().optional(),
-    marketValueInWords: z.string().optional(),
     marketValuation: z.string().optional(),
-    landValueByValuer: z.string().optional(),
     improvementsValueByValuer: z.string().optional(),
+    landValueByValuer: z.string().optional(),
     chattelsValueByValuer: z.string().optional(),
     marketValueByValuer: z.string().optional(),
 });
@@ -59,6 +58,7 @@ const formSchema = z.object({
   commentary: commentarySchema,
   constructionBrief: constructionBriefSchema,
   marketValuation: marketValuationSchema,
+  marketValuationRaw: z.string().optional(),
 });
 
 type Step2ReviewProps = {
@@ -127,7 +127,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   const [commentaryOptions, setCommentaryOptions] = React.useState<CommentaryOptionsData | null>(null);
   const [isLoadingInitialData, setIsLoadingInitialData] = React.useState(true);
   const [isConvertingToWords, setIsConvertingToWords] = React.useState(false);
-  
+  const [valuationCheckStatus, setValuationCheckStatus] = React.useState<'Equal' | 'Error' | null>(null);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -149,13 +150,13 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       },
       marketValuation: {
         marketValue: '',
-        marketValueInWords: '',
         marketValuation: '',
-        landValueByValuer: '',
         improvementsValueByValuer: '',
+        landValueByValuer: '',
         chattelsValueByValuer: '',
         marketValueByValuer: '',
-      }
+      },
+      marketValuationRaw: '',
     },
   });
 
@@ -163,37 +164,67 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     control: form.control,
     name: 'data.comparableSales',
   });
-
-  const handleConvertToWords = React.useCallback(async () => {
-    const marketValueStr = form.getValues('marketValuation.marketValue');
-    if (!marketValueStr) return;
-    
-    // Remove non-numeric characters except the decimal point
-    const numericValue = parseFloat(marketValueStr.replace(/[^0-9.]/g, ''));
-
-    if (isNaN(numericValue)) {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid Number',
-        description: 'Market Value does not contain a valid number to convert.',
-      });
-      return;
+  
+  const parseCurrency = (value: string | undefined): number => {
+    if (!value) return 0;
+    return Number(String(value).replace(/[^0-9.-]+/g,""));
+  };
+  
+  const formatCurrency = (value: number | undefined): string => {
+    if (value === undefined || isNaN(value)) return '';
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+  };
+  
+  const handleMarketValuationUpdate = React.useCallback(async () => {
+    const rawValue = form.getValues('marketValuationRaw');
+    if (!rawValue) {
+        toast({ variant: 'destructive', title: 'Input Required', description: 'Please enter a numeric value for Market Valuation.' });
+        return;
     }
-    
+    const numericValue = parseCurrency(rawValue);
+    if (isNaN(numericValue)) {
+        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Market Valuation must be a number.' });
+        return;
+    }
+
+    const formattedMarketValue = formatCurrency(numericValue);
+    form.setValue('marketValuation.marketValue', formattedMarketValue);
+
     setIsConvertingToWords(true);
     try {
       const result = await convertNumberToWords({ number: numericValue });
-      form.setValue('marketValuation.marketValueInWords', result.words);
+      const valuationNarrative = `${formattedMarketValue}\n${result.words}`;
+      form.setValue('marketValuation.marketValuation', valuationNarrative);
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Conversion Failed',
-        description: error.message,
-      });
+      toast({ variant: 'destructive', title: 'Conversion Failed', description: error.message });
+      form.setValue('marketValuation.marketValuation', formattedMarketValue);
     } finally {
       setIsConvertingToWords(false);
     }
   }, [form, toast]);
+
+
+  const handleSumAndCheck = () => {
+    const improvementsValue = parseCurrency(form.getValues('marketValuation.improvementsValueByValuer'));
+    const landValue = parseCurrency(form.getValues('marketValuation.landValueByValuer'));
+    const chattelsValue = parseCurrency(form.getValues('marketValuation.chattelsValueByValuer'));
+
+    const total = improvementsValue + landValue + chattelsValue;
+
+    form.setValue('marketValuation.improvementsValueByValuer', formatCurrency(improvementsValue));
+    form.setValue('marketValuation.landValueByValuer', formatCurrency(landValue));
+    form.setValue('marketValuation.chattelsValueByValuer', formatCurrency(chattelsValue));
+    form.setValue('marketValuation.marketValueByValuer', formatCurrency(total));
+    
+    const marketValueFromFirstCard = parseCurrency(form.getValues('marketValuation.marketValue'));
+
+    if(total === marketValueFromFirstCard) {
+        setValuationCheckStatus('Equal');
+    } else {
+        setValuationCheckStatus('Error');
+    }
+  };
+
 
   const generalConstructionOptions = [
     { id: 'concrete slab foundation', label: 'concrete slab foundation' },
@@ -523,94 +554,82 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         </div>
     );
   };
-
+  
   const renderMarketValuationSection = () => {
     return (
-        <div className="space-y-6 pt-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Market Valuation</CardTitle>
-                    <CardDescription>
-                        Enter the market valuation details. The value in words will be automatically generated.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
+      <div className="space-y-6 pt-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Market Valuation</CardTitle>
+            <CardDescription>
+              Enter the total market value to generate the formatted currency and text representations.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="marketValuationRaw"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Market Valuation:</FormLabel>
+                  <div className="flex items-center gap-2">
+                    <FormControl>
+                      <Input 
+                        placeholder="e.g., 940000" 
+                        type="number" 
+                        {...field} />
+                    </FormControl>
+                    <Button type="button" onClick={handleMarketValuationUpdate} disabled={isConvertingToWords}>
+                      {isConvertingToWords ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update'}
+                    </Button>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="marketValuation.marketValue"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center justify-between">
+                    <FormLabel>Market Value:</FormLabel>
+                    <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_MarketValue]</code>
+                  </div>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="marketValuation.marketValuation"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center justify-between">
+                    <FormLabel>Market Valuation:</FormLabel>
+                    <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_MarketValuation]</code>
+                  </div>
+                  <FormControl>
+                    <Textarea rows={4} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Valuation Breakdown</CardTitle>
+                <CardDescription>Enter the breakdown and check the sum against the market value.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField
-                        control={form.control}
-                        name="marketValuation.marketValue"
-                        render={({ field }) => (
-                            <FormItem>
-                                <div className="flex items-center justify-between">
-                                    <FormLabel>Market Value</FormLabel>
-                                    <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_MarketValue]</code>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <FormControl>
-                                        <Input placeholder="e.g., $1,200,000" {...field} />
-                                    </FormControl>
-                                    <Button type="button" variant="secondary" onClick={handleConvertToWords} disabled={isConvertingToWords}>
-                                        {isConvertingToWords ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Convert to Words'}
-                                    </Button>
-                                </div>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="marketValuation.marketValueInWords"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Market Value in Words</FormLabel>
-                                <FormControl>
-                                    <Input {...field} readOnly className="bg-muted" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                     <Separator />
-                     <FormField
-                        control={form.control}
-                        name="marketValuation.marketValuation"
-                        render={({ field }) => (
-                            <FormItem>
-                                <div className="flex items-center justify-between">
-                                    <FormLabel>Market Valuation (Narrative)</FormLabel>
-                                    <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_MarketValuation]</code>
-                                </div>
-                                <FormControl>
-                                    <Textarea rows={6} {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Valuation Breakdown (By Valuer)</CardTitle>
-                    <CardDescription>
-                        Enter the valuer's breakdown of the property value.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <FormField
-                        control={form.control}
-                        name="marketValuation.landValueByValuer"
-                        render={({ field }) => (
-                            <FormItem>
-                                <div className="flex items-center justify-between">
-                                    <FormLabel>Land Value</FormLabel>
-                                    <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_LandValueByValuer]</code>
-                                </div>
-                                <FormControl><Input {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                     <FormField
                         control={form.control}
                         name="marketValuation.improvementsValueByValuer"
                         render={({ field }) => (
@@ -624,13 +643,27 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                             </FormItem>
                         )}
                     />
-                     <FormField
+                    <FormField
+                        control={form.control}
+                        name="marketValuation.landValueByValuer"
+                        render={({ field }) => (
+                            <FormItem>
+                                <div className="flex items-center justify-between">
+                                    <FormLabel>Land Value</FormLabel>
+                                    <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_LandValueByValuer]</code>
+                                </div>
+                                <FormControl><Input {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
                         control={form.control}
                         name="marketValuation.chattelsValueByValuer"
                         render={({ field }) => (
                             <FormItem>
-                               <div className="flex items-center justify-between">
-                                    <FormLabel>Chattels Value</FormLabel>
+                                <div className="flex items-center justify-between">
+                                    <FormLabel>Chattels</FormLabel>
                                     <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_ChattelsByValuer]</code>
                                 </div>
                                 <FormControl><Input {...field} /></FormControl>
@@ -638,23 +671,34 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                             </FormItem>
                         )}
                     />
-                     <FormField
-                        control={form.control}
-                        name="marketValuation.marketValueByValuer"
-                        render={({ field }) => (
-                            <FormItem>
-                                <div className="flex items-center justify-between">
-                                    <FormLabel>Total Market Value</FormLabel>
-                                    <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_MarketValueByValuer]</code>
-                                </div>
-                                <FormControl><Input {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </CardContent>
-            </Card>
-        </div>
+                </div>
+                <Separator />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div className="md:col-span-2">
+                        <FormField
+                            control={form.control}
+                            name="marketValuation.marketValueByValuer"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <div className="flex items-center justify-between">
+                                        <FormLabel>Market Value</FormLabel>
+                                        <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_MarketValueByValuer]</code>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <FormControl><Input {...field} /></FormControl>
+                                        {valuationCheckStatus === 'Equal' && <span className="text-sm font-medium text-green-600">Equal</span>}
+                                        {valuationCheckStatus === 'Error' && <span className="text-sm font-medium text-destructive">Error</span>}
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                    <Button type="button" onClick={handleSumAndCheck}>Sum & Check</Button>
+                </div>
+            </CardContent>
+        </Card>
+      </div>
     );
   }
 
