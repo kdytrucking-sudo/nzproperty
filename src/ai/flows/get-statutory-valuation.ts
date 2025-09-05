@@ -1,46 +1,48 @@
+
 'use server';
 /**
- * @fileOverview Retrieves statutory valuation data from a given URL.
+ * @fileOverview Extracts statutory valuation data from a given URL.
+ * This flow is designed to be called manually by the user providing a specific URL.
  *
- * - getStatutoryValuation - A function that takes a URL and returns valuation data.
- * - GetStatutoryValuationInput - The input type for the function.
- * - GetStatutoryValuationOutput - The return type for the function.
+ * - getValuationFromUrl - A function that takes a URL and returns valuation data.
+ * - GetValuationFromUrlInput - The input type for the function.
+ * - GetValuationFromUrlOutput - The return type for the function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-const GetStatutoryValuationInputSchema = z.object({
+const GetValuationFromUrlInputSchema = z.object({
   url: z.string().url().describe('The URL of the property valuation page.'),
 });
-export type GetStatutoryValuationInput = z.infer<typeof GetStatutoryValuationInputSchema>;
+export type GetValuationFromUrlInput = z.infer<typeof GetValuationFromUrlInputSchema>;
 
-const GetStatutoryValuationOutputSchema = z.object({
+const GetValuationFromUrlOutputSchema = z.object({
   landValueByWeb: z.string().describe('The Land Value extracted from the website.'),
   improvementsValueByWeb: z.string().describe('The Value of Improvements extracted from the website.'),
   ratingValueByWeb: z.string().describe('The Capital Value (Rating Valuation) extracted from the website.'),
 });
-export type GetStatutoryValuationOutput = z.infer<typeof GetStatutoryValuationOutputSchema>;
+export type GetValuationFromUrlOutput = z.infer<typeof GetValuationFromUrlOutputSchema>;
 
 const prompt = ai.definePrompt({
     name: 'extractValuationFromUrlPrompt',
     input: { schema: z.object({ url: z.string() }) },
-    output: { schema: GetStatutoryValuationOutputSchema },
+    output: { schema: GetValuationFromUrlOutputSchema },
     prompt: `Please extract the 'Land value', 'Value of improvements', and 'Capital value (rating valuation)' from the following URL. If a value cannot be found, return "N/A" for that field. URL: {{{url}}}`
 });
 
 
-export async function getStatutoryValuation(
-  input: GetStatutoryValuationInput
-): Promise<GetStatutoryValuationOutput> {
-  return getStatutoryValuationFlow(input);
+export async function getValuationFromUrl(
+  input: GetValuationFromUrlInput
+): Promise<GetValuationFromUrlOutput> {
+  return getValuationFromUrlFlow(input);
 }
 
-const getStatutoryValuationFlow = ai.defineFlow(
+const getValuationFromUrlFlow = ai.defineFlow(
   {
-    name: 'getStatutoryValuationFlow',
-    inputSchema: GetStatutoryValuationInputSchema,
-    outputSchema: GetStatutoryValuationOutputSchema,
+    name: 'getValuationFromUrlFlow',
+    inputSchema: GetValuationFromUrlInputSchema,
+    outputSchema: GetValuationFromUrlOutputSchema,
   },
   async ({ url }) => {
     try {
@@ -50,10 +52,10 @@ const getStatutoryValuationFlow = ai.defineFlow(
         throw new Error('AI could not extract valuation data from the provided URL.');
       }
       
-      return GetStatutoryValuationOutputSchema.parse(output);
+      return GetValuationFromUrlOutputSchema.parse(output);
 
     } catch (error: any) {
-        console.error("Error in getStatutoryValuationFlow:", error);
+        console.error("Error in getValuationFromUrlFlow:", error);
         if (error instanceof z.ZodError) {
              throw new Error(`AI returned data in an unexpected format. Details: ${error.errors.map(e => e.message).join(', ')}`);
         }

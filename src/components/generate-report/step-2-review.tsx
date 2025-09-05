@@ -26,7 +26,7 @@ import type { CommentaryOptionsData } from '@/lib/commentary-schema';
 import { Checkbox } from '@/components/ui/checkbox';
 import { convertNumberToWords } from '@/ai/flows/convert-number-to-words';
 import { Separator } from '@/components/ui/separator';
-import { getStatutoryValuation } from '@/ai/flows/get-statutory-valuation';
+import { getValuationFromUrl } from '@/ai/flows/get-statutory-valuation';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 const commentarySchema = z.object({
@@ -330,110 +330,11 @@ function MarketValuationTab({ form }: { form: any }) {
   );
 }
 
-// Statutory Valuation Tab Component
-function StatutoryValuationTab({ form }: { form: any }) {
-    const { toast } = useToast();
-    const [isFetching, setIsFetching] = React.useState(false);
-    const { getValues, setValue } = form;
-
-    const handleFetchData = async () => {
-        const address = getValues('data.Property.Property Address');
-        if (!address) {
-            toast({ variant: 'destructive', title: 'Address Missing', description: 'Property address is not available to fetch data.' });
-            return;
-        }
-
-        setIsFetching(true);
-        try {
-            const result = await getStatutoryValuation({ url: address });
-            setValue('statutoryValuation.landValueByWeb', result.landValueByWeb, { shouldDirty: true });
-            setValue('statutoryValuation.improvementsValueByWeb', result.improvementsValueByWeb, { shouldDirty: true });
-            setValue('statutoryValuation.ratingValueByWeb', result.ratingValueByWeb, { shouldDirty: true });
-            toast({ title: 'Success', description: 'Statutory valuation data has been retrieved.' });
-        } catch (error: any) {
-            console.error('Failed to fetch statutory valuation:', error);
-            toast({ variant: 'destructive', title: 'Fetch Failed', description: error.message });
-        } finally {
-            setIsFetching(false);
-        }
-    };
-
-    return (
-        <div className="space-y-6 pt-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Retrieve Statutory Valuation (Automated)</CardTitle>
-                    <CardDescription>
-                        Attempt to automatically fetch valuation data from the Auckland Council website. If this fails, please use the &quot;Manual Valuation&quot; tab.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                        <Label>Property Address</Label>
-                        <p className="text-sm font-medium p-3 bg-muted rounded-md text-muted-foreground">
-                            {getValues('data.Property.Property Address') || 'N/A'}
-                        </p>
-                    </div>
-                    <Button type="button" onClick={handleFetchData} disabled={isFetching}>
-                        {isFetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        Retrieve Data From Web
-                    </Button>
-                    <Separator />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                       <FormField
-                            control={form.control}
-                            name="statutoryValuation.landValueByWeb"
-                            render={({ field }) => (
-                                <FormItem>
-                                     <div className="flex items-center justify-between">
-                                        <FormLabel>Land Value</FormLabel>
-                                        <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_LandValueByWeb]</code>
-                                    </div>
-                                    <FormControl><Input {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={form.control}
-                            name="statutoryValuation.improvementsValueByWeb"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <div className="flex items-center justify-between">
-                                        <FormLabel>Value of Improvements</FormLabel>
-                                        <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_ValueOfImprovementsByWeb]</code>
-                                    </div>
-                                    <FormControl><Input {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={form.control}
-                            name="statutoryValuation.ratingValueByWeb"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <div className="flex items-center justify-between">
-                                        <FormLabel>Rating Valuation</FormLabel>
-                                        <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_RatingValueByWeb]</code>
-                                    </div>
-                                    <FormControl><Input {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-    );
-}
-
 // Manual Valuation Tab Component
 function ManualValuationTab({ form }: { form: any }) {
     const { toast } = useToast();
     const [isExtracting, setIsExtracting] = React.useState(false);
-    const [url, setUrl] = React.useState('');
+    const [urlInput, setUrlInput] = React.useState('');
     const { getValues, setValue } = form;
     const councilWebsite = 'https://www.aucklandcouncil.govt.nz/property-rates-valuations/pages/find-property-rates-valuation.aspx';
 
@@ -449,13 +350,13 @@ function ManualValuationTab({ form }: { form: any }) {
     };
 
     const handleExtract = async () => {
-        if (!url || !URL.canParse(url)) {
+        if (!urlInput || !URL.canParse(urlInput)) {
             toast({ variant: 'destructive', title: 'Invalid URL', description: 'Please paste a valid URL from the council website.' });
             return;
         }
         setIsExtracting(true);
         try {
-            const result = await getStatutoryValuation({ url });
+            const result = await getValuationFromUrl({ url: urlInput });
             setValue('statutoryValuation.landValueByWeb', result.landValueByWeb, { shouldDirty: true });
             setValue('statutoryValuation.improvementsValueByWeb', result.improvementsValueByWeb, { shouldDirty: true });
             setValue('statutoryValuation.ratingValueByWeb', result.ratingValueByWeb, { shouldDirty: true });
@@ -499,11 +400,11 @@ function ManualValuationTab({ form }: { form: any }) {
                             <p>Paste the final URL here and click extract. The results will be populated below.</p>
                             <div className="flex items-center gap-2 mt-4">
                                 <Input
-                                    value={url}
-                                    onChange={(e) => setUrl(e.target.value)}
+                                    value={urlInput}
+                                    onChange={(e) => setUrlInput(e.target.value)}
                                     placeholder="https://... Paste URL here"
                                 />
-                                <Button type="button" onClick={handleExtract} disabled={isExtracting || !url}>
+                                <Button type="button" onClick={handleExtract} disabled={isExtracting || !urlInput}>
                                     {isExtracting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Extract from URL
                                 </Button>
@@ -1085,7 +986,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                         ))}
                         {extractedData.comparableSales && <TabsTrigger value="comparableSales">Comparables</TabsTrigger>}
                         <TabsTrigger value="marketValuation">Market Valuation</TabsTrigger>
-                        <TabsTrigger value="statutoryValuation">Statutory Valuation</TabsTrigger>
                         <TabsTrigger value="manualValuation">Manual Valuation</TabsTrigger>
                         <TabsTrigger value="commentary">Commentary</TabsTrigger>
                         <TabsTrigger value="constructionBrief">Construction Brief</TabsTrigger>
@@ -1124,9 +1024,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
 
                     <TabsContent value="marketValuation">
                         <MarketValuationTab form={form} />
-                    </TabsContent>
-                    <TabsContent value="statutoryValuation">
-                        <StatutoryValuationTab form={form} />
                     </TabsContent>
                     <TabsContent value="manualValuation">
                         <ManualValuationTab form={form} />
