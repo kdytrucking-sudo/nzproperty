@@ -26,8 +26,6 @@ import type { CommentaryOptionsData } from '@/lib/commentary-schema';
 import { Checkbox } from '@/components/ui/checkbox';
 import { convertNumberToWords } from '@/ai/flows/convert-number-to-words';
 import { Separator } from '@/components/ui/separator';
-import { getStatutoryValuation } from '@/ai/flows/get-statutory-valuation';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const commentarySchema = z.object({
   PreviousSale: z.string().optional(),
@@ -56,19 +54,12 @@ const marketValuationSchema = z.object({
   marketValueByValuer: z.string().optional(),
 });
 
-const statutoryValuationSchema = z.object({
-  landValueByWeb: z.string().optional(),
-  improvementsValueByWeb: z.string().optional(),
-  ratingValueByWeb: z.string().optional(),
-});
-
 const formSchema = z.object({
   templateFileName: z.string().min(1, 'A report template is required.'),
   data: z.any(),
   commentary: commentarySchema,
   constructionBrief: constructionBriefSchema,
   marketValuation: marketValuationSchema,
-  statutoryValuation: statutoryValuationSchema,
 });
 
 type Step2ReviewProps = {
@@ -93,118 +84,6 @@ const parseCurrency = (value: string | undefined): number => {
     if (!value) return 0;
     return Number(String(value).replace(/[^0-9.-]+/g,""));
 }
-
-// Statutory Valuation Tab Component
-function StatutoryValuationTab({ form }: { form: any }) {
-    const { toast } = useToast();
-    const [isFetching, setIsFetching] = React.useState(false);
-    const { getValues, setValue } = form;
-
-    const propertyAddress = getValues('data.Property.Property Address');
-
-    const handleRetrieveData = async () => {
-        if (!propertyAddress) {
-            toast({
-                variant: 'destructive',
-                title: 'Address Missing',
-                description: 'Cannot retrieve data without a property address.',
-            });
-            return;
-        }
-
-        setIsFetching(true);
-        try {
-            const result = await getStatutoryValuation({ propertyAddress });
-            setValue('statutoryValuation.landValueByWeb', result.landValueByWeb, { shouldDirty: true });
-            setValue('statutoryValuation.improvementsValueByWeb', result.improvementsValueByWeb, { shouldDirty: true });
-            setValue('statutoryValuation.ratingValueByWeb', result.ratingValueByWeb, { shouldDirty: true });
-            toast({
-                title: 'Success',
-                description: 'Statutory valuation data has been retrieved.',
-            });
-        } catch (error: any) {
-            toast({
-                variant: 'destructive',
-                title: 'Failed to Retrieve Data',
-                description: error.message,
-            });
-        } finally {
-            setIsFetching(false);
-        }
-    };
-
-    return (
-        <div className="space-y-6 pt-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Retrieve Statutory Valuation</CardTitle>
-                    <CardDescription>
-                        Retrieve the latest valuation data from the Auckland Council website. The data can be edited after retrieval.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <Alert>
-                        <AlertTitle>Property Address</AlertTitle>
-                        <AlertDescription>
-                            The following address will be used for the lookup: <span className="font-semibold">{propertyAddress || 'N/A'}</span>
-                        </AlertDescription>
-                    </Alert>
-                    <div className="flex justify-center">
-                         <Button type="button" onClick={handleRetrieveData} disabled={isFetching || !propertyAddress}>
-                            {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Retrieve Data From Web
-                        </Button>
-                    </div>
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <FormField
-                            control={form.control}
-                            name="statutoryValuation.landValueByWeb"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <div className="flex items-center justify-between">
-                                        <FormLabel>Land Value</FormLabel>
-                                        <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_LandValueByWeb]</code>
-                                    </div>
-                                    <FormControl><Input {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="statutoryValuation.improvementsValueByWeb"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <div className="flex items-center justify-between">
-                                        <FormLabel>Value of Improvements</FormLabel>
-                                        <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_ValueOfImprovementsByWeb]</code>
-                                    </div>
-                                    <FormControl><Input {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="statutoryValuation.ratingValueByWeb"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <div className="flex items-center justify-between">
-                                        <FormLabel>Rating Valuation</FormLabel>
-                                        <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_RatingValueByWeb]</code>
-                                    </div>
-                                    <FormControl><Input {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-    );
-}
-
 
 // Market Valuation Tab Component
 function MarketValuationTab({ form }: { form: any }) {
@@ -556,11 +435,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         chattelsValueByValuer: '',
         marketValueByValuer: '',
       },
-      statutoryValuation: {
-        landValueByWeb: '',
-        improvementsValueByWeb: '',
-        ratingValueByWeb: '',
-      },
     },
   });
 
@@ -688,7 +562,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         commentary: values.commentary, 
         constructionBrief: values.constructionBrief,
         marketValuation: values.marketValuation,
-        statutoryValuation: values.statutoryValuation,
       };
       const result = await generateReportFromTemplate({
         templateFileName: values.templateFileName,
@@ -957,7 +830,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     />
 
                     <Tabs defaultValue={defaultTab}>
-                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-8">
+                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-6">
                         {tabKeys.map(key => (
                         <TabsTrigger key={key} value={key}>
                             {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
@@ -965,7 +838,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                         ))}
                         {extractedData.comparableSales && <TabsTrigger value="comparableSales">Comparables</TabsTrigger>}
                         <TabsTrigger value="marketValuation">Market Valuation</TabsTrigger>
-                        <TabsTrigger value="statutoryValuation">Statutory Valuation</TabsTrigger>
                         <TabsTrigger value="commentary">Commentary</TabsTrigger>
                         <TabsTrigger value="constructionBrief">Construction Brief</TabsTrigger>
                     </TabsList>
@@ -1004,9 +876,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     <TabsContent value="marketValuation">
                         <MarketValuationTab form={form} />
                     </TabsContent>
-                    <TabsContent value="statutoryValuation">
-                        <StatutoryValuationTab form={form} />
-                    </TabsContent>
                     <TabsContent value="commentary">
                         {renderCommentarySection()}
                     </TabsContent>
@@ -1035,3 +904,5 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     </Card>
   );
 }
+
+    
