@@ -76,6 +76,8 @@ export default function ManageCommentaryPage() {
     defaultValues: {
       PreviousSale: [],
       ContractSale: [],
+      Disclosure: [],
+      MarketComment: [],
       SuppliedDocumentation: [],
       RecentOrProvided: [],
       LIM: [],
@@ -184,6 +186,18 @@ export default function ManageCommentaryPage() {
                 name="ContractSale"
                 label="Contract for Sale"
                 description="Manage options for the [Replace_ContractSale] section."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="Disclosure"
+                label="Disclosure"
+                description="Manage options for the Disclosure section."
+            />
+            <CommentaryFieldArray 
+                control={form.control}
+                name="MarketComment"
+                label="Market Comment"
+                description="Manage options for the Market Comment section."
             />
              <CommentaryFieldArray 
                 control={form.control}
