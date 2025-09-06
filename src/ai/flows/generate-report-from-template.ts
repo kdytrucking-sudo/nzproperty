@@ -210,6 +210,7 @@ const prepareTemplateData = async (data: any) => {
   // 3) commentary
   if ((data as any)?.commentary) {
     const placeholderMapping: Record<string, string> = {
+      PurposeofValuation: 'Replace_PurposeofValuation',
       PreviousSale: 'Replace_PreviousSale',
       ContractSale: 'Replace_ContractSale',
       SuppliedDocumentation: 'Replace_SuppliedDoc',

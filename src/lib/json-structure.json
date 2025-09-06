@@ -54,6 +54,15 @@
         "required": false
       }
     },
+    "Client/Borrower": {
+      "label": "Client/Borrower",
+      "placeholder": "[extracted_Client]",
+      "displayType": "text",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
     "Land Area": {
       "label": "Land Area",
       "placeholder": "[extracted_LandArea]",
@@ -131,15 +140,6 @@
     "Date of Valuation": {
       "label": "Date of Valuation",
       "placeholder": "[extracted_DateofValuation]",
-      "displayType": "text",
-      "validation": {
-        "type": "string",
-        "required": false
-      }
-    },
-    "Client/Borrower": {
-      "label": "Client/Borrower",
-      "placeholder": "[extracted_Client]",
       "displayType": "text",
       "validation": {
         "type": "string",

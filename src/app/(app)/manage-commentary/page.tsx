@@ -74,6 +74,7 @@ export default function ManageCommentaryPage() {
   const form = useForm<CommentaryOptionsData>({
     resolver: zodResolver(CommentaryOptionsSchema),
     defaultValues: {
+      PurposeofValuation: [],
       PreviousSale: [],
       ContractSale: [],
       SuppliedDocumentation: [],
@@ -169,6 +170,12 @@ export default function ManageCommentaryPage() {
       <main>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSave)} className="space-y-6">
+            <CommentaryFieldArray 
+                control={form.control}
+                name="PurposeofValuation"
+                label="Purpose of Valuation"
+                description="Manage options for the [Replace_PurposeofValuation] section."
+            />
             <CommentaryFieldArray 
                 control={form.control}
                 name="PreviousSale"
