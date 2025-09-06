@@ -565,55 +565,57 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
               Enter the total market value to generate the formatted currency and text representations.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <FormField
-              control={form.control}
-              name="marketValuationRaw"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Market Valuation:</FormLabel>
-                  <div className="flex items-center gap-2">
-                    <FormControl>
-                      <Input 
-                        placeholder="e.g., 940000" 
-                        type="number" 
-                        {...field} />
-                    </FormControl>
-                    <Button type="button" onClick={handleMarketValuationUpdate} disabled={isConvertingToWords}>
-                      {isConvertingToWords ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update'}
-                    </Button>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="marketValuation.marketValue"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center justify-between">
-                    <FormLabel>Market Value:</FormLabel>
-                    <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_MarketValue]</code>
-                  </div>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <CardContent className="space-y-4">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                <FormField
+                  control={form.control}
+                  name="marketValuationRaw"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Input Value</FormLabel>
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Input 
+                            placeholder="e.g., 940000" 
+                            type="number" 
+                            {...field} />
+                        </FormControl>
+                        <Button type="button" onClick={handleMarketValuationUpdate} disabled={isConvertingToWords}>
+                          {isConvertingToWords ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update'}
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="marketValuation.marketValue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Market Value</FormLabel>
+                        <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_MarketValue]</code>
+                      </div>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </div>
             <FormField
               control={form.control}
               name="marketValuation.marketValuation"
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center justify-between">
-                    <FormLabel>Market Valuation:</FormLabel>
+                    <FormLabel>Market Valuation (Narrative)</FormLabel>
                     <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_MarketValuation]</code>
                   </div>
                   <FormControl>
-                    <Textarea rows={2} {...field} />
+                    <Textarea rows={4} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -757,7 +759,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                             {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                         </TabsTrigger>
                         ))}
-                        {extractedData.comparableSales && <TabsTrigger value="comparableSales">Comparables</TabsTrigger>}
                         <TabsTrigger value="marketValuation">Market Valuation</TabsTrigger>
                         <TabsTrigger value="commentary">Commentary</TabsTrigger>
                         <TabsTrigger value="constructionBrief">Construction Brief</TabsTrigger>
@@ -768,31 +769,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                         {renderFormSection(form, `data.${key}`, form.getValues(`data.${key}`), initialJsonStructure[key as keyof typeof initialJsonStructure])}
                         </TabsContent>
                     ))}
-
-                    {extractedData.comparableSales && (
-                        <TabsContent value="comparableSales" className="space-y-4 pt-4">
-                        <div className="space-y-6">
-                            {fields.map((field, index) => (
-                            <div key={field.id} className="relative rounded-md border p-4 pr-12">
-                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
-                                <FormField control={form.control} name={`data.comparableSales.${index}.compAddress`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name={`data.comparableSales.${index}.compSaleDate`} render={({ field }) => (<FormItem><FormLabel>Sale Date</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name={`data.comparableSales.${index}.compSalePrice`} render={({ field }) => (<FormItem><FormLabel>Sale Price</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name={`data.comparableSales.${index}.compLandArea`} render={({ field }) => (<FormItem><FormLabel>Land Area</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name={`data.comparableSales.${index}.compFloorArea`} render={({ field }) => (<FormItem><FormLabel>Floor Area</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                </div>
-                                <Button type="button" variant="destructive" size="icon" className="absolute right-2 top-2 h-7 w-7" onClick={() => remove(index)}>
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Remove Comparable</span>
-                                </Button>
-                            </div>
-                            ))}
-                            <Button type="button" variant="outline" size="sm" onClick={() => append({ compAddress: '', compSaleDate: '', compSalePrice: '', compLandArea: '', compFloorArea: '' })}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add Comparable Sale
-                            </Button>
-                        </div>
-                        </TabsContent>
-                    )}
                     
                     <TabsContent value="marketValuation">
                         {renderMarketValuationSection()}
