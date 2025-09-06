@@ -7,7 +7,7 @@ export const CommentaryOptionsSchema = z.object({
   SuppliedDocumentation: z.array(z.string()),
   RecentOrProvided: z.array(z.string()),
   LIM: z.array(z.string()),
-  PC78: zarray(z.string()),
+  PC78: z.array(z.string()),
   OperativeZone: z.array(z.string()),
 });
 
