@@ -1,6 +1,7 @@
 {
-  "Property": {
+  "Info": {
     "Property Address": "[extracted_Address]",
+     "Property Address Multi-Line": "[extracted_AddressMultiLine]",
     "Prepared For": "[extracted_PreparedFor]",
     "Land Area": "[extracted_LandArea]",
     "Title": "[extracted_Title]",
@@ -10,7 +11,7 @@
     "Title Owner": "[extracted_TitleOwner]",
     "Title Brief": "[extracted_TitleBrief]"
   },
-  "Valuation": {
+  "General Info": {
     "Principal Use": "[extracted_PrincipalUse]",
     "Instructed By": "[Replace_ InstructedBy]",
     "Date of Valuation": "[extracted_DateofValuation]",
@@ -20,7 +21,7 @@
     "Date of Preparation": "[extracted_DateofPreparation]",
     "Date of Inspection": "[extracted_DateofInspection]"
   },
-  "DIY": {
+  "Impro Info": {
     "SWOT Analysis Strengths": "[extracted_Strengths]",
     "SWOT Analysis Weaknesses": "[extracted_Weaknesses]",
     "Location Description": "[extracted_LocationDescription]"
