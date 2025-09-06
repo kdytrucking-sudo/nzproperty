@@ -38,6 +38,46 @@
     "Under the Auckland Unitary Plan (Operative in Part), the property has a zoning of Residential – Mixed Housing Suburban.  This zone is to be the most widespread residential zone in Auckland.  Its density controls allow a moderate l",
     "Under the Auckland Unitary Plan (Operative in Part), the property has a zoning of Residential – Mixed Housing Suburban.  This zone is to be the most widespread residential zone in Auckland.  Its density controls allow a moderate level of intensification, while retaining a relatively spacious quality consistent with a suburban residential character, compared to the Mixed Housing Urban and Terrace Housing and Apartment Buildings zones.  \nSubdivision and development within the zone allows two dwellings per site as a permitted activity and three or more dwellings being a restricted discretionary activity.  Further, development of two dwellings will need to comply with the following standards within the Mixed Housing Suburban zone:\nBuilding Height\nHeight in relation to boundary\nMinimum yard depth setbacks from each boundary\nMaximum impervious area\nBuilding coverage\nLandscaped area\nOutlook space\nDaylight ingress\nOutdoor living space\nFencing and wall restrictions\nSubdivision for three or more dwellings within this zone, while being restricted discretionary will also need to comply with the following standards within the zone, building height; height in relation to boundary and minimum yard depth setbacks from each boundary. \nVacant proposed site subdivision is a restricted discretionary activity within this zone and allows a net site area of 400 sm for parent sites that are less than one hectare.  For parent sites that are in excess of one hectare, vacant proposed site subdivision is a discretionary activity with the following rules regarding site areas:\nMinimum net site area\t320 sm\nMinimum average net site area\t400 sm\nMaximum average net site area\t480 sm\nThe Mixed Housing Suburban zone aims to enable a variety of housing types and encourage development as it is the most wide-spread residential zone under the unitary plan.  The zone is concentrated around residential use but allows for non – residential activities that will support the social and economic well-being of the community while monitoring any effects on the residential amenity of the zone.\n\nControls\nMacroinvertebrate Community Index - Urban\nControls: Stormwater Management Area Control - ESKDALE, Flow 1\n\nDesignations\nAirspace Restriction Designations - ID 4311, Defence purposes - protection of approach and departure paths (Whenuapai Air Base), Minister of Defence\n (Alternative)"
   ],
-  "ZoningOptionOperative": [],
-  "ZoningOptionPC78": []
+  "ZoningOptionOperative": [
+    "Residential – Large Lot ",
+    "Residential – Mixed Housing Suburban",
+    "Residential – Mixed Housing Urban ",
+    "Residential – Single House ",
+    "Residential – Terrace Housing and Apartment Buildings",
+    "Business – City Centre",
+    "Business - General Business",
+    "Business - Local Centre",
+    "Business - Metropolitan Centre",
+    "Business - Mixed Use",
+    "Business - Neighbourhood Centre zone",
+    "Business - Town Centre",
+    "Coastal-General Coastal Marine",
+    "Future Urban",
+    "Heavy Industry",
+    "Light Industry",
+    "Open Space - Informal Recreation",
+    "Open Space Overviews",
+    "Special Purpose – Major Recreation Facility Zone",
+    "Rural Countryside updated",
+    "Rural Production",
+    "Rural - Rural Coastal zone",
+    "Rural - Waitakere Ranges",
+    "Rural - Mixed Rural"
+  ],
+  "ZoningOptionPC78": [
+    "Residential – Mixed Housing Suburban",
+    "Residential – Mixed Housing Urban ",
+    "Residential – Terrace Housing and Apartment Buildings",
+    "No Proposed Zone",
+    "Future Coastal Hazards Plan Change",
+    "Business – City Centre",
+    "Business - General Business",
+    "Business - Local Centre",
+    "Business - Metropolitan Centre",
+    "Business - Mixed Use",
+    "Business - Neighbourhood Centre zone",
+    "Business - Town Centre",
+    "Low-Density Residential (LDR) Zone",
+    "Medium Density Residential Standards (MDRS)"
+  ]
 }

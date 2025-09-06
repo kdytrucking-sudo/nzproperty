@@ -2,11 +2,14 @@
 
 import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, PlusCircle, Trash2, Copy } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Copy, CalendarIcon } from 'lucide-react';
 import { useForm, useFieldArray, Control, FieldValues, Path } from 'react-hook-form';
 import { z } from 'zod';
+import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -25,6 +28,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { convertNumberToWords } from '@/ai/flows/convert-number-to-words';
 import { Separator } from '@/components/ui/separator';
 import { getExtractionConfig } from '@/ai/flows/get-extraction-config';
+import { cn } from '@/lib/utils';
 
 // Main form schema
 const formSchema = z.any();
@@ -58,7 +62,8 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
             ? placeholder.replace(/\[(extracted_|Replace_)\s*/, '[Replace_').replace(']', '')
             : null;
 
-        const FormComponent = displayType === 'textarea' ? Textarea : Input;
+        let FormComponent: React.ElementType = Input;
+        if (displayType === 'textarea') FormComponent = Textarea;
 
         return (
           <FormField
@@ -66,7 +71,7 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
             control={form.control}
             name={fieldPath}
             render={({ field }) => (
-              <FormItem className={FormComponent === Textarea ? 'md:col-span-2' : ''}>
+              <FormItem className={displayType === 'textarea' ? 'md:col-span-2' : ''}>
                 <div className="flex items-center justify-between">
                   <FormLabel>{label || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</FormLabel>
                   {templateTag && (
@@ -74,7 +79,31 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
                   )}
                 </div>
                 <FormControl>
-                  <FormComponent {...field} {...(FormComponent === Textarea ? { rows: 4 } : {})} />
+                  {displayType === 'date' ? (
+                    <Popover>
+                      <div className="flex items-center gap-2">
+                         <Input {...field} />
+                         <PopoverTrigger asChild>
+                            <Button variant="outline" size="icon">
+                              <CalendarIcon className="h-4 w-4" />
+                            </Button>
+                         </PopoverTrigger>
+                      </div>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          onSelect={(date) => {
+                            if (date) {
+                              field.onChange(format(date, 'dd MMMM yyyy'));
+                            }
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
+                     <FormComponent {...field} {...(displayType === 'textarea' ? { rows: 4 } : {})} />
+                  )}
                 </FormControl>
                 <FormMessage />
               </FormItem>
