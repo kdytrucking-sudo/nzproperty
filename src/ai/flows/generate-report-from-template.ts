@@ -272,7 +272,7 @@ const prepareTemplateData = async (data: any) => {
   if ((data as any)?.statutoryValuation) {
     countAndSetReplacement('Replace_LandValueByWeb', (data as any).statutoryValuation.landValueByWeb);
     countAndSetReplacement('Replace_ValueOfImprovementsByWeb', (data as any).statutoryValuation.improvementsValueByWeb);
-    countAndSetReplacement('Replace_RatingValueByWeb', (data as any).statutoryValuation.ratingValueByWeb);
+    countAndSetReplacement('Replace_RatingValuationByWeb', (data as any).statutoryValuation.ratingValueByWeb);
   }
 
   return { templateData, replacementCount };

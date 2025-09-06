@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Copy } from 'lucide-react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -51,6 +51,12 @@ const marketValuationSchema = z.object({
     marketValueByValuer: z.string().optional(),
 });
 
+const statutoryValuationSchema = z.object({
+    landValueByWeb: z.string().optional(),
+    improvementsValueByWeb: z.string().optional(),
+    ratingValueByWeb: z.string().optional(),
+});
+
 
 const formSchema = z.object({
   templateFileName: z.string().min(1, 'A report template is required.'),
@@ -58,6 +64,7 @@ const formSchema = z.object({
   commentary: commentarySchema,
   constructionBrief: constructionBriefSchema,
   marketValuation: marketValuationSchema,
+  statutoryValuation: statutoryValuationSchema,
   marketValuationRaw: z.string().optional(),
 });
 
@@ -156,6 +163,11 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         chattelsValueByValuer: '',
         marketValueByValuer: '',
       },
+      statutoryValuation: {
+        landValueByWeb: '',
+        improvementsValueByWeb: '',
+        ratingValueByWeb: '',
+      },
       marketValuationRaw: '',
     },
   });
@@ -223,6 +235,17 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     } else {
         setValuationCheckStatus('Error');
     }
+  };
+
+  const handleStatutoryCalculation = () => {
+    const landValue = parseCurrency(form.getValues('statutoryValuation.landValueByWeb'));
+    const improvementsValue = parseCurrency(form.getValues('statutoryValuation.improvementsValueByWeb'));
+
+    const total = landValue + improvementsValue;
+    
+    form.setValue('statutoryValuation.landValueByWeb', formatCurrency(landValue));
+    form.setValue('statutoryValuation.improvementsValueByWeb', formatCurrency(improvementsValue));
+    form.setValue('statutoryValuation.ratingValueByWeb', formatCurrency(total));
   };
 
 
@@ -338,7 +361,13 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     }
 
     try {
-      const fullData = { ...values.data, commentary: values.commentary, constructionBrief: values.constructionBrief, marketValuation: values.marketValuation };
+      const fullData = { 
+        ...values.data, 
+        commentary: values.commentary, 
+        constructionBrief: values.constructionBrief, 
+        marketValuation: values.marketValuation,
+        statutoryValuation: values.statutoryValuation
+      };
       const result = await generateReportFromTemplate({
         templateFileName: values.templateFileName,
         data: fullData,
@@ -555,18 +584,27 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     );
   };
   
+  const handleCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({ title: 'Copied!', description: 'Address copied to clipboard.' });
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Failed to copy', description: 'Could not copy address.' });
+    }
+  };
+
   const renderMarketValuationSection = () => {
     return (
       <div className="space-y-6 pt-4">
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-2">
             <CardTitle>Market Valuation</CardTitle>
             <CardDescription>
               Enter the total market value to generate the formatted currency and text representations.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+          <CardContent className="space-y-4">
+             <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="marketValuationRaw"
@@ -577,7 +615,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                         <FormControl>
                           <Input 
                             placeholder="e.g., 940000" 
-                            type="number" 
                             {...field} />
                         </FormControl>
                         <Button type="button" onClick={handleMarketValuationUpdate} disabled={isConvertingToWords}>
@@ -699,6 +736,61 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     <Button type="button" onClick={handleSumAndCheck}>Sum & Check</Button>
                 </div>
             </CardContent>
+        </Card>
+
+         <Card>
+          <CardHeader>
+            <CardTitle>Statutory Valuation</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2 rounded-md border bg-muted/50 p-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-muted-foreground">Property Address: <span className="text-foreground">{extractedData.Property?.['Property Address'] || 'N/A'}</span></p>
+                <Button variant="ghost" size="sm" onClick={() => handleCopy(extractedData.Property?.['Property Address'] || '')}><Copy className="mr-2 h-4 w-4" />Copy</Button>
+              </div>
+              <p className="text-sm font-medium text-muted-foreground">
+                URL: <a href="https://www.aucklandcouncil.govt.nz/property-rates-valuations/pages/find-property-rates-valuation.aspx" target="_blank" rel="noopener noreferrer" className="text-primary underline">click to open official site</a>. Please paste the copied address to find the valuation.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 items-end gap-4 md:grid-cols-3">
+                <FormField
+                    control={form.control}
+                    name="statutoryValuation.landValueByWeb"
+                    render={({ field }) => (
+                        <FormItem>
+                            <div className="flex items-center justify-between"><FormLabel>Land Value</FormLabel><code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_LandValueByWeb]</code></div>
+                            <FormControl><Input {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="statutoryValuation.improvementsValueByWeb"
+                    render={({ field }) => (
+                        <FormItem>
+                            <div className="flex items-center justify-between"><FormLabel>Value of Improvements</FormLabel><code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_ValueOfImprovementsByWeb]</code></div>
+                             <div className="flex items-center gap-2">
+                                <FormControl><Input {...field} /></FormControl>
+                                <Button type="button" variant="secondary" size="sm" onClick={handleStatutoryCalculation}>Cal</Button>
+                             </div>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="statutoryValuation.ratingValueByWeb"
+                    render={({ field }) => (
+                        <FormItem>
+                            <div className="flex items-center justify-between"><FormLabel>Rating Valuation</FormLabel><code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_RatingValueByWeb]</code></div>
+                            <FormControl><Input {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
+          </CardContent>
         </Card>
       </div>
     );
