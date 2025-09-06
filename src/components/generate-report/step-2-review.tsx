@@ -603,7 +603,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
               Enter the total market value to generate the formatted currency and text representations.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-4">
              <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
@@ -748,7 +748,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                 <Button variant="ghost" size="sm" onClick={() => handleCopy(extractedData.Property?.['Property Address'] || '')}><Copy className="mr-2 h-4 w-4" />Copy</Button>
               </div>
               <p className="text-sm font-medium text-muted-foreground">
-                URL: <a href="https://www.aucklandcouncil.govt.nz/property-rates-valuations/pages/find-property-rates-valuation.aspx" target="_blank" rel="noopener noreferrer" className="text-primary underline">click to open official site</a>. Please paste the copied address to find the valuation.
+                URL: <a href="https://www.aucklandcouncil.govt.nz/property-rates-valuations/pages/find-property-rates-valuation.aspx" target="_blank" rel="noopener noreferrer" className="text-primary underline">click to open official site</a>
               </p>
             </div>
             <div className="grid grid-cols-1 items-end gap-4 md:grid-cols-3">
@@ -757,7 +757,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     name="statutoryValuation.landValueByWeb"
                     render={({ field }) => (
                         <FormItem>
-                            <div className="flex items-center justify-between"><FormLabel>Land Value</FormLabel><code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_LandValueByWeb]</code></div>
+                            <div className="flex items-center justify-between"><FormLabel>Land Value</FormLabel><code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_LandValueFromWeb]</code></div>
                             <FormControl><Input {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
