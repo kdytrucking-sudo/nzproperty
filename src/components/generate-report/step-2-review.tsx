@@ -366,7 +366,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         commentary: values.commentary, 
         constructionBrief: values.constructionBrief, 
         marketValuation: values.marketValuation,
-        statutoryValuation: values.statutoryValuation
+        statutoryValuation: values.statutoryValuation,
       };
       const result = await generateReportFromTemplate({
         templateFileName: values.templateFileName,
@@ -737,8 +737,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                 </div>
             </CardContent>
         </Card>
-
-         <Card>
+        <Card>
           <CardHeader>
             <CardTitle>Statutory Valuation</CardTitle>
           </CardHeader>
@@ -769,7 +768,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     name="statutoryValuation.improvementsValueByWeb"
                     render={({ field }) => (
                         <FormItem>
-                            <div className="flex items-center justify-between"><FormLabel>Value of Improvements</FormLabel><code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_ValueOfImprovementsByWeb]</code></div>
+                            <div className="flex items-center justify-between"><FormLabel>Value of Improvements</FormLabel><code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_ValueofImprovementsFromWeb]</code></div>
                              <div className="flex items-center gap-2">
                                 <FormControl><Input {...field} /></FormControl>
                                 <Button type="button" variant="secondary" size="sm" onClick={handleStatutoryCalculation}>Cal</Button>
@@ -783,7 +782,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     name="statutoryValuation.ratingValueByWeb"
                     render={({ field }) => (
                         <FormItem>
-                            <div className="flex items-center justify-between"><FormLabel>Rating Valuation</FormLabel><code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_RatingValueByWeb]</code></div>
+                            <div className="flex items-center justify-between"><FormLabel>Rating Valuation</FormLabel><code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_RatingValuationFromWeb]</code></div>
                             <FormControl><Input {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
