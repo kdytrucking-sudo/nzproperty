@@ -20,7 +20,7 @@
     },
     "Instructed By": {
       "label": "Instructed By",
-      "placeholder": "[Replace_InstructedBy]",
+      "placeholder": "[extracted_InstructedBy]",
       "displayType": "text",
       "validation": {
         "type": "string",
