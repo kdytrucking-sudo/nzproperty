@@ -9,6 +9,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "snapshot": "node scripts/snapshot.mjs",
+    "restore": "node scripts/restore.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -41,6 +43,7 @@
     "@tiptap/react": "^2.5.5",
     "@tiptap/starter-kit": "^2.5.5",
     "@vis.gl/react-google-maps": "^1.1.0",
+    "archiver": "^7.0.1",
     "axios": "^1.7.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -48,6 +51,7 @@
     "docxtemplater": "^3.47.2",
     "dotenv": "^16.5.0",
     "embla-carousel-react": "^8.6.0",
+    "extract-zip": "^2.0.1",
     "firebase": "^11.9.1",
     "framer-motion": "^11.2.12",
     "genkit": "^1.14.1",
