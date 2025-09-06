@@ -565,7 +565,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
               Enter the total market value to generate the formatted currency and text representations.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-2">
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                 <FormField
                   control={form.control}
@@ -615,7 +615,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">[Replace_MarketValuation]</code>
                   </div>
                   <FormControl>
-                    <Textarea rows={4} {...field} />
+                    <Textarea rows={2} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
