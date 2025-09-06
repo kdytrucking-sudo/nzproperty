@@ -75,6 +75,7 @@ export default function ManageCommentaryPage() {
     resolver: zodResolver(CommentaryOptionsSchema),
     defaultValues: {
       PurposeofValuation: [],
+      PrincipalUse: [],
       PreviousSale: [],
       ContractSale: [],
       SuppliedDocumentation: [],
@@ -151,6 +152,7 @@ export default function ManageCommentaryPage() {
                 <Skeleton className="h-64 w-full" />
                 <Skeleton className="h-64 w-full" />
                 <Skeleton className="h-64 w-full" />
+                 <Skeleton className="h-64 w-full" />
             </main>
         </div>
     )
@@ -175,6 +177,12 @@ export default function ManageCommentaryPage() {
                 name="PurposeofValuation"
                 label="Purpose of Valuation"
                 description="Manage options for the [Replace_PurposeofValuation] section."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="PrincipalUse"
+                label="Principal Use"
+                description="Manage options for the [Replace_PrincipalUse] section."
             />
             <CommentaryFieldArray 
                 control={form.control}

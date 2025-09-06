@@ -128,15 +128,6 @@
     }
   },
   "General Info": {
-    "Principal Use": {
-      "label": "Principal Use",
-      "placeholder": "[extracted_PrincipalUse]",
-      "displayType": "text",
-      "validation": {
-        "type": "string",
-        "required": false
-      }
-    },
     "Date of Valuation": {
       "label": "Date of Valuation",
       "placeholder": "[extracted_DateofValuation]",

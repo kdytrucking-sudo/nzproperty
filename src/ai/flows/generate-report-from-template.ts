@@ -218,8 +218,7 @@ const prepareTemplateData = async (data: any) => {
       LIM: 'Replace_LIM',
       PC78: 'Replace_PC78',
       OperativeZone: 'Replace_Zone',
-      ZoningOperative: 'Replace_ZoningOperative',
-      ZoningPlanChange78: 'Replace_ZoningPlanChange78',
+      PrincipalUse: 'Replace_PrincipalUse',
     };
     Object.keys((data as any).commentary).forEach((key: string) => {
       const templateKey = placeholderMapping[key];

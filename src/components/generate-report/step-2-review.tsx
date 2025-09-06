@@ -55,8 +55,8 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
         const { label, placeholder, displayType } = fieldConfig;
         
         const templateTag = placeholder
-          ? placeholder.replace(/\[(extracted_|Replace_)\s*/, '[Replace_').replace(']', '')
-          : null;
+            ? placeholder.replace(/\[(extracted_|Replace_)\s*/, '[Replace_').replace(']', '')
+            : null;
 
         const FormComponent = displayType === 'textarea' ? Textarea : Input;
 
@@ -104,6 +104,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       data: extractedData,
       commentary: {
         PurposeofValuation: '',
+        PrincipalUse: '',
         PreviousSale: '',
         ContractSale: '',
         SuppliedDocumentation: '',
@@ -297,6 +298,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         setCommentaryOptions(commentaryOpts);
         // Set default values for commentary textareas
         form.setValue('commentary.PurposeofValuation', commentaryOpts.PurposeofValuation?.[0] || '');
+        form.setValue('commentary.PrincipalUse', commentaryOpts.PrincipalUse?.[0] || '');
         form.setValue('commentary.PreviousSale', commentaryOpts.PreviousSale?.[0] || '');
         form.setValue('commentary.ContractSale', commentaryOpts.ContractSale?.[0] || '');
         form.setValue('commentary.SuppliedDocumentation', commentaryOpts.SuppliedDocumentation?.[0] || '');
@@ -368,6 +370,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     
     const commentaryFields: { key: keyof CommentaryOptionsData, label: string, placeholder?: string }[] = [
         { key: 'PurposeofValuation', label: 'Purpose of Valuation', placeholder: '[Replace_PurposeofValuation]' },
+        { key: 'PrincipalUse', label: 'Principal Use', placeholder: '[Replace_PrincipalUse]' },
         { key: 'PreviousSale', label: 'Previous Sale', placeholder: '[Replace_PreviousSale]' },
         { key: 'ContractSale', label: 'Contract for Sale', placeholder: '[Replace_ContractSale]' },
         { key: 'SuppliedDocumentation', label: 'Supplied Documentation', placeholder: '[Replace_SuppliedDoc]' },
