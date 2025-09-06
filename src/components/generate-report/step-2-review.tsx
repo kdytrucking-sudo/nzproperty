@@ -143,6 +143,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         OperativeZone: '',
         ZoningOptionOperative: '',
         ZoningOptionPC78: '',
+        ConditionAndRepair: '',
       },
       constructionBrief: {
         generalConstruction: [],
@@ -339,6 +340,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         form.setValue('commentary.OperativeZone', commentaryOpts.OperativeZone?.[0] || '');
         form.setValue('commentary.ZoningOptionOperative', commentaryOpts.ZoningOptionOperative?.[0] || '');
         form.setValue('commentary.ZoningOptionPC78', commentaryOpts.ZoningOptionPC78?.[0] || '');
+        form.setValue('commentary.ConditionAndRepair', commentaryOpts.ConditionAndRepair?.[0] || '');
 
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load initial data', description: error.message });
@@ -413,6 +415,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         { key: 'OperativeZone', label: 'Operative Zone', placeholder: '[Replace_Zone]' },
         { key: 'ZoningOptionOperative', label: 'Zoning Option Operative', placeholder: '[Replace_ZoningOptionOperative]' },
         { key: 'ZoningOptionPC78', label: 'Zoning Option PC78', placeholder: '[Replace_ZoningOptionPC78]' },
+        { key: 'ConditionAndRepair', label: 'Condition & Repair', placeholder: '[Replace_ConditionAndRepair]' },
     ];
 
     return (

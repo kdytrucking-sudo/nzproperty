@@ -12,6 +12,7 @@ export const CommentaryOptionsSchema = z.object({
   OperativeZone: z.array(z.string()),
   ZoningOptionOperative: z.array(z.string()),
   ZoningOptionPC78: z.array(z.string()),
+  ConditionAndRepair: z.array(z.string()),
 });
 
 export type CommentaryOptionsData = z.infer<typeof CommentaryOptionsSchema>;

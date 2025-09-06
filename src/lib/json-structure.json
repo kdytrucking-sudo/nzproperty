@@ -4,85 +4,127 @@
       "label": "Property Address",
       "placeholder": "[extracted_Address]",
       "displayType": "text",
-      "validation": { "type": "string", "required": true }
+      "validation": {
+        "type": "string",
+        "required": true
+      }
     },
     "Property Address Multi-Line": {
       "label": "Property Address Multi-Line",
       "placeholder": "[extracted_AddressMultiLine]",
       "displayType": "textarea",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     },
     "Instructed By": {
       "label": "Instructed By",
       "placeholder": "[extracted_InstructedBy]",
       "displayType": "text",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     },
     "VOS Order No": {
       "label": "VOS Order No",
       "placeholder": "[extracted_VOSOrderNo]",
       "displayType": "text",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     },
     "Prepared For": {
       "label": "Prepared For",
       "placeholder": "[extracted_PreparedFor]",
       "displayType": "text",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     },
     "Instructions": {
       "label": "Instructions",
       "placeholder": "[extracted_Instructions]",
       "displayType": "text",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     },
     "Client/Borrower": {
       "label": "Client/Borrower",
       "placeholder": "[extracted_Client]",
       "displayType": "text",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     },
     "Land Area": {
       "label": "Land Area",
       "placeholder": "[extracted_LandArea]",
       "displayType": "text",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     },
     "Title": {
       "label": "Title",
       "placeholder": "[extracted_Title]",
       "displayType": "text",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     },
     "Date of Valuation": {
       "label": "Date of Valuation",
       "placeholder": "[extracted_DateofValuation]",
       "displayType": "date",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     },
     "Date of Preparation": {
       "label": "Date of Preparation",
       "placeholder": "[extracted_DateofPreparation]",
       "displayType": "date",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     },
     "Date of Inspection": {
       "label": "Date of Inspection",
       "placeholder": "[extracted_DateofInspection]",
       "displayType": "date",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     },
     "Report Version": {
       "label": "Report Version",
       "placeholder": "[extracted_ReportVersion]",
       "displayType": "text",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     },
     "Special Assumptions": {
       "label": "Special Assumptions",
       "placeholder": "[extracted_Assumptions]",
       "displayType": "textarea",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     }
   },
   "General Info": {
@@ -90,51 +132,85 @@
       "label": "Zoning Detail",
       "placeholder": "[extracted_Zoning]",
       "displayType": "textarea",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     },
-    "Property Brief Description": {
-      "label": "Property Brief Description",
-      "placeholder": "[extracted_PropertySummary]",
-      "displayType": "textarea",
-      "validation": { "type": "string", "required": false }
-    },
+
     "Title Interestes": {
       "label": "Title Interestes",
       "placeholder": "[extracted_TitleInterests]",
       "displayType": "textarea",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     },
     "Title Owner": {
       "label": "Title Owner",
       "placeholder": "[extracted_TitleOwner]",
       "displayType": "text",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     },
     "Title Brief": {
       "label": "Title Brief",
       "placeholder": "[extracted_TitleBrief]",
       "displayType": "textarea",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     }
   },
   "Impro Info": {
+    "Property Description": {
+      "label": "Property Description",
+      "placeholder": "[extracted_PropertySummary]",
+      "displayType": "textarea",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "General Description": {
+      "label": "General Description",
+      "placeholder": "[extracted_GeneralDescription]",
+      "displayType": "textarea",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
     "SWOT Analysis Strengths": {
       "label": "SWOT Analysis Strengths",
       "placeholder": "[extracted_Strengths]",
       "displayType": "textarea",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     },
     "SWOT Analysis Weaknesses": {
       "label": "SWOT Analysis Weaknesses",
       "placeholder": "[extracted_Weaknesses]",
       "displayType": "textarea",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     },
     "Location Description": {
       "label": "Location Description",
       "placeholder": "[extracted_LocationDescription]",
       "displayType": "textarea",
-      "validation": { "type": "string", "required": false }
+      "validation": {
+        "type": "string",
+        "required": false
+      }
     }
   }
 }

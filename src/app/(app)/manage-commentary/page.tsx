@@ -85,6 +85,7 @@ export default function ManageCommentaryPage() {
       OperativeZone: [],
       ZoningOptionOperative: [],
       ZoningOptionPC78: [],
+      ConditionAndRepair: [],
     },
   });
 
@@ -239,6 +240,12 @@ export default function ManageCommentaryPage() {
                 name="ZoningOptionPC78"
                 label="Zoning Option PC78"
                 description="Manage options for the [Replace_ZoningOptionPC78] section."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="ConditionAndRepair"
+                label="Condition & Repair"
+                description="Manage options for the [Replace_ConditionAndRepair] section."
             />
              {isDirty && (
                  <div className="fixed bottom-6 right-6 z-50 w-full max-w-md">
