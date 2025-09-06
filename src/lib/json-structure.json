@@ -2,7 +2,7 @@
   "Info": {
     "Property Address": {
       "label": "Property Address",
-      "placeholder": "[extracted_Address]",
+      "placeholder": "[Replace_Address]",
       "displayType": "text",
       "validation": {
         "type": "string",
@@ -11,7 +11,7 @@
     },
     "Property Address Multi-Line": {
       "label": "Property Address Multi-Line",
-      "placeholder": "[extracted_AddressMultiLine]",
+      "placeholder": "[Replace_AddressMultiLine]",
       "displayType": "textarea",
       "validation": {
         "type": "string",
@@ -20,7 +20,7 @@
     },
     "Instructed By": {
       "label": "Instructed By",
-      "placeholder": "[extracted_InstructedBy]",
+      "placeholder": "[Replace_InstructedBy]",
       "displayType": "text",
       "validation": {
         "type": "string",
@@ -29,7 +29,7 @@
     },
     "VOS Order No": {
       "label": "VOS Order No",
-      "placeholder": "[extracted_VOSOrderNo]",
+      "placeholder": "[Replace_VOSOrderNo]",
       "displayType": "text",
       "validation": {
         "type": "string",
@@ -38,7 +38,7 @@
     },
     "Prepared For": {
       "label": "Prepared For",
-      "placeholder": "[extracted_PreparedFor]",
+      "placeholder": "[Replace_PreparedFor]",
       "displayType": "text",
       "validation": {
         "type": "string",
@@ -47,7 +47,7 @@
     },
     "Instructions": {
       "label": "Instructions",
-      "placeholder": "[extracted_Instructions]",
+      "placeholder": "[Replace_Instructions]",
       "displayType": "text",
       "validation": {
         "type": "string",
@@ -56,7 +56,7 @@
     },
     "Client/Borrower": {
       "label": "Client/Borrower",
-      "placeholder": "[extracted_Client]",
+      "placeholder": "[Replace_Client]",
       "displayType": "text",
       "validation": {
         "type": "string",
@@ -65,7 +65,7 @@
     },
     "Land Area": {
       "label": "Land Area",
-      "placeholder": "[extracted_LandArea]",
+      "placeholder": "[Replace_LandArea]",
       "displayType": "text",
       "validation": {
         "type": "string",
@@ -74,7 +74,7 @@
     },
     "Title": {
       "label": "Title",
-      "placeholder": "[extracted_Title]",
+      "placeholder": "[Replace_Title]",
       "displayType": "text",
       "validation": {
         "type": "string",
@@ -83,7 +83,7 @@
     },
     "Date of Valuation": {
       "label": "Date of Valuation",
-      "placeholder": "[extracted_DateofValuation]",
+      "placeholder": "[Replace_DateofValuation]",
       "displayType": "date",
       "validation": {
         "type": "string",
@@ -92,7 +92,7 @@
     },
     "Date of Preparation": {
       "label": "Date of Preparation",
-      "placeholder": "[extracted_DateofPreparation]",
+      "placeholder": "[Replace_DateofPreparation]",
       "displayType": "date",
       "validation": {
         "type": "string",
@@ -101,7 +101,7 @@
     },
     "Date of Inspection": {
       "label": "Date of Inspection",
-      "placeholder": "[extracted_DateofInspection]",
+      "placeholder": "[Replace_DateofInspection]",
       "displayType": "date",
       "validation": {
         "type": "string",
@@ -110,7 +110,7 @@
     },
     "Report Version": {
       "label": "Report Version",
-      "placeholder": "[extracted_ReportVersion]",
+      "placeholder": "[Replace_ReportVersion]",
       "displayType": "text",
       "validation": {
         "type": "string",
@@ -119,7 +119,7 @@
     },
     "Special Assumptions": {
       "label": "Special Assumptions",
-      "placeholder": "[extracted_Assumptions]",
+      "placeholder": "[Replace_Assumptions]",
       "displayType": "textarea",
       "validation": {
         "type": "string",
@@ -130,17 +130,16 @@
   "General Info": {
     "Zoning": {
       "label": "Zoning Detail",
-      "placeholder": "[extracted_Zoning]",
+      "placeholder": "[Replace_Zoning]",
       "displayType": "textarea",
       "validation": {
         "type": "string",
         "required": false
       }
     },
-
     "Title Interestes": {
       "label": "Title Interestes",
-      "placeholder": "[extracted_TitleInterests]",
+      "placeholder": "[Replace_TitleInterests]",
       "displayType": "textarea",
       "validation": {
         "type": "string",
@@ -149,7 +148,7 @@
     },
     "Title Owner": {
       "label": "Title Owner",
-      "placeholder": "[extracted_TitleOwner]",
+      "placeholder": "[Replace_TitleOwner]",
       "displayType": "text",
       "validation": {
         "type": "string",
@@ -158,7 +157,7 @@
     },
     "Title Brief": {
       "label": "Title Brief",
-      "placeholder": "[extracted_TitleBrief]",
+      "placeholder": "[Replace_TitleBrief]",
       "displayType": "textarea",
       "validation": {
         "type": "string",
@@ -169,7 +168,7 @@
   "Impro Info": {
     "Property Description": {
       "label": "Property Description",
-      "placeholder": "[extracted_PropertySummary]",
+      "placeholder": "[Replace_PropertySummary]",
       "displayType": "textarea",
       "validation": {
         "type": "string",
@@ -178,8 +177,35 @@
     },
     "General Description": {
       "label": "General Description",
-      "placeholder": "[extracted_GeneralDescription]",
+      "placeholder": "[Replace_GeneralDescription]",
       "displayType": "textarea",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "EGS-BF": {
+      "label": "EGS-BF",
+      "placeholder": "[Replace_EGSBF]",
+      "displayType": "text",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "EGS-FH": {
+      "label": "EGS-FH",
+      "placeholder": "[Replace_EGSFH]",
+      "displayType": "text",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "EGS-E/LS": {
+      "label": "EGS-E/LS",
+      "placeholder": "[Replace_EGSELS]",
+      "displayType": "text",
       "validation": {
         "type": "string",
         "required": false
@@ -187,7 +213,7 @@
     },
     "SWOT Analysis Strengths": {
       "label": "SWOT Analysis Strengths",
-      "placeholder": "[extracted_Strengths]",
+      "placeholder": "[Replace_Strengths]",
       "displayType": "textarea",
       "validation": {
         "type": "string",
@@ -196,7 +222,7 @@
     },
     "SWOT Analysis Weaknesses": {
       "label": "SWOT Analysis Weaknesses",
-      "placeholder": "[extracted_Weaknesses]",
+      "placeholder": "[Replace_Weaknesses]",
       "displayType": "textarea",
       "validation": {
         "type": "string",
@@ -205,7 +231,7 @@
     },
     "Location Description": {
       "label": "Location Description",
-      "placeholder": "[extracted_LocationDescription]",
+      "placeholder": "[Replace_LocationDescription]",
       "displayType": "textarea",
       "validation": {
         "type": "string",

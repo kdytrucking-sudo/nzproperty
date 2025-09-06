@@ -191,8 +191,8 @@ const prepareTemplateData = async (data: any) => {
         Object.keys(sectionSchema).forEach((fieldKey) => {
             const fieldConfig = sectionSchema[fieldKey];
             if (fieldConfig && typeof fieldConfig === 'object' && fieldConfig.placeholder) {
-                const placeholder = fieldConfig.placeholder;
-                const templateKey = placeholder.replace(/\[|\]/g, '').replace('extracted_', 'Replace_');
+                // IMPORTANT: Directly use the placeholder from the JSON, removing only the brackets.
+                const templateKey = fieldConfig.placeholder.replace(/\[|\]/g, '');
                 const value = dataSection[fieldKey];
                 countAndSetReplacement(templateKey, value);
             }
@@ -211,6 +211,7 @@ const prepareTemplateData = async (data: any) => {
   if ((data as any)?.commentary) {
     const placeholderMapping: Record<string, string> = {
       PurposeofValuation: 'Replace_PurposeofValuation',
+      PrincipalUse: 'Replace_PrincipalUse',
       PreviousSale: 'Replace_PreviousSale',
       ContractSale: 'Replace_ContractSale',
       SuppliedDocumentation: 'Replace_SuppliedDoc',
@@ -218,7 +219,6 @@ const prepareTemplateData = async (data: any) => {
       LIM: 'Replace_LIM',
       PC78: 'Replace_PC78',
       OperativeZone: 'Replace_Zone',
-      PrincipalUse: 'Replace_PrincipalUse',
       ZoningOptionOperative: 'Replace_ZoningOptionOperative',
       ZoningOptionPC78: 'Replace_ZoningOptionPC78',
       ConditionAndRepair: 'Replace_ConditionAndRepair',
