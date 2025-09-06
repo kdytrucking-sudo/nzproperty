@@ -9,7 +9,6 @@ import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import fs from 'fs/promises';
 import path from 'path';
-import initialJsonStructure from '@/lib/json-structure.json';
 import globalContent from '@/lib/global-content.json';
 import { contentFields } from '@/lib/content-config';
 
@@ -158,6 +157,11 @@ export type GenerateReportOutput = z.infer<typeof GenerateReportOutputSchema>;
 const prepareTemplateData = async (data: any) => {
   const templateData: Record<string, any> = {};
   let replacementCount = 0;
+  
+  const jsonStructurePath = path.join(process.cwd(), 'src', 'lib', 'json-structure.json');
+  const jsonString = await fs.readFile(jsonStructurePath, 'utf-8');
+  const initialJsonStructure = JSON.parse(jsonString);
+
 
   const countAndSetReplacement = (key: string, value: any): void => {
     const normalizedValue = normalizeNewlines(value);
@@ -193,19 +197,14 @@ const prepareTemplateData = async (data: any) => {
     });
   });
 
-  // 2) Instructed By（原结构之外的补充）
-  if (data?.Valuation?.['Instructed By']) {
-    countAndSetReplacement('Replace_InstructedBy', data.Valuation['Instructed By']);
-  }
-
-  // 3) 全局内容（manage-content）
+  // 2) 全局内容（manage-content）
   contentFields.forEach((field: any) => {
     const templateKey: string = String(field.templateKey).replace(/\[|\]/g, '');
     const contentValue = (globalContent as Record<string, any>)[field.name as keyof typeof globalContent];
     countAndSetReplacement(templateKey, contentValue);
   });
 
-  // 4) commentary
+  // 3) commentary
   if ((data as any)?.commentary) {
     const placeholderMapping: Record<string, string> = {
       PreviousSale: 'Replace_PreviousSale',
@@ -226,12 +225,12 @@ const prepareTemplateData = async (data: any) => {
     });
   }
 
-  // 5) constructionBrief
+  // 4) constructionBrief
   if ((data as any)?.constructionBrief?.finalBrief) {
     countAndSetReplacement('Replace_ConstructionBrief', (data as any).constructionBrief.finalBrief);
   }
 
-  // 6) marketValuation
+  // 5) marketValuation
   if ((data as any)?.marketValuation) {
     if ((data as any).marketValuation.marketValue) {
         countAndSetReplacement('Replace_MarketValue', (data as any).marketValuation.marketValue);
@@ -253,7 +252,7 @@ const prepareTemplateData = async (data: any) => {
     }
   }
 
-  // 7) comparableSales
+  // 6) comparableSales
   if (Array.isArray((data as any)?.comparableSales)) {
     templateData['comparableSales'] = (data as any).comparableSales.map((sale: Record<string, any>) => {
       const n: Record<string, any> = {};
@@ -268,7 +267,7 @@ const prepareTemplateData = async (data: any) => {
     templateData['comparableSales'] = [];
   }
 
-  // 8) statutoryValuation
+  // 7) statutoryValuation
   if ((data as any)?.statutoryValuation) {
     countAndSetReplacement('Replace_LandValueFromWeb', (data as any).statutoryValuation.landValueByWeb);
     countAndSetReplacement('Replace_ValueofImprovementsFromWeb', (data as any).statutoryValuation.improvementsValueByWeb);
@@ -356,3 +355,5 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     }
   }
 );
+
+    

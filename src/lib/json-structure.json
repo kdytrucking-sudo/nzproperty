@@ -1,7 +1,8 @@
 {
   "Info": {
     "Property Address": "[extracted_Address]",
-     "Property Address Multi-Line": "[extracted_AddressMultiLine]",
+    "Property Address Multi-Line": "[extracted_AddressMultiLine]",
+    "Instructed By": "[Replace_ InstructedBy]",
     "Prepared For": "[extracted_PreparedFor]",
     "Land Area": "[extracted_LandArea]",
     "Title": "[extracted_Title]",
@@ -13,7 +14,7 @@
   },
   "General Info": {
     "Principal Use": "[extracted_PrincipalUse]",
-    "Instructed By": "[Replace_ InstructedBy]",
+
     "Date of Valuation": "[extracted_DateofValuation]",
     "VOS Order No": "[extracted_VOSOrderNo]",
     "Client/Borrower": "[extracted_Client]",

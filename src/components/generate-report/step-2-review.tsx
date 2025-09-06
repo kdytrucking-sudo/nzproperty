@@ -19,12 +19,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { listTemplates } from '@/ai/flows/list-templates';
 import { generateReportFromTemplate } from '@/ai/flows/generate-report-from-template';
 import type { PropertyData } from '@/lib/types';
-import initialJsonStructure from '@/lib/json-structure.json';
 import { getCommentaryOptions } from '@/ai/flows/get-commentary-options';
 import type { CommentaryOptionsData } from '@/lib/commentary-schema';
 import { Checkbox } from '@/components/ui/checkbox';
 import { convertNumberToWords } from '@/ai/flows/convert-number-to-words';
 import { Separator } from '@/components/ui/separator';
+import { getExtractionConfig } from '@/ai/flows/get-extraction-config';
 
 const commentarySchema = z.object({
   PreviousSale: z.string().optional(),
@@ -136,6 +136,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   const [isLoadingInitialData, setIsLoadingInitialData] = React.useState(true);
   const [isConvertingToWords, setIsConvertingToWords] = React.useState(false);
   const [valuationCheckStatus, setValuationCheckStatus] = React.useState<'Equal' | 'Error' | null>(null);
+  const [jsonStructure, setJsonStructure] = React.useState<any>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -319,11 +320,15 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     async function fetchInitialData() {
       setIsLoadingInitialData(true);
       try {
-        const [templateList, commentaryOpts] = await Promise.all([
+        const [templateList, commentaryOpts, config] = await Promise.all([
           listTemplates(),
-          getCommentaryOptions()
+          getCommentaryOptions(),
+          getExtractionConfig()
         ]);
         
+        const loadedJsonStructure = JSON.parse(config.jsonStructure);
+        setJsonStructure(loadedJsonStructure);
+
         setTemplates(templateList);
         if (templateList.length > 0) {
           form.setValue('templateFileName', templateList[0]);
@@ -349,8 +354,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const tabKeys = Object.keys(initialJsonStructure);
-  const defaultTab = tabKeys.length > 0 ? tabKeys[0] : 'comparableSales';
+  const tabKeys = jsonStructure ? Object.keys(jsonStructure) : [];
+  const defaultTab = tabKeys.length > 0 ? tabKeys[0] : 'marketValuation';
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsGenerating(true);
@@ -858,7 +863,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
 
                     {tabKeys.map(key => (
                         <TabsContent key={key} value={key} className="space-y-4 pt-4">
-                        {renderFormSection(form, `data.${key}`, form.getValues(`data.${key}`), initialJsonStructure[key as keyof typeof initialJsonStructure])}
+                        {renderFormSection(form, `data.${key}`, form.getValues(`data.${key}`), jsonStructure?.[key])}
                         </TabsContent>
                     ))}
                     
@@ -893,3 +898,5 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     </Card>
   );
 }
+
+    
