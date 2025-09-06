@@ -97,9 +97,16 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
       {keys.map((key) => {
         const fieldPath = `${path}.${key}`;
         const structureValue = structure[key];
-        const templateTag = (typeof structureValue === 'string' && structureValue.startsWith('[extracted_'))
-          ? structureValue.replace('[extracted_', '[Replace_').replace(']', '')
-          : null;
+        
+        let templateTag = null;
+        if (typeof structureValue === 'string') {
+          if (structureValue.startsWith('[extracted_')) {
+            templateTag = structureValue.replace('[extracted_', '[Replace_').replace(']', '');
+          } else if (structureValue.startsWith('[Replace_')) {
+            templateTag = structureValue;
+          }
+        }
+        
         const FormComponent = textAreaFields.includes(fieldPath) ? Textarea : Input;
 
         return (
@@ -603,13 +610,13 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     return (
       <div className="space-y-6 pt-4">
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-4">
             <CardTitle>Market Valuation</CardTitle>
             <CardDescription>
               Enter the total market value to generate the formatted currency and text representations.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 pt-4">
+          <CardContent className="space-y-4">
              <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
@@ -898,5 +905,3 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     </Card>
   );
 }
-
-    
