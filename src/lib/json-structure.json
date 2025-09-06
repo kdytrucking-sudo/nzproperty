@@ -1,29 +1,206 @@
 {
   "Info": {
-    "Property Address": "[extracted_Address]",
-    "Property Address Multi-Line": "[extracted_AddressMultiLine]",
-    "Instructed By": "[extracted_ InstructedBy]",
-    "Prepared For": "[extracted_PreparedFor]",
-    "Land Area": "[extracted_LandArea]",
-    "Title": "[extracted_Title]",
-    "Zoning": "[extracted_Zoning]",
-    "Property Brief Description": "[extracted_PropertySummary]",
-    "Title Interestes": "[extracted_TitleInterests]",
-    "Title Owner": "[extracted_TitleOwner]",
-    "Title Brief": "[extracted_TitleBrief]"
+    "Property Address": {
+      "label": "Property Address",
+      "placeholder": "[extracted_Address]",
+      "displayType": "text",
+      "validation": {
+        "type": "string",
+        "required": true
+      }
+    },
+    "Property Address Multi-Line": {
+      "label": "Property Address Multi-Line",
+      "placeholder": "[extracted_AddressMultiLine]",
+      "displayType": "textarea",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "Instructed By": {
+      "label": "Instructed By",
+      "placeholder": "[extracted_InstructedBy]",
+      "displayType": "text",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "VOS Order No": {
+      "label": "VOS Order No",
+      "placeholder": "[extracted_VOSOrderNo]",
+      "displayType": "text",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "Prepared For": {
+      "label": "Prepared For",
+      "placeholder": "[extracted_PreparedFor]",
+      "displayType": "text",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "Instructions": {
+      "label": "Instructions",
+      "placeholder": "[extracted_Instructions]",
+      "displayType": "text",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "Land Area": {
+      "label": "Land Area",
+      "placeholder": "[extracted_LandArea]",
+      "displayType": "text",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "Title": {
+      "label": "Title",
+      "placeholder": "[extracted_Title]",
+      "displayType": "text",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "Zoning": {
+      "label": "Zoning",
+      "placeholder": "[extracted_Zoning]",
+      "displayType": "textarea",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "Property Brief Description": {
+      "label": "Property Brief Description",
+      "placeholder": "[extracted_PropertySummary]",
+      "displayType": "textarea",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "Title Interestes": {
+      "label": "Title Interestes",
+      "placeholder": "[extracted_TitleInterests]",
+      "displayType": "textarea",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "Title Owner": {
+      "label": "Title Owner",
+      "placeholder": "[extracted_TitleOwner]",
+      "displayType": "text",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "Title Brief": {
+      "label": "Title Brief",
+      "placeholder": "[extracted_TitleBrief]",
+      "displayType": "textarea",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    }
   },
   "General Info": {
-    "Principal Use": "[extracted_PrincipalUse]",
-    "Date of Valuation": "[extracted_DateofValuation]",
-    "VOS Order No": "[extracted_VOSOrderNo]",
-    "Client/Borrower": "[extracted_Client]",
-    "Special Assumptions": "[extracted_Assumptions]",
-    "Date of Preparation": "[extracted_DateofPreparation]",
-    "Date of Inspection": "[extracted_DateofInspection]"
+    "Principal Use": {
+      "label": "Principal Use",
+      "placeholder": "[extracted_PrincipalUse]",
+      "displayType": "text",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "Date of Valuation": {
+      "label": "Date of Valuation",
+      "placeholder": "[extracted_DateofValuation]",
+      "displayType": "text",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "Client/Borrower": {
+      "label": "Client/Borrower",
+      "placeholder": "[extracted_Client]",
+      "displayType": "text",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "Special Assumptions": {
+      "label": "Special Assumptions",
+      "placeholder": "[extracted_Assumptions]",
+      "displayType": "textarea",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "Date of Preparation": {
+      "label": "Date of Preparation",
+      "placeholder": "[extracted_DateofPreparation]",
+      "displayType": "text",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "Date of Inspection": {
+      "label": "Date of Inspection",
+      "placeholder": "[extracted_DateofInspection]",
+      "displayType": "text",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    }
   },
   "Impro Info": {
-    "SWOT Analysis Strengths": "[extracted_Strengths]",
-    "SWOT Analysis Weaknesses": "[extracted_Weaknesses]",
-    "Location Description": "[extracted_LocationDescription]"
+    "SWOT Analysis Strengths": {
+      "label": "SWOT Analysis Strengths",
+      "placeholder": "[extracted_Strengths]",
+      "displayType": "textarea",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "SWOT Analysis Weaknesses": {
+      "label": "SWOT Analysis Weaknesses",
+      "placeholder": "[extracted_Weaknesses]",
+      "displayType": "textarea",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "Location Description": {
+      "label": "Location Description",
+      "placeholder": "[extracted_LocationDescription]",
+      "displayType": "textarea",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    }
   }
 }

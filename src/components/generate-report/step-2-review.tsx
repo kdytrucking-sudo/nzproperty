@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, PlusCircle, Trash2, Copy } from 'lucide-react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Control, FieldValues, Path } from 'react-hook-form';
 import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
@@ -26,47 +26,8 @@ import { convertNumberToWords } from '@/ai/flows/convert-number-to-words';
 import { Separator } from '@/components/ui/separator';
 import { getExtractionConfig } from '@/ai/flows/get-extraction-config';
 
-const commentarySchema = z.object({
-  PreviousSale: z.string().optional(),
-  ContractSale: z.string().optional(),
-  SuppliedDocumentation: z.string().optional(),
-  RecentOrProvided: z.string().optional(),
-  LIM: z.string().optional(),
-  PC78: z.string().optional(),
-  OperativeZone: z.string().optional(),
-});
-
-const constructionBriefSchema = z.object({
-    generalConstruction: z.array(z.string()),
-    interior: z.array(z.string()),
-    finalBrief: z.string(),
-});
-
-const marketValuationSchema = z.object({
-    marketValue: z.string().optional(),
-    marketValuation: z.string().optional(),
-    improvementsValueByValuer: z.string().optional(),
-    landValueByValuer: z.string().optional(),
-    chattelsValueByValuer: z.string().optional(),
-    marketValueByValuer: z.string().optional(),
-});
-
-const statutoryValuationSchema = z.object({
-    landValueByWeb: z.string().optional(),
-    improvementsValueByWeb: z.string().optional(),
-    ratingValueByWeb: z.string().optional(),
-});
-
-
-const formSchema = z.object({
-  templateFileName: z.string().min(1, 'A report template is required.'),
-  data: z.any(),
-  commentary: commentarySchema,
-  constructionBrief: constructionBriefSchema,
-  marketValuation: marketValuationSchema,
-  statutoryValuation: statutoryValuationSchema,
-  marketValuationRaw: z.string().optional(),
-});
+// Main form schema
+const formSchema = z.any();
 
 type Step2ReviewProps = {
   extractedData: PropertyData;
@@ -80,34 +41,24 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
   }
 
   const keys = Object.keys(data);
-  const textAreaFields = [
-    'data.DIY.SWOT Analysis Strengths',
-    'data.DIY.SWOT Analysis Weaknesses',
-    'data.DIY.Location Description',
-    'data.Property.Property Brief Description',
-    'data.Property.Zoning',
-    'data.Property.Title Interestes',
-    'data.Valuation.Special Assumptions',
-    'data.Property.Title Brief',
-    'data.Info.Property Address Multi-Line'
-  ];
-
+  
   return (
     <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
       {keys.map((key) => {
         const fieldPath = `${path}.${key}`;
-        const structureValue = structure[key];
+        const fieldConfig = structure[key];
         
-        let templateTag = null;
-        if (typeof structureValue === 'string') {
-          if (structureValue.startsWith('[extracted_')) {
-            templateTag = structureValue.replace('[extracted_', '[Replace_').replace(']', '');
-          } else if (structureValue.startsWith('[Replace_')) {
-            templateTag = structureValue;
-          }
+        if (!fieldConfig || typeof fieldConfig !== 'object') {
+          return null; // Skip if no config
         }
         
-        const FormComponent = textAreaFields.includes(fieldPath) ? Textarea : Input;
+        const { label, placeholder, displayType } = fieldConfig;
+        
+        const templateTag = placeholder
+          ? placeholder.replace('[extracted_', '[Replace_').replace(']', '')
+          : null;
+
+        const FormComponent = displayType === 'textarea' ? Textarea : Input;
 
         return (
           <FormField
@@ -117,7 +68,7 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
             render={({ field }) => (
               <FormItem className={FormComponent === Textarea ? 'md:col-span-2' : ''}>
                 <div className="flex items-center justify-between">
-                  <FormLabel>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</FormLabel>
+                  <FormLabel>{label || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</FormLabel>
                   {templateTag && (
                     <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{templateTag}</code>
                   )}
@@ -135,6 +86,7 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
   );
 };
 
+
 export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2ReviewProps) {
   const { toast } = useToast();
   const [templates, setTemplates] = React.useState<string[]>([]);
@@ -145,7 +97,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   const [valuationCheckStatus, setValuationCheckStatus] = React.useState<'Equal' | 'Error' | null>(null);
   const [jsonStructure, setJsonStructure] = React.useState<any>(null);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       templateFileName: '',
@@ -757,8 +709,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
           <CardContent className="space-y-4">
             <div className="space-y-2 rounded-md border bg-muted/50 p-3">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-muted-foreground">Property Address: <span className="text-foreground">{extractedData.Property?.['Property Address'] || 'N/A'}</span></p>
-                <Button variant="ghost" size="sm" onClick={() => handleCopy(extractedData.Property?.['Property Address'] || '')}><Copy className="mr-2 h-4 w-4" />Copy</Button>
+                <p className="text-sm font-medium text-muted-foreground">Property Address: <span className="text-foreground">{extractedData.Info?.['Property Address'] || 'N/A'}</span></p>
+                <Button variant="ghost" size="sm" onClick={() => handleCopy(extractedData.Info?.['Property Address'] || '')}><Copy className="mr-2 h-4 w-4" />Copy</Button>
               </div>
               <p className="text-sm font-medium text-muted-foreground">
                 URL: <a href="https://www.aucklandcouncil.govt.nz/property-rates-valuations/pages/find-property-rates-valuation.aspx" target="_blank" rel="noopener noreferrer" className="text-primary underline">click to open official site</a>

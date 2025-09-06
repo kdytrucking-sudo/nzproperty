@@ -16,7 +16,7 @@ import { contentFields } from '@/lib/content-config';
  * Helpers
  * ----------------------------- */
 
-// 统一换行：把字面量 "\n" 也转为真实换行
+// 统一换行：把字面量 "\\n" 也转为真实换行
 const normalizeNewlines = (s: unknown): string =>
   s !== undefined && s !== null
     ? String(s).replace(/\\n/g, '\n').replace(/\r\n/g, '\n').replace(/\r/g, '\n')
@@ -160,7 +160,7 @@ const prepareTemplateData = async (data: any) => {
   
   const jsonStructurePath = path.join(process.cwd(), 'src', 'lib', 'json-structure.json');
   const jsonString = await fs.readFile(jsonStructurePath, 'utf-8');
-  const initialJsonStructure = JSON.parse(jsonString);
+  const jsonStructure = JSON.parse(jsonString);
 
 
   const countAndSetReplacement = (key: string, value: any): void => {
@@ -182,19 +182,22 @@ const prepareTemplateData = async (data: any) => {
     }
   };
 
-  // 1) initialJsonStructure 映射
-  Object.keys(initialJsonStructure as Record<string, unknown>).forEach((sectionKey: string) => {
-    const sectionSchema: Record<string, any> = (initialJsonStructure as Record<string, any>)[sectionKey] ?? {};
-    const dataSection: Record<string, any> | undefined = (data as Record<string, any>)?.[sectionKey];
+  // 1) Handle data based on the dynamic jsonStructure
+  Object.keys(jsonStructure).forEach((sectionKey) => {
+    const sectionSchema = jsonStructure[sectionKey] || {};
+    const dataSection = data?.[sectionKey];
 
-    Object.keys(sectionSchema).forEach((fieldKey: string) => {
-      const placeholder = sectionSchema[fieldKey] as unknown;
-      if (typeof placeholder === 'string' && (placeholder as string).startsWith('[extracted_')) {
-        const templateKey = (placeholder as string).replace('[extracted_', 'Replace_').replace(']', '');
-        const value = dataSection?.[fieldKey];
-        countAndSetReplacement(templateKey, value);
-      }
-    });
+    if (dataSection) {
+        Object.keys(sectionSchema).forEach((fieldKey) => {
+            const fieldConfig = sectionSchema[fieldKey];
+            if (fieldConfig && typeof fieldConfig === 'object' && fieldConfig.placeholder) {
+                const placeholder = fieldConfig.placeholder;
+                const templateKey = placeholder.replace(/\[|\]/g, '').replace('extracted_', 'Replace_');
+                const value = dataSection[fieldKey];
+                countAndSetReplacement(templateKey, value);
+            }
+        });
+    }
   });
 
   // 2) 全局内容（manage-content）
@@ -355,5 +358,3 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     }
   }
 );
-
-    

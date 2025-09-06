@@ -20,21 +20,34 @@ async function getOutputSchema() {
 
     function createZodSchema(obj: any): z.ZodType<any> {
         if (Array.isArray(obj)) {
-            if (obj.length > 0) {
-                return z.array(createZodSchema(obj[0]));
-            } else {
-                return z.array(z.any());
-            }
+            // This case might not be used with the new structure but is kept for safety
+            return obj.length > 0 ? z.array(createZodSchema(obj[0])) : z.array(z.any());
         } else if (typeof obj === 'object' && obj !== null) {
             const shape: { [key: string]: z.ZodType<any> } = {};
             for (const key in obj) {
-                shape[key] = createZodSchema(obj[key]);
+                // Now we need to look deeper into the object to find the placeholder
+                if (typeof obj[key] === 'object' && obj[key] !== null && 'placeholder' in obj[key]) {
+                    const fieldConfig = obj[key];
+                    const description = `Extracted data for ${fieldConfig.label || key}`;
+                    
+                    // Basic validation type handling
+                    let zodType;
+                    if (fieldConfig.validation?.type === 'number') {
+                        zodType = z.union([z.number(), z.string()]).describe(description); // Allow string to be flexible
+                    } else {
+                        zodType = z.string().describe(description);
+                    }
+                    
+                    shape[key] = zodType;
+
+                } else {
+                     // Handle nested objects that are not field definitions (if any)
+                    shape[key] = createZodSchema(obj[key]);
+                }
             }
             return z.object(shape);
-        } else if (typeof obj === 'string') {
-            // All fields are treated as strings as per the placeholder format.
-            return z.string().describe(`Extracted data for ${obj.replace(/\[|\]/g, '')}`);
         }
+        // Fallback for any other type
         return z.any();
     }
     return createZodSchema(jsonObject);
