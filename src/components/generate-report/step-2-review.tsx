@@ -112,6 +112,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         LIM: '',
         PC78: '',
         OperativeZone: '',
+        ZoningOptionOperative: '',
+        ZoningOptionPC78: '',
       },
       constructionBrief: {
         generalConstruction: [],
@@ -306,6 +308,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         form.setValue('commentary.LIM', commentaryOpts.LIM?.[0] || '');
         form.setValue('commentary.PC78', commentaryOpts.PC78?.[0] || '');
         form.setValue('commentary.OperativeZone', commentaryOpts.OperativeZone?.[0] || '');
+        form.setValue('commentary.ZoningOptionOperative', commentaryOpts.ZoningOptionOperative?.[0] || '');
+        form.setValue('commentary.ZoningOptionPC78', commentaryOpts.ZoningOptionPC78?.[0] || '');
 
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load initial data', description: error.message });
@@ -378,6 +382,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         { key: 'LIM', label: 'Land Information Memorandum', placeholder: '[Replace_LIM]' },
         { key: 'PC78', label: 'Plan Change 78: Intensification', placeholder: '[Replace_PC78]' },
         { key: 'OperativeZone', label: 'Operative Zone', placeholder: '[Replace_Zone]' },
+        { key: 'ZoningOptionOperative', label: 'Zoning Option Operative', placeholder: '[Replace_ZoningOptionOperative]' },
+        { key: 'ZoningOptionPC78', label: 'Zoning Option PC78', placeholder: '[Replace_ZoningOptionPC78]' },
     ];
 
     return (
