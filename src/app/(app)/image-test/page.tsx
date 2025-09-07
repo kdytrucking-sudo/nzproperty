@@ -101,7 +101,7 @@ export default function ImageTestPage() {
       <header>
         <h1 className="font-headline text-3xl font-bold text-foreground">Image Replacement Test</h1>
         <p className="text-muted-foreground">
-          An isolated environment to test .docx image replacement functionality without external modules.
+          An isolated environment to test .docx image replacement functionality.
         </p>
       </header>
 
@@ -173,7 +173,7 @@ export default function ImageTestPage() {
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>How it works</AlertTitle>
                   <AlertDescription>
-                    This test uses a custom parser. In your template, insert a placeholder like <code>{'{image_placeholder}'}</code>. You can use any placeholder image in the template to define the size and position. The tag does not need to be in the alt-text.
+                   In your template, insert a placeholder like <code>{'{image_placeholder}'}</code> (inside curly braces). The image module will use the dimensions of any placeholder image you've used in the template, so you can control the size and position.
                   </AlertDescription>
                 </Alert>
               </CardContent>

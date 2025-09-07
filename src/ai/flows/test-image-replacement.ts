@@ -1,6 +1,7 @@
 'use server';
 /**
  * @fileOverview A Genkit flow to test image replacement in a .docx template.
+ * This version uses a custom parser and does not require external image modules.
  */
 
 import { ai } from '@/ai/genkit';
@@ -20,40 +21,30 @@ const TestImageReplacementOutputSchema = z.object({
 });
 export type TestImageReplacementOutput = z.infer<typeof TestImageReplacementOutputSchema>;
 
-// This is a custom parser for docxtemplater that handles image data.
-// It looks for a placeholder and returns the image data in a format
-// that docxtemplater can understand, without needing an external module.
-const imageDataParser = (tag: string) => {
-    if (tag.startsWith('image_')) {
-        return {
-            _type: "image",
-            module: "open-xml-templating/docxtemplater-image-module",
-            source: (scope: any) => {
-                // The 'scope' is the data object passed to doc.setData()
-                // We expect the image data to be a base64 string on the scope object.
-                const imageBase64 = scope[tag];
-                if (!imageBase64 || typeof imageBase64 !== 'string') {
-                    return new (Docxtemplater as any).Errors.XTError("Image data not found or invalid for tag " + tag);
-                }
-                // Remove the data URI prefix (e.g., "data:image/png;base64,")
-                return Buffer.from(imageBase64.split(',')[1], 'base64');
-            },
-            // This part is important for resizing. The size will be taken from the placeholder image in the template.
-            formatter: (tag: string, scope: any) => {
-                 const image = scope[tag];
-                 return image;
-            },
-        };
-    }
-    return null;
-};
-
 
 export async function testImageReplacement(
   input: TestImageReplacementInput
 ): Promise<TestImageReplacementOutput> {
   return testImageReplacementFlow(input);
 }
+
+// Custom parser to handle image tags
+const imageDataParser = (tag: string) => {
+  if (tag.startsWith('image_')) {
+    return {
+      get(scope: any) {
+        // 'scope' is the data object passed to doc.setData()
+        // We expect the image data to be in scope.image
+        if (tag === 'image_placeholder') {
+          return scope.image;
+        }
+        return undefined;
+      },
+    };
+  }
+  return null;
+};
+
 
 const testImageReplacementFlow = ai.defineFlow(
   {
@@ -63,25 +54,23 @@ const testImageReplacementFlow = ai.defineFlow(
   },
   async ({ templateDataUri, imageDataUri, placeholder }) => {
     try {
-      // 1. Decode template from data URI
+      // 1. Decode template and image from data URIs
       const templateBuffer = Buffer.from(templateDataUri.split(',')[1], 'base64');
-
+      const imageBase64 = imageDataUri.split(',')[1];
       const zip = new PizZip(templateBuffer);
-
+      
       const doc = new Docxtemplater(zip, {
-        // Use the custom parser we defined above
-        parser: imageDataParser,
-        // The paragraphLoop setting is recommended when using images.
+        // No external modules needed
         paragraphLoop: true,
         linebreaks: true,
       });
       
       // 2. Prepare data for the template
-      // The key must match the placeholder text inside the delimiters, without the '{}'
-      // e.g., for placeholder {image_placeholder}, key is 'image_placeholder'
+      // The key in the data object must match the placeholder in the template.
+      // The value is the base64 encoded image data.
       const placeholderKey = placeholder.replace(/\{|\}/g, '');
       const templateData = {
-        [placeholderKey]: imageDataUri // Pass the full data URI
+        [placeholderKey]: imageBase64
       };
 
       doc.setData(templateData);
@@ -106,13 +95,13 @@ const testImageReplacementFlow = ai.defineFlow(
     } catch (error: any) {
       console.error('Error during image replacement test:', error);
       let errorMessage = 'Failed to process the document.';
-      if (error.properties && error.properties.errors) {
-        const firstError = error.properties.errors[0];
-        errorMessage += ` Details: ${firstError.properties.explanation} (ID: ${firstError.id})`;
-      } else {
-        errorMessage = error.message;
-      }
-      throw new Error(errorMessage);
+       if (error.properties && error.properties.errors) {
+         const firstError = error.properties.errors[0];
+         errorMessage += ` Details: ${firstError.properties.explanation} (ID: ${firstError.id})`;
+       } else {
+         errorMessage = error.message;
+       }
+       throw new Error(errorMessage);
     }
   }
 );
