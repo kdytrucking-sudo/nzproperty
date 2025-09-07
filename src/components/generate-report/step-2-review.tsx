@@ -3,8 +3,8 @@
 
 import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, PlusCircle, Trash2, Copy, CalendarIcon, Image as ImageIcon } from 'lucide-react';
-import { useForm, useFieldArray, Control, FieldValues, Path, UseFormSetValue } from 'react-hook-form';
+import { Loader2, PlusCircle, Trash2, Copy, CalendarIcon, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { format } from 'date-fns';
 
@@ -29,14 +29,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { convertNumberToWords } from '@/ai/flows/convert-number-to-words';
 import { Separator } from '@/components/ui/separator';
 import { getExtractionConfig } from '@/ai/flows/get-extraction-config';
-import { cn } from '@/lib/utils';
 import { getMultiOptions } from '@/ai/flows/get-multi-options';
-import type { MultiOptionsData, MultiOptionCard, MultiOptionItem } from '@/lib/multi-options-schema';
+import type { MultiOptionCard, MultiOptionItem, MultiOptionsData } from '@/lib/multi-options-schema';
 import { FileUploader } from '../file-uploader';
 import { getImageOptions } from '@/ai/flows/get-image-options';
 import type { ImageConfig } from '@/lib/image-options-schema';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { AlertCircle } from 'lucide-react';
 
 const ACCEPTED_IMAGE_TYPES = {
   'image/png': ['.png'],
@@ -185,7 +183,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
+  useFieldArray({
     control: form.control,
     name: 'data.comparableSales',
   });
@@ -413,15 +411,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     }
 
     try {
-      const multiOptionBriefs = values.multiOptionBriefs || {};
-      const placeholderData: Record<string, string> = {};
-      if (multiOptions) {
-        multiOptions.forEach(card => {
-          const placeholderKey = card.placeholder.replace(/\[|\]/g, '');
-          placeholderData[placeholderKey] = multiOptionBriefs[card.id] || '';
-        });
-      }
-      
+      // Prepare image data by converting files to data URIs
       const imagesData: { [key: string]: string } = {};
       if (values.images) {
         for (const placeholder in values.images) {
@@ -432,19 +422,20 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         }
       }
 
+      // Consolidate all data for the template
       const fullData = { 
         ...values.data, 
         commentary: values.commentary, 
         constructionBrief: values.constructionBrief, 
         marketValuation: values.marketValuation,
         statutoryValuation: values.statutoryValuation,
-        ...placeholderData,
-        images: imagesData,
+        multiOptionBriefs: values.multiOptionBriefs,
       };
 
       const result = await generateReportFromTemplate({
         templateFileName: values.templateFileName,
         data: fullData,
+        images: imagesData,
       });
 
       toast({
@@ -958,7 +949,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                 <CardHeader>
                     <CardTitle>Report Images</CardTitle>
                     <CardDescription>
-                        Upload images for the placeholders defined in your global image configurations.
+                        Upload images for the placeholders defined in your global image configurations. These will be inserted into the final report.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
