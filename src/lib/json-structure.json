@@ -27,6 +27,7 @@
         "required": false
       }
     },
+
     "VOS Order No": {
       "label": "VOS Order No",
       "placeholder": "[Replace_VOSOrderNo]",
@@ -220,8 +221,24 @@
         "required": false
       }
     },
- 
- 
+    "SWOT Analysis Strengths": {
+      "label": "SWOT Analysis Strengths",
+      "placeholder": "[Replace_Strengths]",
+      "displayType": "textarea",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
+    "SWOT Analysis Weaknesses": {
+      "label": "SWOT Analysis Weaknesses",
+      "placeholder": "[Replace_Weaknesses]",
+      "displayType": "textarea",
+      "validation": {
+        "type": "string",
+        "required": false
+      }
+    },
     "Location Description": {
       "label": "Location Description",
       "placeholder": "[Replace_LocationDescription]",

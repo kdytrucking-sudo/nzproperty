@@ -1,8 +1,9 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, PlusCircle, Trash2, Save, Pencil, ShieldX } from 'lucide-react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { Loader2, PlusCircle, Trash2, Save, ShieldX } from 'lucide-react';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import * as React from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { MultiOptionsSchema, type MultiOptionsData, type MultiOptionCard } from '@/lib/multi-options-schema';
+import { MultiOptionsSchema, type MultiOptionsData } from '@/lib/multi-options-schema';
 import { getMultiOptions } from '@/ai/flows/get-multi-options';
 import { saveMultiOptions } from '@/ai/flows/save-multi-options';
 
@@ -35,7 +36,7 @@ export default function ManageMultiOptionPage() {
     },
   });
 
-  const { fields, append, remove, update } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'cards',
   });

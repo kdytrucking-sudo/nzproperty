@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * 生成 Word 报告（稳定版：软回车 -> 硬回车，保样式，避坑）
@@ -11,6 +12,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import globalContent from '@/lib/global-content.json';
 import { contentFields } from '@/lib/content-config';
+import { multiOptionsSchema, type MultiOptionsData } from '@/lib/multi-options-schema';
+
 
 /* -----------------------------
  * Helpers
@@ -190,7 +193,7 @@ const prepareTemplateData = async (data: any) => {
     const dataSection = data?.[sectionKey];
 
     if (dataSection) {
-      Object.keys(sectionSchema).forEach((fieldKey) => {
+      Object.keys(dataSection).forEach((fieldKey) => {
         const fieldConfig = sectionSchema[fieldKey];
         if (fieldConfig && typeof fieldConfig === 'object' && fieldConfig.placeholder) {
           const templateKey = fieldConfig.placeholder.replace(/\[|\]/g, '');
@@ -234,15 +237,9 @@ const prepareTemplateData = async (data: any) => {
   }
 
   // 4) constructionBrief
-  if ((data as any)?.constructionBrief) {
-    if ((data as any).constructionBrief.finalBrief) {
-        countAndSetReplacement('Replace_ConstructionBrief', (data as any).constructionBrief.finalBrief);
-    }
-    if ((data as any).constructionBrief.chattelsBrief) {
-        countAndSetReplacement('Replace_Chattels', (data as any).constructionBrief.chattelsBrief);
-    }
+  if ((data as any)?.constructionBrief?.finalBrief) {
+    countAndSetReplacement('Replace_ConstructionBrief', (data as any).constructionBrief.finalBrief);
   }
-
 
   // 5) marketValuation
   if ((data as any)?.marketValuation) {
@@ -287,15 +284,32 @@ const prepareTemplateData = async (data: any) => {
     countAndSetReplacement('Replace_ValueofImprovementsFromWeb', (data as any).statutoryValuation.improvementsValueByWeb);
     countAndSetReplacement('Replace_RatingValuationFromWeb', (data as any).statutoryValuation.ratingValueByWeb);
   }
-  
+
   // 8) Multi-options
-  if ((data as any)?.multiOptions) {
-    Object.keys((data as any).multiOptions).forEach(key => {
-      const placeholder = (data as any).multiOptions[key].placeholder.replace(/\[|\]/g, '');
-      const value = (data as any).multiOptions[key].value;
-      countAndSetReplacement(placeholder, value);
-    });
-  }
+  // The placeholders are dynamic, so we loop through the data object keys
+  Object.keys(data).forEach(key => {
+    // We identify multi-option placeholders by checking if they start with 'Replace_'
+    // and are not part of the other structured data we've already handled.
+    if (key.startsWith('Replace_')) {
+      const alreadyHandled = [
+        'Replace_PurposeofValuation', 'Replace_PrincipalUse', 'Replace_PreviousSale', 'Replace_ContractSale',
+        'Replace_SuppliedDoc', 'Replace_RecentOrProvided', 'Replace_LIM', 'Replace_PC78', 'Replace_Zone',
+        'Replace_ZoningOptionOperative', 'Replace_ZoningOptionPC78', 'Replace_ConditionAndRepair',
+        'Replace_ConstructionBrief', 'Replace_MarketValue', 'Replace_MarketValuation', 'Replace_ImprovementValueByValuer',
+        'Replace_LandValueByValuer', 'Replace_ChattelsByValuer', 'Replace_MarketValueByValuer',
+        'Replace_LandValueFromWeb', 'Replace_ValueofImprovementsFromWeb', 'Replace_RatingValuationFromWeb'
+      ].includes(key);
+
+      const isFromJsonStructure = Object.values(jsonStructure).some((section: any) => 
+        Object.values(section).some((field: any) => field.placeholder?.replace(/\[|\]/g, '') === key)
+      );
+
+      if (!alreadyHandled && !isFromJsonStructure) {
+         countAndSetReplacement(key, data[key]);
+      }
+    }
+  });
+
 
   return { templateData, replacementCount };
 };

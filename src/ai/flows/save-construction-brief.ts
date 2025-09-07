@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Saves the construction and chattels briefs to a JSON file.
+ * @fileOverview Saves the construction brief to a JSON file.
  */
 
 import { ai } from '@/ai/genkit';
@@ -9,8 +9,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const SaveConstructionBriefInputSchema = z.object({
-  brief: z.string().optional(),
-  chattelsBrief: z.string().optional(),
+  brief: z.string(),
 });
 
 export type SaveConstructionBriefInput = z.infer<typeof SaveConstructionBriefInputSchema>;

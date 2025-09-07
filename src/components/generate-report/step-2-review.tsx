@@ -1,9 +1,10 @@
+
 'use client';
 
 import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, PlusCircle, Trash2, Copy, CalendarIcon } from 'lucide-react';
-import { useForm, useFieldArray, Control, FieldValues, Path } from 'react-hook-form';
+import { useForm, useFieldArray, Control, FieldValues, Path, UseFormSetValue } from 'react-hook-form';
 import { z } from 'zod';
 import { format } from 'date-fns';
 
@@ -30,8 +31,7 @@ import { Separator } from '@/components/ui/separator';
 import { getExtractionConfig } from '@/ai/flows/get-extraction-config';
 import { cn } from '@/lib/utils';
 import { getMultiOptions } from '@/ai/flows/get-multi-options';
-import type { MultiOptionsData, MultiOptionCard } from '@/lib/multi-options-schema';
-import { getConstructionBrief } from '@/ai/flows/get-construction-brief';
+import type { MultiOptionsData, MultiOptionCard, MultiOptionItem } from '@/lib/multi-options-schema';
 
 // Main form schema
 const formSchema = z.any();
@@ -124,11 +124,11 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   const [templates, setTemplates] = React.useState<string[]>([]);
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [commentaryOptions, setCommentaryOptions] = React.useState<CommentaryOptionsData | null>(null);
-  const [multiOptions, setMultiOptions] = React.useState<MultiOptionsData | null>(null);
   const [isLoadingInitialData, setIsLoadingInitialData] = React.useState(true);
   const [isConvertingToWords, setIsConvertingToWords] = React.useState(false);
   const [valuationCheckStatus, setValuationCheckStatus] = React.useState<'Equal' | 'Error' | null>(null);
   const [jsonStructure, setJsonStructure] = React.useState<any>(null);
+  const [multiOptions, setMultiOptions] = React.useState<MultiOptionsData | null>(null);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -150,8 +150,9 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         ConditionAndRepair: '',
       },
       constructionBrief: {
+        generalConstruction: [],
+        interior: [],
         finalBrief: '',
-        chattelsBrief: '',
       },
       marketValuation: {
         marketValue: '',
@@ -167,7 +168,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         ratingValueByWeb: '',
       },
       marketValuationRaw: '',
-      multiOptions: {} as Record<string, { placeholder: string, value: string }>,
+      multiOptionSelections: {} as Record<string, string[]>,
+      multiOptionBriefs: {} as Record<string, string>,
     },
   });
 
@@ -248,16 +250,80 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   };
 
 
+  const generalConstructionOptions = [
+    { id: 'concrete slab foundation', label: 'concrete slab foundation' },
+    { id: 'pile foundation', label: 'pile foundation' },
+    { id: 'concrete ring wall', label: 'concrete ring wall' },
+    { id: 'concrete flooring', label: 'concrete flooring' },
+    { id: 'timber flooring', label: 'timber flooring' },
+    { id: 'brick cladding', label: 'brick cladding' },
+    { id: 'timber weatherboard cladding', label: 'timber weatherboard cladding' },
+    { id: 'vertical timber cladding', label: 'vertical timber cladding' },
+    { id: 'horizontal timber cladding', label: 'horizontal timber cladding' },
+    { id: 'plaster cladding', label: 'plaster cladding' },
+    { id: 'concrete cladding', label: 'concrete cladding' },
+    { id: 'fibre cement sheet cladding', label: 'fibre cement sheet cladding' },
+    { id: 'tile cladding', label: 'tile cladding' },
+    { id: 'steel cladding', label: 'steel cladding' },
+    { id: 'concrete block cladding', label: 'concrete block cladding' },
+    { id: 'aluminium joinery', label: 'aluminium joinery' },
+    { id: 'double glazed aluminium joinery', label: 'double glazed aluminium joinery' },
+    { id: 'timber joinery', label: 'timber joinery' },
+    { id: 'metal roof', label: 'metal roof' },
+    { id: 'tile roof', label: 'tile roof' },
+    { id: 'longrun steel roof', label: 'longrun steel roof' },
+    { id: 'concrete tile roof', label: 'concrete tile roof' },
+    { id: 'metal tile roof', label: 'metal tile roof' },
+  ];
+
+  const interiorOptions = [
+      { id: 'plasterboard', label: 'plasterboard' },
+      { id: 'soft board', label: 'soft board' },
+      { id: 'hard board', label: 'hard board' },
+      { id: 'tile ceiling', label: 'tile ceiling' },
+      { id: 'plaster ceiling', label: 'plaster ceiling' },
+  ];
+
+  const generateBrief = () => {
+      const { generalConstruction, interior } = form.getValues('constructionBrief');
+
+      let firstSentence = 'General construction elements comprise what appears to be ';
+      if (generalConstruction.length > 0) {
+          if (generalConstruction.length === 1) {
+              firstSentence += generalConstruction[0] + '.';
+          } else {
+              const allButLast = generalConstruction.slice(0, -1).join(', ');
+              const last = generalConstruction[generalConstruction.length - 1];
+              firstSentence += `${allButLast} and ${last}.`;
+          }
+      }
+
+      let secondSentence = 'The interior appears to be mostly timber framed with ';
+      if (interior.length > 0) {
+          if (interior.length === 1) {
+               secondSentence += interior[0];
+          } else {
+              const allButLast = interior.slice(0, -1).join(', ');
+              const last = interior[interior.length - 1];
+              secondSentence += `${allButLast} and ${last}`;
+          }
+      }
+      secondSentence += ' or of similar linings.';
+
+      const fullBrief = `${firstSentence}\n${secondSentence}`;
+      form.setValue('constructionBrief.finalBrief', fullBrief);
+  };
+
+
   React.useEffect(() => {
     async function fetchInitialData() {
       setIsLoadingInitialData(true);
       try {
-        const [templateList, commentaryOpts, multiOpts, config, constructionData] = await Promise.all([
+        const [templateList, commentaryOpts, config, multiOpts] = await Promise.all([
           listTemplates(),
           getCommentaryOptions(),
-          getMultiOptions(),
           getExtractionConfig(),
-          getConstructionBrief(),
+          getMultiOptions(),
         ]);
         
         const loadedJsonStructure = JSON.parse(config.jsonStructure);
@@ -269,17 +335,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         }
         
         setCommentaryOptions(commentaryOpts);
-        setMultiOptions(multiOpts);
-
-        form.setValue('constructionBrief.finalBrief', constructionData.brief || '');
-        form.setValue('constructionBrief.chattelsBrief', constructionData.chattelsBrief || '');
-        
-        const initialMultiOptionsState: Record<string, { placeholder: string, value: string }> = {};
-        multiOpts.forEach(card => {
-            initialMultiOptionsState[card.id] = { placeholder: card.placeholder, value: '' };
-        });
-        form.setValue('multiOptions', initialMultiOptionsState);
-
         // Set default values for commentary textareas
         form.setValue('commentary.PurposeofValuation', commentaryOpts.PurposeofValuation?.[0] || '');
         form.setValue('commentary.PrincipalUse', commentaryOpts.PrincipalUse?.[0] || '');
@@ -293,6 +348,17 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         form.setValue('commentary.ZoningOptionOperative', commentaryOpts.ZoningOptionOperative?.[0] || '');
         form.setValue('commentary.ZoningOptionPC78', commentaryOpts.ZoningOptionPC78?.[0] || '');
         form.setValue('commentary.ConditionAndRepair', commentaryOpts.ConditionAndRepair?.[0] || '');
+        
+        setMultiOptions(multiOpts);
+        // Initialize form state for multi-options
+        const initialSelections: Record<string, string[]> = {};
+        const initialBriefs: Record<string, string> = {};
+        multiOpts.forEach(card => {
+          initialSelections[card.id] = [];
+          initialBriefs[card.id] = '';
+        });
+        form.setValue('multiOptionSelections', initialSelections);
+        form.setValue('multiOptionBriefs', initialBriefs);
 
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load initial data', description: error.message });
@@ -317,14 +383,24 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     }
 
     try {
+      const multiOptionBriefs = values.multiOptionBriefs || {};
+      const placeholderData: Record<string, string> = {};
+      if (multiOptions) {
+        multiOptions.forEach(card => {
+          const placeholderKey = card.placeholder.replace(/\[|\]/g, '');
+          placeholderData[placeholderKey] = multiOptionBriefs[card.id] || '';
+        });
+      }
+
       const fullData = { 
         ...values.data, 
         commentary: values.commentary, 
         constructionBrief: values.constructionBrief, 
         marketValuation: values.marketValuation,
         statutoryValuation: values.statutoryValuation,
-        multiOptions: values.multiOptions,
+        ...placeholderData
       };
+
       const result = await generateReportFromTemplate({
         templateFileName: values.templateFileName,
         data: fullData,
@@ -421,13 +497,193 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     );
   }
 
-  const renderConstructionChattelsSection = () => {
+  const renderMultiOptionSection = () => {
+    if (isLoadingInitialData) {
+      return <div className="text-center py-10 text-muted-foreground">Loading Multi-Options...</div>;
+    }
+    if (!multiOptions || multiOptions.length === 0) {
+      return <div className="text-center py-10 text-muted-foreground">No multi-select options configured. Please define them in the 'Multi-Select' page.</div>;
+    }
+
+    const handleCheckboxChange = (checked: boolean, card: MultiOptionCard, option: MultiOptionItem) => {
+      const currentSelections = form.getValues(`multiOptionSelections.${card.id}`) || [];
+      let newSelections: string[];
+      if (checked) {
+        newSelections = [...currentSelections, option.option];
+      } else {
+        newSelections = currentSelections.filter(sel => sel !== option.option);
+      }
+      form.setValue(`multiOptionSelections.${card.id}`, newSelections);
+      form.setValue(`multiOptionBriefs.${card.id}`, newSelections.join('\n'));
+    };
+
     return (
-        <div className="space-y-6 pt-4">
+      <div className="space-y-6 pt-4">
+        {multiOptions.map((card) => (
+          <Card key={card.id}>
+            <CardHeader>
+              <CardTitle>{card.cardName}</CardTitle>
+              <CardDescription>
+                Placeholder: <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{card.placeholder}</code>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <FormLabel>Available Options</FormLabel>
+                <div className="space-y-2 rounded-md border p-4 h-80 overflow-y-auto">
+                  {card.options.map((option) => (
+                    <FormField
+                      key={option.id}
+                      control={form.control}
+                      name={`multiOptionSelections.${card.id}`}
+                      render={({ field }) => {
+                        return (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(option.option)}
+                                onCheckedChange={(checked) => handleCheckboxChange(!!checked, card, option)}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">{option.label}</FormLabel>
+                          </FormItem>
+                        );
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <FormLabel>Selected Text (for report)</FormLabel>
+                 <FormField
+                    control={form.control}
+                    name={`multiOptionBriefs.${card.id}`}
+                    render={({ field }) => (
+                      <FormControl>
+                        <Textarea {...field} rows={14} className="font-mono h-80"/>
+                      </FormControl>
+                    )}
+                 />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+
+  const renderConstructionBriefSection = () => {
+    return (
+        <div className="space-y-8 pt-4">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>General Construction Elements</CardTitle>
+                        <CardDescription>Select the elements for the first sentence.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                        <FormField
+                            control={form.control}
+                            name="constructionBrief.generalConstruction"
+                            render={() => (
+                                <div className="grid grid-cols-2 gap-4">
+                                    {generalConstructionOptions.map((item) => (
+                                        <FormField
+                                            key={item.id}
+                                            control={form.control}
+                                            name="constructionBrief.generalConstruction"
+                                            render={({ field }) => (
+                                                <FormItem
+                                                    key={item.id}
+                                                    className="flex flex-row items-start space-x-3 space-y-0"
+                                                >
+                                                    <FormControl>
+                                                        <Checkbox
+                                                            checked={field.value?.includes(item.id)}
+                                                            onCheckedChange={(checked) => {
+                                                                return checked
+                                                                    ? field.onChange([...(field.value || []), item.id])
+                                                                    : field.onChange(
+                                                                        field.value?.filter(
+                                                                            (value) => value !== item.id
+                                                                        )
+                                                                    )
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal">
+                                                        {item.label}
+                                                    </FormLabel>
+                                                </FormItem>
+                                            )}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Interior Elements</CardTitle>
+                        <CardDescription>Select the elements for the second sentence.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                         <FormField
+                            control={form.control}
+                            name="constructionBrief.interior"
+                            render={() => (
+                                <div className="grid grid-cols-2 gap-4">
+                                    {interiorOptions.map((item) => (
+                                        <FormField
+                                            key={item.id}
+                                            control={form.control}
+                                            name="constructionBrief.interior"
+                                            render={({ field }) => (
+                                                <FormItem
+                                                    key={item.id}
+                                                    className="flex flex-row items-start space-x-3 space-y-0"
+                                                >
+                                                    <FormControl>
+                                                        <Checkbox
+                                                            checked={field.value?.includes(item.id)}
+                                                            onCheckedChange={(checked) => {
+                                                                return checked
+                                                                    ? field.onChange([...(field.value || []), item.id])
+                                                                    : field.onChange(
+                                                                        field.value?.filter(
+                                                                            (value) => value !== item.id
+                                                                        )
+                                                                    )
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal">
+                                                        {item.label}
+                                                    </FormLabel>
+                                                </FormItem>
+                                            )}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
+            </div>
+            
+            <div className="flex justify-center">
+                <Button type="button" onClick={generateBrief}>
+                    Generate Brief
+                </Button>
+            </div>
+
             <Card>
                 <CardHeader>
-                    <CardTitle>Construction Brief</CardTitle>
-                    <CardDescription>This content is managed on the <a href="/construction-brief" className="underline">Manage Construction & Chattels Brief</a> page and will be used for the [Replace_ConstructionBrief] placeholder.</CardDescription>
+                    <CardTitle>Generated Construction Brief</CardTitle>
+                    <CardDescription>Review and edit the generated text below. This content will be used for the [Replace_ConstructionBrief] placeholder.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <FormField
@@ -435,21 +691,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                         name="constructionBrief.finalBrief"
                         render={({ field }) => (
                             <Textarea {...field} rows={8} className="font-mono"/>
-                        )}
-                    />
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Chattels Brief</CardTitle>
-                    <CardDescription>This content is managed on the <a href="/construction-brief" className="underline">Manage Construction & Chattels Brief</a> page and will be used for the [Replace_Chattels] placeholder.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <FormField
-                        control={form.control}
-                        name="constructionBrief.chattelsBrief"
-                        render={({ field }) => (
-                            <Textarea {...field} rows={4} className="font-mono"/>
                         )}
                     />
                 </CardContent>
@@ -669,66 +910,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     );
   }
 
-  const renderMultiOptionSection = () => {
-    if (isLoadingInitialData) {
-        return <div className="text-center py-10 text-muted-foreground">Loading Multi-Options...</div>;
-    }
-    if (!multiOptions || multiOptions.length === 0) {
-        return <div className="text-center py-10 text-muted-foreground">No options defined. Please define them on the 'Manage Multi Options' page.</div>;
-    }
-
-    return (
-        <div className="space-y-6 pt-4">
-            {multiOptions.map((card, cardIndex) => (
-                <Card key={card.id}>
-                    <CardHeader>
-                        <CardTitle>{card.cardName}</CardTitle>
-                        <CardDescription>Placeholder: <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{card.placeholder}</code></CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          {card.options.map((option) => (
-                            <FormItem key={option.id} className="flex flex-row items-start space-x-3 space-y-0">
-                               <FormControl>
-                                 <Checkbox
-                                    onCheckedChange={(checked) => {
-                                        const currentVal = form.getValues(`multiOptions.${card.id}.value`) || '';
-                                        const lines = currentVal.split('\n').filter(line => line.trim() !== '');
-                                        let newLines;
-                                        if (checked) {
-                                            newLines = [...lines, option.option];
-                                        } else {
-                                            newLines = lines.filter(line => line !== option.option);
-                                        }
-                                        form.setValue(`multiOptions.${card.id}.value`, newLines.join('\n'));
-                                    }}
-                                  />
-                               </FormControl>
-                               <FormLabel className="font-normal">{option.label}</FormLabel>
-                            </FormItem>
-                          ))}
-                        </div>
-                        <FormField
-                            control={form.control}
-                            name={`multiOptions.${card.id}.value`}
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="sr-only">Selected options for {card.cardName}</FormLabel>
-                                    <FormControl>
-                                        <Textarea {...field} rows={6} className="font-mono text-sm" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </CardContent>
-                </Card>
-            ))}
-        </div>
-    );
-};
-
-
   return (
     <Card>
       <CardHeader>
@@ -778,7 +959,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     />
 
                     <Tabs defaultValue={defaultTab}>
-                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-7">
+                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-6">
                         {tabKeys.map(key => (
                         <TabsTrigger key={key} value={key}>
                             {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
@@ -786,8 +967,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                         ))}
                         <TabsTrigger value="marketValuation">Market Valuation</TabsTrigger>
                         <TabsTrigger value="commentary">Commentary</TabsTrigger>
-                        <TabsTrigger value="constructionChattels">Construction/Chattels</TabsTrigger>
                         <TabsTrigger value="multiOption">Multi Option</TabsTrigger>
+                        <TabsTrigger value="constructionBrief">Construction Brief</TabsTrigger>
                     </TabsList>
 
                     {tabKeys.map(key => (
@@ -802,11 +983,11 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     <TabsContent value="commentary">
                         {renderCommentarySection()}
                     </TabsContent>
-                     <TabsContent value="constructionChattels">
-                        {renderConstructionChattelsSection()}
-                    </TabsContent>
                     <TabsContent value="multiOption">
-                        {renderMultiOptionSection()}
+                      {renderMultiOptionSection()}
+                    </TabsContent>
+                     <TabsContent value="constructionBrief">
+                        {renderConstructionBriefSection()}
                     </TabsContent>
                     </Tabs>
 

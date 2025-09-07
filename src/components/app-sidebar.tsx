@@ -1,9 +1,9 @@
+
 'use client';
 
 import {
   FileJson,
   LayoutDashboard,
-  ListTodo,
   PanelLeft,
   Settings,
   Pencil,
@@ -11,6 +11,7 @@ import {
   FileUp,
   MessageSquareQuote,
   Construction,
+  ListTodo,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -48,14 +49,19 @@ export function AppSidebar() {
       icon: MessageSquareQuote,
     },
     {
+      href: '/manage-multi-option',
+      label: 'Multi-Select',
+      icon: ListTodo,
+    },
+    {
+      href: '/construction-brief',
+      label: 'Construction Brief',
+      icon: Construction,
+    },
+    {
       href: '/manage-templates',
       label: 'Manage Templates',
       icon: FileText,
-    },
-     {
-      href: '/manage-multi-option',
-      label: 'Manage Multi Options',
-      icon: ListTodo,
     },
     {
       href: '/json-editor',
