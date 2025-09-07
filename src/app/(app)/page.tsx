@@ -22,7 +22,7 @@ function GenerateReportFlow() {
   };
 
   const handleReportGenerated = (reportDataUri: string, count: number, instructedBy: string | undefined) => {
-    const address = propertyData?.propertyDetails?.address || 'Report';
+    const address = propertyData?.Info?.['Property Address'] || 'Report';
     const date = new Date().toISOString().split('T')[0];
     const fileName = `${address} - ${date}.docx`;
 

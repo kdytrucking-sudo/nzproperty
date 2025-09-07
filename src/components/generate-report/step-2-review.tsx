@@ -381,7 +381,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         title: 'Report Generated Successfully',
         description: `Replaced ${result.replacementsCount} placeholders. Your download will begin shortly.`,
       });
-      const debugValue = values.data?.Info?.['Instructed By Who'];
+      const debugValue = values.data?.Info?.['Instructed By'];
       onReportGenerated(result.generatedDocxDataUri, result.replacementsCount, debugValue);
 
     } catch (error: any) {
