@@ -26,6 +26,8 @@ const formSchema = z.object({
   template: z.array(z.instanceof(File)).min(1, 'A .docx template is required.'),
   image: z.array(z.instanceof(File)).min(1, 'An image file is required.'),
   placeholder: z.string().min(1, 'Placeholder text is required.'),
+  width: z.coerce.number().optional(),
+  height: z.coerce.number().optional(),
 });
 
 type FormSchema = z.infer<typeof formSchema>;
@@ -49,7 +51,9 @@ export default function ImageTestPage() {
     defaultValues: {
       template: [],
       image: [],
-      placeholder: '{image_placeholder}',
+      placeholder: '{%report_logo}',
+      width: undefined,
+      height: undefined,
     },
   });
 
@@ -76,6 +80,8 @@ export default function ImageTestPage() {
         templateDataUri,
         imageDataUri,
         placeholder: values.placeholder,
+        width: values.width,
+        height: values.height,
       });
 
       setResultUri(result.generatedDocxDataUri);
@@ -163,17 +169,45 @@ export default function ImageTestPage() {
                     <FormItem>
                       <FormLabel>Image Placeholder in Template</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="e.g., {image_placeholder}" />
+                        <Input {...field} placeholder="e.g., {%report_logo}" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                   <FormField
+                      control={form.control}
+                      name="width"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Width (px)</FormLabel>
+                          <FormControl>
+                            <Input type="number" {...field} placeholder="e.g., 240" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="height"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Height (px)</FormLabel>
+                          <FormControl>
+                            <Input type="number" {...field} placeholder="e.g., 96" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                </div>
                  <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>How it works</AlertTitle>
                   <AlertDescription>
-                   In your template, insert a placeholder like <code>{'{image_placeholder}'}</code> (inside curly braces). The image module will use the dimensions of any placeholder image you've used in the template, so you can control the size and position.
+                   In your template, insert a placeholder like <code>{'%report_logo}'}</code>. The image module will use your specified dimensions. If none are provided, it will attempt to use the original image dimensions.
                   </AlertDescription>
                 </Alert>
               </CardContent>
