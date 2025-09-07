@@ -1,50 +1,36 @@
-
 'use client';
 
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Download, FileUp, Image as ImageIcon } from 'lucide-react';
-import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
+import { Loader2, FileDown, TestTube2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import * as React from 'react';
 import { FileUploader } from '@/components/file-uploader';
-import { getImageOptions } from '@/ai/flows/get-image-options';
-import type { ImageConfig } from '@/lib/image-options-schema';
 import { testImageReplacement } from '@/ai/flows/test-image-replacement';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import type { ImageConfig } from '@/lib/image-options-schema';
+import { getImageOptions } from '@/ai/flows/get-image-options';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const ACCEPTED_DOCX_TYPES = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
 };
-
 const ACCEPTED_IMAGE_TYPES = {
   'image/png': ['.png'],
   'image/jpeg': ['.jpg', '.jpeg'],
 };
 
-// Dynamically build the schema based on image configs
-const createFormSchema = (imageConfigs: ImageConfig[]) => {
-  let imageSchemaPart = z.object({});
-  imageConfigs.forEach(config => {
-    // The key here should be the placeholder, which is what's used in the form state
-    imageSchemaPart = imageSchemaPart.extend({
-      [config.placeholder]: z.array(z.instanceof(File)).min(1, `Image for ${config.cardName} is required.`),
-    });
-  });
+const formSchema = z.object({
+  template: z.array(z.instanceof(File)).min(1, 'A .docx template is required.'),
+  images: z.record(z.string(), z.array(z.instanceof(File)).optional()),
+});
 
-  return z.object({
-    templateDocx: z.array(z.instanceof(File)).min(1, 'A .docx template is required.'),
-    images: imageSchemaPart,
-  });
-};
+type FormSchema = z.infer<typeof formSchema>;
 
-
-// Helper function to convert a file to a data URI
 const fileToDataUri = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -54,105 +40,106 @@ const fileToDataUri = (file: File): Promise<string> => {
   });
 };
 
-
 export default function ImageTestPage() {
   const { toast } = useToast();
-  const [isGenerating, setIsGenerating] = React.useState(false);
+  const [isProcessing, setIsProcessing] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [resultUri, setResultUri] = React.useState<string | null>(null);
   const [imageConfigs, setImageConfigs] = React.useState<ImageConfig[]>([]);
-  const [isLoadingConfigs, setIsLoadingConfigs] = React.useState(true);
-  
-  // Initialize with a base schema. It will be updated dynamically.
-  const [formSchema, setFormSchema] = React.useState(() => createFormSchema([]));
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    // Default values will be set in an effect after configs are loaded
-    defaultValues: {
-      templateDocx: [],
-      images: {},
-    },
-  });
 
   React.useEffect(() => {
     async function loadConfigs() {
-      setIsLoadingConfigs(true);
+      setIsLoading(true);
       try {
         const configs = await getImageOptions();
         setImageConfigs(configs);
-        // Update the schema before resetting the form
-        setFormSchema(createFormSchema(configs));
       } catch (error: any) {
         toast({
           variant: 'destructive',
-          title: 'Failed to load image configurations',
+          title: 'Failed to load configurations',
           description: error.message,
         });
       } finally {
-        setIsLoadingConfigs(false);
+        setIsLoading(false);
       }
     }
     loadConfigs();
   }, [toast]);
-  
-  // Effect to reset form with new schema and default values when configs load
-  React.useEffect(() => {
-    if (imageConfigs.length > 0) {
-      const defaultImages = imageConfigs.reduce((acc, config) => {
-        // Use the placeholder as the key for the form state
-        acc[config.placeholder] = [];
-        return acc;
-      }, {} as Record<string, File[]>);
-      
-      form.reset({
-        templateDocx: [],
-        images: defaultImages,
-      });
-    }
-  }, [imageConfigs, form.reset, form]);
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsGenerating(true);
+  const form = useForm<FormSchema>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      template: [],
+      images: {},
+    },
+  });
+
+  const handleDownload = () => {
+    if (!resultUri) return;
+    const link = document.createElement('a');
+    link.href = resultUri;
+    link.download = `test_result_${Date.now()}.docx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  async function onSubmit(values: FormSchema) {
+    setIsProcessing(true);
+    setResultUri(null);
     try {
-        // Convert the template file
-        const templateDataUri = await fileToDataUri(values.templateDocx[0]);
+      const templateDataUri = await fileToDataUri(values.template[0]);
+      
+      const imagesData = await Promise.all(
+        Object.entries(values.images)
+          .filter(([, files]) => files && files.length > 0)
+          .map(async ([placeholder, files]) => {
+            if (!files || files.length === 0) return null;
+            const config = imageConfigs.find(c => c.placeholder === placeholder);
+            if (!config) return null;
+            
+            const imageDataUri = await fileToDataUri(files[0]);
+            return {
+              placeholder: config.placeholder,
+              imageDataUri,
+              width: config.width,
+              height: config.height,
+            };
+          })
+      );
+      
+      const validImagesData = imagesData.filter(Boolean) as { placeholder: string; imageDataUri: string; width: number; height: number; }[];
 
-        // Convert all images
-        const imagesDataUris: { [key: string]: string } = {};
-        for (const placeholder in values.images) {
-            const fileList = values.images[placeholder];
-            if (fileList && fileList.length > 0) {
-                imagesDataUris[placeholder] = await fileToDataUri(fileList[0]);
-            }
-        }
-
-        // Call the Genkit flow
-        const result = await testImageReplacement({
-            templateDataUri: templateDataUri,
-            imagesData: imagesDataUris,
-        });
-        
-        // Handle the result
-        const link = document.createElement("a");
-        link.href = result.generatedDocxDataUri;
-        link.download = `TEST_RESULT_${new Date().toISOString()}.docx`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
+      if (validImagesData.length === 0) {
         toast({
-            title: 'Report Generated',
-            description: `Successfully replaced ${result.replacementsCount} image(s). Download has started.`,
+          variant: 'destructive',
+          title: 'No Images Provided',
+          description: 'Please upload at least one image to test the replacement.',
         });
+        setIsProcessing(false);
+        return;
+      }
+
+      const result = await testImageReplacement({
+        templateDataUri,
+        images: validImagesData,
+      });
+
+      setResultUri(result.generatedDocxDataUri);
+      toast({
+        title: 'Replacement Successful!',
+        description: `Replaced ${validImagesData.length} image(s). The document is ready for download.`,
+      });
 
     } catch (error: any) {
-        console.error('Test run failed:', error);
-        toast({
-            variant: 'destructive',
-            title: 'Test Failed',
-            description: error.message || 'An unknown error occurred.',
-        });
+      console.error('Test failed:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Replacement Failed',
+        description: error.message,
+      });
     } finally {
-        setIsGenerating(false);
+      setIsProcessing(false);
     }
   }
 
@@ -161,102 +148,102 @@ export default function ImageTestPage() {
       <header>
         <h1 className="font-headline text-3xl font-bold text-foreground">Image Replacement Test</h1>
         <p className="text-muted-foreground">
-          Test the image replacement functionality using a template and the configured placeholders.
+          An isolated environment to test .docx image replacement functionality using your global configurations.
         </p>
       </header>
 
       <main>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>1. Upload Template</CardTitle>
                 <CardDescription>
-                  Upload the master .docx template that contains the image placeholders e.g. <code>{'[%my_image]'}</code>.
+                  Upload the master .docx template that contains the image placeholders.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <FormField
-                    control={form.control}
-                    name="templateDocx"
-                    render={() => (
-                        <Controller
-                            name="templateDocx"
-                            control={form.control}
-                            render={({field}) => (
-                                <FileUploader
-                                    label="Template File (.docx)"
-                                    value={field.value}
-                                    onValueChange={field.onChange}
-                                    options={{ accept: ACCEPTED_DOCX_TYPES }}
-                                    maxFiles={1}
-                                />
-                            )}
-                        />
-                    )}
+                  control={form.control}
+                  name="template"
+                  render={({ field }) => (
+                    <FileUploader
+                      label=""
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      options={{ accept: ACCEPTED_DOCX_TYPES }}
+                      maxFiles={1}
+                    />
+                  )}
                 />
+                 <FormMessage>{form.formState.errors.template?.message}</FormMessage>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>2. Upload Images</CardTitle>
+                <CardDescription>
+                  These configurations are loaded from your "Manage Images" page. Upload an image for each placeholder you want to test.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isLoading ? (
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    <Skeleton className="h-48 w-full" />
+                    <Skeleton className="h-48 w-full" />
+                  </div>
+                ) : imageConfigs.length === 0 ? (
+                  <Alert variant="destructive">
+                     <AlertCircle className="h-4 w-4" />
+                     <AlertTitle>No Configurations Found</AlertTitle>
+                     <AlertDescription>
+                        Please go to the "Manage Images" page to create at least one image configuration.
+                     </AlertDescription>
+                   </Alert>
+                ) : (
+                  <div className="grid grid-cols-1 gap-x-6 gap-y-8 lg:grid-cols-2">
+                    {imageConfigs.map((config) => (
+                       <FormField
+                          key={config.id}
+                          control={form.control}
+                          name={`images.${config.placeholder}`}
+                          render={({ field }) => (
+                            <FormItem>
+                               <FileUploader
+                                  label={`${config.cardName} (${config.width}x${config.height}px)`}
+                                  value={field.value ?? null}
+                                  onValueChange={field.onChange}
+                                  options={{ accept: ACCEPTED_IMAGE_TYPES }}
+                                  maxFiles={1}
+                                />
+                                <FormLabel className="text-xs text-muted-foreground">
+                                  Placeholder: <code className="bg-muted px-1 py-0.5 rounded-sm">{config.placeholder}</code>
+                                </FormLabel>
+                                <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>2. Upload Images</CardTitle>
-                    <CardDescription>
-                        Provide an image for each placeholder defined in the "Manage Images" section.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {isLoadingConfigs ? (
-                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                           <Skeleton className="h-48 w-full" />
-                           <Skeleton className="h-48 w-full" />
-                        </div>
-                    ) : imageConfigs.length === 0 ? (
-                       <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>No Image Configurations Found</AlertTitle>
-                            <AlertDescription>
-                                Please go to the &quot;Manage Images&quot; page to create at least one image configuration to use this test page.
-                            </AlertDescription>
-                        </Alert>
-                    ) : (
-                        <div className="grid grid-cols-1 gap-x-6 gap-y-8 lg:grid-cols-2">
-                            {imageConfigs.map((config) => (
-                                <FormField
-                                    key={config.id}
-                                    control={form.control}
-                                    name={`images.${config.placeholder}`}
-                                    render={() => (
-                                        <Controller
-                                            name={`images.${config.placeholder}`}
-                                            control={form.control}
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FileUploader
-                                                        label={`${config.cardName} (${config.width}x${config.height}px)`}
-                                                        value={field.value ?? null}
-                                                        onValueChange={field.onChange}
-                                                        options={{ accept: ACCEPTED_IMAGE_TYPES }}
-                                                        maxFiles={1}
-                                                    />
-                                                     <FormLabel className="text-xs text-muted-foreground">
-                                                        Placeholder: <code className="bg-muted px-1 py-0.5 rounded-sm">{config.placeholder}</code>
-                                                    </FormLabel>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    )}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-             <div className="flex justify-end">
-                <Button type="submit" disabled={isGenerating || isLoadingConfigs || imageConfigs.length === 0}>
-                    {isGenerating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</> : 'Generate Test Document'}
+
+            <div className="flex justify-end gap-4">
+              <Button type="submit" disabled={isProcessing}>
+                {isProcessing ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
+                ) : (
+                  <><TestTube2 className="mr-2 h-4 w-4" /> Run Test</>
+                )}
+              </Button>
+              {resultUri && (
+                <Button type="button" variant="secondary" onClick={handleDownload}>
+                  <FileDown className="mr-2 h-4 w-4" /> Download Result
                 </Button>
+              )}
             </div>
           </form>
         </Form>

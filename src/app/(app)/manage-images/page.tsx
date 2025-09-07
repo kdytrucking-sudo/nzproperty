@@ -1,4 +1,3 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -70,12 +69,14 @@ export default function ManageImagesPage() {
   };
   
   const handlePlaceholderBlur = (e: React.FocusEvent<HTMLInputElement>, cardIndex: number) => {
-    let value = e.target.value.trim();
-    // Remove any existing delimiters to start clean
-    value = value.replace(/[\{\}%]/g, '');
-    // Add the correct delimiters
-    value = `{%${value}}`;
-    form.setValue(`configs.${cardIndex}.placeholder`, value, { shouldDirty: true });
+    let value = e.target.value;
+    if (value && !value.startsWith('{%')) {
+        value = `{%${value}`;
+    }
+    if (value && !value.endsWith('}')) {
+        value = `${value}}`;
+    }
+    form.setValue(`configs.${cardIndex}.placeholder`, value);
   };
 
   async function onSave(values: FormValues) {
@@ -194,7 +195,7 @@ export default function ManageImagesPage() {
                               <FormItem>
                                   <FormLabel>Width (px)</FormLabel>
                                   <FormControl>
-                                      <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} placeholder="e.g., 600" />
+                                      <Input type="number" {...field} placeholder="e.g., 600" />
                                   </FormControl>
                                   <FormMessage />
                               </FormItem>
@@ -207,7 +208,7 @@ export default function ManageImagesPage() {
                               <FormItem>
                                   <FormLabel>Height (px)</FormLabel>
                                   <FormControl>
-                                      <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} placeholder="e.g., 400" />
+                                      <Input type="number" {...field} placeholder="e.g., 400" />
                                   </FormControl>
                                   <FormMessage />
                               </FormItem>

@@ -1,39 +1,35 @@
-
 'use server';
 /**
- * @fileOverview A Genkit flow for testing image replacement in a .docx template.
+ * Insert multiple images at specified TEXT tags like {%report_logo} using
+ * docxtemplater-image-module-free.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
-import fs from 'fs/promises';
-import path from 'path';
-import { ImageOptionsSchema, type ImageConfig } from '@/lib/image-options-schema';
 
+/* eslint-disable @typescript-eslint/no-var-requires */
 const ImageModule = require('docxtemplater-image-module-free');
 
-/* -----------------------------
- * Schemas
- * ----------------------------- */
+/* ----------------------------- Schemas ----------------------------- */
+const ImageInfoSchema = z.object({
+  placeholder: z.string().describe('Text tag in template, e.g. {%report_logo}'),
+  imageDataUri: z.string().describe('Image as data URI, e.g. data:image/png;base64,...'),
+  width: z.number().describe('Width in pixels.'),
+  height: z.number().describe('Height in pixels.'),
+});
 
 const TestImageReplacementInputSchema = z.object({
-  templateDataUri: z.string().describe('The .docx template file as a data URI.'),
-  imagesData: z.record(z.string(), z.string()).describe('A map of image placeholders to their data URIs.'),
+  templateDataUri: z.string().describe('docx template as data URI'),
+  images: z.array(ImageInfoSchema).describe('An array of image information to replace.'),
 });
+export type TestImageReplacementInput = z.infer<typeof TestImageReplacementInputSchema>;
 
 const TestImageReplacementOutputSchema = z.object({
-  generatedDocxDataUri: z.string().describe('The generated .docx file as a data URI.'),
-  replacementsCount: z.number().describe('The number of image placeholders that were replaced.'),
+  generatedDocxDataUri: z.string(),
 });
-
-export type TestImageReplacementInput = z.infer<typeof TestImageReplacementInputSchema>;
 export type TestImageReplacementOutput = z.infer<typeof TestImageReplacementOutputSchema>;
-
-/* -----------------------------
- * Flow
- * ----------------------------- */
 
 export async function testImageReplacement(
   input: TestImageReplacementInput
@@ -41,92 +37,75 @@ export async function testImageReplacement(
   return testImageReplacementFlow(input);
 }
 
+/* ------------------------------ Flow ------------------------------ */
 const testImageReplacementFlow = ai.defineFlow(
   {
     name: 'testImageReplacementFlow',
     inputSchema: TestImageReplacementInputSchema,
     outputSchema: TestImageReplacementOutputSchema,
   },
-  async ({ templateDataUri, imagesData }) => {
+  async ({ templateDataUri, images }) => {
     try {
-      // 1. Prepare image module and configurations
-      const imageOptionsPath = path.join(process.cwd(), 'src', 'lib', 'image-options.json');
-      const imageOptionsJson = await fs.readFile(imageOptionsPath, 'utf-8');
-      const imageConfigs = ImageOptionsSchema.parse(JSON.parse(imageOptionsJson));
+      const templateBuffer = Buffer.from(templateDataUri.split(',')[1], 'base64');
+      const zip = new PizZip(templateBuffer);
       
-      const imageSizeMap = new Map<string, { width: number; height: number }>();
-      imageConfigs.forEach((config: ImageConfig) => {
-        // Key is placeholder WITHOUT delimiters, e.g., "Image_NatureofProperty1"
-        const key = config.placeholder.replace(/\{%|\[%|%\]|%}|}/g, '');
-        imageSizeMap.set(key, { width: config.width, height: config.height });
+      const imageSizes = new Map<string, { width: number; height: number }>();
+      images.forEach(img => {
+          const key = img.placeholder.trim().replace(/^\{\%/, '').replace(/\}$/, '');
+          imageSizes.set(key, { width: img.width, height: img.height });
       });
 
       const imageModule = new ImageModule({
         fileType: 'docx',
         centered: false,
-        getImage(tagValue: string) {
-          const base64 = tagValue.split(',')[1] ?? '';
-          return Buffer.from(base64, 'base64');
+
+        getImage(tagValue: unknown) {
+          if (Buffer.isBuffer(tagValue)) return tagValue;
+          if (typeof tagValue === 'string' && tagValue.startsWith('data:')) {
+            const b64 = tagValue.split(',')[1] ?? '';
+            return Buffer.from(b64, 'base64');
+          }
+          throw new Error('getImage: expected Buffer or data URI string');
         },
-        getSize(_img: Buffer, _tagValue: string, tagName: string) {
-            // tagName is the placeholder key without delimiters
-            const size = imageSizeMap.get(tagName);
-            return size ? [size.width, size.height] : [300, 200]; // fallback size
+
+        getSize(_img: Buffer, _tagValue: unknown, tagName: string) {
+          const size = imageSizes.get(tagName);
+          if (size) {
+            return [size.width, size.height];
+          }
+          // Fallback if size not found, though it should always be present with this logic
+          return [300, 200];
         },
       });
 
-      // 2. Load template from data URI
-      const base64Content = templateDataUri.split(',')[1];
-      const templateBuffer = Buffer.from(base64Content, 'base64');
-      const zip = new PizZip(templateBuffer);
-      
       const doc = new Docxtemplater(zip, {
         modules: [imageModule],
-        // IMPORTANT: Use the correct delimiters for image replacement.
-        // The free image module ONLY works with the default '{%...}' syntax.
-        // We will NOT set custom delimiters here, so it uses its default.
+        paragraphLoop: true,
+        linebreaks: true,
       });
 
-      // 3. Prepare data for the template
-      const templateData: Record<string, string> = {};
-      let replacementsCount = 0;
-      Object.entries(imagesData).forEach(([placeholder, dataUri]) => {
-          if (dataUri) {
-              // The key in templateData must match the placeholder in the document,
-              // but WITHOUT the delimiters.
-              const key = placeholder.replace(/\{%|\}/g, '');
-              templateData[key] = dataUri;
-              replacementsCount++;
-          }
+      const templateData: { [key: string]: string } = {};
+      images.forEach(img => {
+        const key = img.placeholder.trim().replace(/^\{\%/, '').replace(/\}$/, '');
+        templateData[key] = img.imageDataUri;
       });
-      
-      // 4. Render the document
+
       doc.setData(templateData);
+
       doc.render();
 
-      // 5. Generate and return the final document
-      const finalBuffer = doc.getZip().generate({
-        type: 'nodebuffer',
-        compression: 'DEFLATE',
-      });
-      
-      const finalBase64 = finalBuffer.toString('base64');
-      const finalDataUri = `data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${finalBase64}`;
-
+      const out = doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' });
+      const base64 = out.toString('base64');
       return {
-        generatedDocxDataUri: finalDataUri,
-        replacementsCount: replacementsCount,
+        generatedDocxDataUri:
+          `data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${base64}`,
       };
-
-    } catch (error: any) {
-      console.error(`Error in testImageReplacementFlow:`, error);
-      // Check for docxtemplater-specific errors
-      if (error.properties && error.properties.errors) {
-          const firstError = error.properties.errors[0];
-          const explanation = firstError.properties.explanation || `Unexplained error with placeholder: ${firstError.properties.id}`;
-          throw new Error(`Template render error: ${explanation}`);
+    } catch (err: any) {
+      if (err?.properties?.errors?.length) {
+        const first = err.properties.errors[0];
+        throw new Error(first?.properties?.explanation || first?.id || 'Template render error');
       }
-      throw new Error(error.message || 'Failed to process the template file.');
+      throw new Error(err?.message || 'Failed to process the document.');
     }
   }
 );

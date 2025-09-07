@@ -73,13 +73,13 @@ export function AppSidebar() {
     },
   ];
 
-   const testMenuItems = [
-    {
+  const testMenuItems = [
+     {
       href: '/image-test',
-      label: 'Image Test',
+      label: 'Image Replacement Test',
       icon: TestTube2,
     },
-  ];
+  ]
 
   return (
     <Sidebar>
@@ -109,7 +109,7 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
-           <SidebarSeparator />
+          <SidebarSeparator />
            {testMenuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton

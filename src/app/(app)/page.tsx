@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -14,7 +15,7 @@ function GenerateReportFlow() {
   const [generatedFileName, setGeneratedFileName] = React.useState<string>('');
   const [replacementsCount, setReplacementsCount] = React.useState(0);
   const [debugValue, setDebugValue] = React.useState<string | undefined>(undefined);
-  const [debugImagePlaceholders, setDebugImagePlaceholders] = React.useState<Record<string, string> | undefined>(undefined);
+  const [debugImages, setDebugImages] = React.useState<{ placeholder: string; fileName: string }[]>([]);
 
 
   const handleDataExtracted = (data: PropertyData) => {
@@ -22,7 +23,7 @@ function GenerateReportFlow() {
     setStep('review');
   };
 
-  const handleReportGenerated = (reportDataUri: string, count: number, instructedBy: string | undefined, imagePlaceholders: Record<string, string> | undefined) => {
+  const handleReportGenerated = (reportDataUri: string, count: number, instructedBy: string | undefined, uploadedImages: { placeholder: string; fileName: string }[]) => {
     const address = propertyData?.Info?.['Property Address'] || 'Report';
     const date = new Date().toISOString().split('T')[0];
     const fileName = `${address} - ${date}.docx`;
@@ -31,7 +32,7 @@ function GenerateReportFlow() {
     setGeneratedFileName(fileName);
     setReplacementsCount(count);
     setDebugValue(instructedBy);
-    setDebugImagePlaceholders(imagePlaceholders);
+    setDebugImages(uploadedImages);
     setStep('result');
   };
 
@@ -41,7 +42,7 @@ function GenerateReportFlow() {
     setGeneratedFileName('');
     setReplacementsCount(0);
     setDebugValue(undefined);
-    setDebugImagePlaceholders(undefined);
+    setDebugImages([]);
     setStep('input');
   };
 
@@ -115,7 +116,7 @@ function GenerateReportFlow() {
                 onStartOver={handleStartOver} 
                 replacementsCount={replacementsCount}
                 debugInstructedBy={debugValue}
-                debugImagePlaceholders={debugImagePlaceholders}
+                uploadedImages={debugImages}
               />
             </motion.div>
           )}
