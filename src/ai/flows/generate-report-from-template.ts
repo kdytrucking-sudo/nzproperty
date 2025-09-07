@@ -10,8 +10,7 @@ import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import fs from 'fs/promises';
 import path from 'path';
-import sizeOf from 'image-size';
-import { ImageConfig, ImageOptionsSchema } from '@/lib/image-options-schema';
+import { ImageOptionsSchema } from '@/lib/image-options-schema';
 
 // ESM compatibility for require
 const ImageModule = require('docxtemplater-image-module-free');
@@ -156,6 +155,7 @@ const prepareTemplateData = async (data: any) => {
     Object.keys(data.images).forEach(placeholder => {
         const imageDataUri = data.images[placeholder];
         if (imageDataUri) {
+            // The key for docxtemplater should be the placeholder without the delimiters
             const key = placeholder.trim().replace(/^\{\%/, '').replace(/\}$/, '');
             templateData[key] = imageDataUri;
             replacementCount++;
@@ -218,6 +218,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
       
       const imageSizeMap = new Map<string, { width: number; height: number }>();
       imageConfigs.forEach(config => {
+        // The key for the map should also be the placeholder without delimiters.
         const key = config.placeholder.trim().replace(/^\{\%/, '').replace(/\}$/, '');
         imageSizeMap.set(key, { width: config.width, height: config.height });
       });
@@ -227,6 +228,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
         centered: false,
         getImage(tagValue: unknown) {
           if (Buffer.isBuffer(tagValue)) return tagValue;
+          // tagValue is the a data URI string in our case
           if (typeof tagValue === 'string' && tagValue.startsWith('data:')) {
             const b64 = tagValue.split(',')[1] ?? '';
             return Buffer.from(b64, 'base64');
@@ -234,10 +236,12 @@ const generateReportFromTemplateFlow = ai.defineFlow(
           throw new Error('getImage: expected Buffer or data URI string');
         },
         getSize(_img: Buffer, _tagValue: unknown, tagName: string) {
+          // tagName is the placeholder key, e.g. "Image_NatureofProperty1"
           const size = imageSizeMap.get(tagName);
           if (size) {
             return [size.width, size.height];
           }
+          // Fallback size if no configuration is found
           return [300, 200];
         },
       });
@@ -245,8 +249,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
       const doc = new Docxtemplater(zip, {
         modules: [imageModule],
         delimiters: { start: '[', end: ']' },
-        linebreaks: false,
-        nullGetter: () => '',
+        // Use paragraphLoop for looping over sales data
         paragraphLoop: true,
       });
 
