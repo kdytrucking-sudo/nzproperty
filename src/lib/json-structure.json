@@ -19,8 +19,8 @@
       }
     },
     "Instructed By": {
-      "label": "Instructed By Who",
-      "placeholder": "[Replace_InstructedBy]",
+      "label": "Instructed By",
+      "placeholder": "[Replace_InstructedByWho]",
       "displayType": "text",
       "validation": {
         "type": "string",
@@ -36,7 +36,6 @@
         "required": false
       }
     },
-
     "Job No": {
       "label": "Job No",
       "placeholder": "[Replace_JobNo]",
@@ -46,7 +45,6 @@
         "required": false
       }
     },
-
     "Prepared For": {
       "label": "Prepared For",
       "placeholder": "[Replace_PreparedFor]",

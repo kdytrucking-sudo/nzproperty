@@ -35,7 +35,7 @@ const formSchema = z.any();
 
 type Step2ReviewProps = {
   extractedData: PropertyData;
-  onReportGenerated: (reportDataUri: string, replacementsCount: number) => void;
+  onReportGenerated: (reportDataUri: string, replacementsCount: number, instructedBy: string | undefined) => void;
   onBack: () => void;
 };
 
@@ -381,7 +381,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         title: 'Report Generated Successfully',
         description: `Replaced ${result.replacementsCount} placeholders. Your download will begin shortly.`,
       });
-      onReportGenerated(result.generatedDocxDataUri, result.replacementsCount);
+      const debugValue = values.data?.Info?.['Instructed By Who'];
+      onReportGenerated(result.generatedDocxDataUri, result.replacementsCount, debugValue);
 
     } catch (error: any) {
       console.error('Error generating report:', error);
