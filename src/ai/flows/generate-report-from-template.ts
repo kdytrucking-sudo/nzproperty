@@ -191,8 +191,8 @@ const prepareTemplateData = async (data: any) => {
         Object.keys(sectionSchema).forEach((fieldKey) => {
             const fieldConfig = sectionSchema[fieldKey];
             if (fieldConfig && typeof fieldConfig === 'object' && fieldConfig.placeholder) {
-                // IMPORTANT: Directly use the placeholder from the JSON, removing only the brackets.
-                const templateKey = fieldConfig.placeholder.replace(/\[|\]/g, '');
+                // Standardize the placeholder to get the final template key
+                const templateKey = fieldConfig.placeholder.replace(/\[|\]/g, '').replace(/^extracted_/, 'Replace_');
                 const value = dataSection[fieldKey];
                 countAndSetReplacement(templateKey, value);
             }
