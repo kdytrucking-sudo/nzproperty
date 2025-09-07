@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -62,7 +63,7 @@ export default function ManageImagesPage() {
     append({
       id: crypto.randomUUID(),
       cardName: 'New Image',
-      placeholder: '[%new_image]',
+      placeholder: '{%new_image}',
       width: 600,
       height: 400,
     });
@@ -71,9 +72,9 @@ export default function ManageImagesPage() {
   const handlePlaceholderBlur = (e: React.FocusEvent<HTMLInputElement>, cardIndex: number) => {
     let value = e.target.value.trim();
     // Remove any existing delimiters to start clean
-    value = value.replace(/^\[%?/, '').replace(/\]$/, '');
+    value = value.replace(/[\{\}%]/g, '');
     // Add the correct delimiters
-    value = `[%${value}]`;
+    value = `{%${value}}`;
     form.setValue(`configs.${cardIndex}.placeholder`, value, { shouldDirty: true });
   };
 
@@ -179,7 +180,7 @@ export default function ManageImagesPage() {
                           <FormItem>
                               <FormLabel>Placeholder Tag</FormLabel>
                               <FormControl>
-                                  <Input {...field} onBlur={(e) => handlePlaceholderBlur(e, cardIndex)} className="font-mono text-sm" placeholder="e.g., [%property_photo]" />
+                                  <Input {...field} onBlur={(e) => handlePlaceholderBlur(e, cardIndex)} className="font-mono text-sm" placeholder="e.g., {%property_photo}" />
                               </FormControl>
                               <FormMessage />
                           </FormItem>
@@ -193,7 +194,7 @@ export default function ManageImagesPage() {
                               <FormItem>
                                   <FormLabel>Width (px)</FormLabel>
                                   <FormControl>
-                                      <Input type="number" {...field} placeholder="e.g., 600" />
+                                      <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} placeholder="e.g., 600" />
                                   </FormControl>
                                   <FormMessage />
                               </FormItem>
@@ -206,7 +207,7 @@ export default function ManageImagesPage() {
                               <FormItem>
                                   <FormLabel>Height (px)</FormLabel>
                                   <FormControl>
-                                      <Input type="number" {...field} placeholder="e.g., 400" />
+                                      <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} placeholder="e.g., 400" />
                                   </FormControl>
                                   <FormMessage />
                               </FormItem>

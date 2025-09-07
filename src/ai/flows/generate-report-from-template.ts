@@ -14,7 +14,7 @@ import Docxtemplater from 'docxtemplater';
 import fs from 'fs/promises';
 import path from 'path';
 import { ImageOptionsSchema, type ImageConfig } from '@/lib/image-options-schema';
-import type { MultiOptionCard } from '@/lib/multi-options-schema';
+import { MultiOptionCard, type MultiOptionsData } from '@/lib/multi-options-schema';
 
 
 // ESM compatibility for require
@@ -169,7 +169,7 @@ export async function generateReportFromTemplate(
 
 // Asynchronously load multi-options once
 const getMultiOptions = (() => {
-  let promise: Promise<MultiOptionCard[]> | null = null;
+  let promise: Promise<MultiOptionsData> | null = null;
   return () => {
     if (!promise) {
       promise = fs.readFile(path.join(process.cwd(), 'src', 'lib', 'multi-options.json'), 'utf-8').then(JSON.parse);
@@ -194,7 +194,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
       let bufferWithImages = templateBuffer;
       let imageReplacements = 0;
 
-      // STAGE 1: Replace Images
+      // STAGE 1: Replace Images - This uses the default '{%placeholder}' syntax
       if (images && Object.keys(images).length > 0) {
           const imageOptionsPath = path.join(process.cwd(), 'src', 'lib', 'image-options.json');
           const imageOptionsJson = await fs.readFile(imageOptionsPath, 'utf-8');
@@ -202,55 +202,51 @@ const generateReportFromTemplateFlow = ai.defineFlow(
           
           const imageSizeMap = new Map<string, { width: number; height: number }>();
           imageConfigs.forEach((config: ImageConfig) => {
-              const key = config.placeholder.trim().replace(/^\[%/, '').replace(/\]$/, '');
+              // The key for the map is the placeholder without any delimiters
+              const key = config.placeholder.trim().replace(/^\{%/, '').replace(/\}$/, '');
               imageSizeMap.set(key, { width: config.width, height: config.height });
           });
 
           const imageModule = new ImageModule({
               fileType: 'docx',
               centered: false,
-              // The tag to look for inside the delimiters: [%tag]
-              tag: '%',
-              getImage(tagValue: unknown) {
-                  if (Buffer.isBuffer(tagValue)) return tagValue;
-                  if (typeof tagValue === 'string' && tagValue.startsWith('data:')) {
-                      const b64 = tagValue.split(',')[1] ?? '';
-                      return Buffer.from(b64, 'base64');
-                  }
-                  return null;
+              getImage(tagValue: string) {
+                const base64 = tagValue.split(',')[1] ?? '';
+                return Buffer.from(base64, 'base64');
               },
-              getSize(_img: Buffer, _tagValue: unknown, tagName: string) {
+              getSize(_img: Buffer, _tagValue: string, tagName: string) {
                   const size = imageSizeMap.get(tagName);
-                  return size ? [size.width, size.height] : [300, 200];
+                  return size ? [size.width, size.height] : [300, 200]; // fallback size
               },
           });
 
           const zip = new PizZip(templateBuffer);
           const doc = new Docxtemplater(zip, {
               modules: [imageModule],
-              delimiters: { start: '[', end: ']' },
+              paragraphLoop: true,
+              // DO NOT set delimiters here, let image module use default {%...}
           });
 
           const imageDataForTemplate: Record<string, string> = {};
           Object.entries(images).forEach(([placeholder, dataUri]) => {
               if (dataUri) {
-                  const key = placeholder.trim().replace(/^\[%/, '').replace(/\]$/, '');
+                  const key = placeholder.trim().replace(/^\{%/, '').replace(/\}$/, '');
                   imageDataForTemplate[key] = dataUri;
                   imageReplacements++;
               }
           });
-
+          
           doc.setData(imageDataForTemplate);
           doc.render();
 
           bufferWithImages = doc.getZip().generate({ type: 'nodebuffer' });
       }
 
-      // STAGE 2: Replace Text
+      // STAGE 2: Replace Text - This uses custom '[placeholder]' syntax
       const zipForText = new PizZip(bufferWithImages);
       const docForText = new Docxtemplater(zipForText, {
           paragraphLoop: true,
-          delimiters: { start: '[', end: ']' },
+          delimiters: { start: '[', end: ']' }, // Custom delimiters for text
       });
 
       const { templateData: textData, replacementCount: textReplacements } = await prepareTextData(data);

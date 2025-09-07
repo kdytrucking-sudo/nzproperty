@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -159,7 +160,7 @@ export default function ImageTestPage() {
               <CardHeader>
                 <CardTitle>1. Upload Template</CardTitle>
                 <CardDescription>
-                  Upload the master .docx template that contains the image placeholders.
+                  Upload the master .docx template that contains the image placeholders e.g. <code>{' {%my_image}'}</code>.
                 </CardDescription>
               </CardHeader>
               <CardContent>

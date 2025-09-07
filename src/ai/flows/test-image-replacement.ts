@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * Insert multiple images at specified TEXT tags like {%report_logo} using
@@ -51,29 +52,23 @@ const testImageReplacementFlow = ai.defineFlow(
       
       const imageSizes = new Map<string, { width: number; height: number }>();
       images.forEach(img => {
-          const key = img.placeholder.trim().replace(/^\{\%/, '').replace(/\}$/, '');
+          const key = img.placeholder.trim().replace(/^\{%/, '').replace(/\}$/, '');
           imageSizes.set(key, { width: img.width, height: img.height });
       });
 
       const imageModule = new ImageModule({
         fileType: 'docx',
         centered: false,
-
-        getImage(tagValue: unknown) {
-          if (Buffer.isBuffer(tagValue)) return tagValue;
-          if (typeof tagValue === 'string' && tagValue.startsWith('data:')) {
-            const b64 = tagValue.split(',')[1] ?? '';
-            return Buffer.from(b64, 'base64');
-          }
-          throw new Error('getImage: expected Buffer or data URI string');
+        getImage(tagValue: string) {
+            const base64 = tagValue.split(',')[1] ?? '';
+            return Buffer.from(base64, 'base64');
         },
-
-        getSize(_img: Buffer, _tagValue: unknown, tagName: string) {
+        getSize(_img: Buffer, _tagValue: string, tagName: string) {
           const size = imageSizes.get(tagName);
           if (size) {
             return [size.width, size.height];
           }
-          // Fallback if size not found, though it should always be present with this logic
+          // Fallback if size not found
           return [300, 200];
         },
       });
@@ -81,12 +76,12 @@ const testImageReplacementFlow = ai.defineFlow(
       const doc = new Docxtemplater(zip, {
         modules: [imageModule],
         paragraphLoop: true,
-        linebreaks: true,
+        // Use default delimiters for image module: {%...}
       });
 
       const templateData: { [key: string]: string } = {};
       images.forEach(img => {
-        const key = img.placeholder.trim().replace(/^\{\%/, '').replace(/\}$/, '');
+        const key = img.placeholder.trim().replace(/^\{%/, '').replace(/\}$/, '');
         templateData[key] = img.imageDataUri;
       });
 
