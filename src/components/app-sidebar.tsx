@@ -13,6 +13,7 @@ import {
   Construction,
   ListTodo,
   TestTube2,
+  Image,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -59,6 +60,11 @@ export function AppSidebar() {
       href: '/manage-templates',
       label: 'Manage Templates',
       icon: FileText,
+    },
+    {
+      href: '/manage-images',
+      label: 'Manage Images',
+      icon: Image,
     },
     {
       href: '/json-editor',
