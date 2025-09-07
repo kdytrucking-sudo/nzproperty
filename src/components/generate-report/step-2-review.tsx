@@ -1,8 +1,9 @@
+
 'use client';
 
 import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, PlusCircle, Trash2, Copy, CalendarIcon, FileUp } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Copy, CalendarIcon } from 'lucide-react';
 import { useForm, useFieldArray, Control, FieldValues, Path, UseFormSetValue } from 'react-hook-form';
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -31,12 +32,6 @@ import { getExtractionConfig } from '@/ai/flows/get-extraction-config';
 import { cn } from '@/lib/utils';
 import { getMultiOptions } from '@/ai/flows/get-multi-options';
 import type { MultiOptionsData, MultiOptionCard, MultiOptionItem } from '@/lib/multi-options-schema';
-import { FileUploader } from '../file-uploader';
-
-const ACCEPTED_IMAGE_TYPES = {
-  'image/png': ['.png'],
-  'image/jpeg': ['.jpg', '.jpeg'],
-};
 
 // Main form schema
 const formSchema = z.any();
@@ -140,7 +135,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     defaultValues: {
       templateFileName: '',
       data: extractedData,
-      propertyImage: [] as File[],
       commentary: {
         PurposeofValuation: '',
         PrincipalUse: '',
@@ -379,15 +373,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   const tabKeys = jsonStructure ? Object.keys(jsonStructure) : [];
   const defaultTab = tabKeys.length > 0 ? tabKeys[0] : 'marketValuation';
 
-  const fileToDataUri = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsGenerating(true);
 
@@ -398,108 +383,33 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     }
 
     try {
-      let imageDataUri: string | undefined;
-      if (values.propertyImage && values.propertyImage.length > 0) {
-        imageDataUri = await fileToDataUri(values.propertyImage[0]);
-      }
-      
-      const flattenData = (obj: any, prefix = ''): Record<string, any> => {
-        return Object.keys(obj).reduce((acc, k) => {
-          const pre = prefix.length ? prefix + '.' : '';
-          if (typeof obj[k] === 'object' && obj[k] !== null && !Array.isArray(obj[k])) {
-            Object.assign(acc, flattenData(obj[k], pre + k));
-          } else {
-            // Replace placeholder keys with the correct format for docxtemplater
-            const newKey = pre.replace(/\./g, '_') + k;
-            const templateKey = `Replace_${newKey}`;
-            acc[templateKey] = obj[k];
-          }
-          return acc;
-        }, {} as Record<string, any>);
-      };
-
-       const createTemplatePlaceholders = (data: any, structure: any, path: string = ''): Record<string, any> => {
-          let placeholders: Record<string, any> = {};
-          for (const key in structure) {
-              const currentPath = path ? `${path}.${key}` : key;
-              const fieldConfig = structure[key];
-              
-              if (fieldConfig.placeholder) {
-                  // Get value from data
-                  const value = data[key];
-                  // Use placeholder from config (e.g., [Replace_Address]) and remove brackets
-                  const placeholderKey = fieldConfig.placeholder.replace(/\[|\]/g, '');
-                  placeholders[placeholderKey] = value;
-              } else if (typeof fieldConfig === 'object' && !Array.isArray(fieldConfig) && data[key]) {
-                  // Recurse for nested objects
-                  const nestedPlaceholders = createTemplatePlaceholders(data[key], fieldConfig, currentPath);
-                  placeholders = { ...placeholders, ...nestedPlaceholders };
-              }
-          }
-          return placeholders;
-      };
-
-      const extractedPlaceholders = createTemplatePlaceholders(values.data, jsonStructure);
-
-      const commentaryPlaceholders = {
-        'Replace_PurposeofValuation': values.commentary.PurposeofValuation,
-        'Replace_PrincipalUse': values.commentary.PrincipalUse,
-        'Replace_PreviousSale': values.commentary.PreviousSale,
-        'Replace_ContractSale': values.commentary.ContractSale,
-        'Replace_SuppliedDoc': values.commentary.SuppliedDocumentation,
-        'Replace_RecentOrProvided': values.commentary.RecentOrProvided,
-        'Replace_LIM': values.commentary.LIM,
-        'Replace_PC78': values.commentary.PC78,
-        'Replace_Zone': values.commentary.OperativeZone,
-        'Replace_ZoningOptionOperative': values.commentary.ZoningOptionOperative,
-        'Replace_ZoningOptionPC78': values.commentary.ZoningOptionPC78,
-        'Replace_ConditionAndRepair': values.commentary.ConditionAndRepair,
-      };
-
-      const valuationPlaceholders = {
-        'Replace_MarketValue': values.marketValuation.marketValue,
-        'Replace_MarketValuation': values.marketValuation.marketValuation,
-        'Replace_ImprovementValueByValuer': values.marketValuation.improvementsValueByValuer,
-        'Replace_LandValueByValuer': values.marketValuation.landValueByValuer,
-        'Replace_ChattelsByValuer': values.marketValuation.chattelsValueByValuer,
-        'Replace_MarketValueByValuer': values.marketValuation.marketValueByValuer,
-        'Replace_LandValueFromWeb': values.statutoryValuation.landValueByWeb,
-        'Replace_ValueofImprovementsFromWeb': values.statutoryValuation.improvementsValueByWeb,
-        'Replace_RatingValuationFromWeb': values.statutoryValuation.ratingValueByWeb,
-      };
-      
-      const constructionBriefPlaceholder = {
-        'Replace_ConstructionBrief': values.constructionBrief.finalBrief
-      };
-
       const multiOptionBriefs = values.multiOptionBriefs || {};
-      const multiOptionPlaceholders: Record<string, string> = {};
+      const placeholderData: Record<string, string> = {};
       if (multiOptions) {
         multiOptions.forEach(card => {
           const placeholderKey = card.placeholder.replace(/\[|\]/g, '');
-          multiOptionPlaceholders[placeholderKey] = multiOptionBriefs[card.id] || '';
+          placeholderData[placeholderKey] = multiOptionBriefs[card.id] || '';
         });
       }
 
-      const allDataForTemplate = {
-        ...extractedPlaceholders,
-        ...commentaryPlaceholders,
-        ...valuationPlaceholders,
-        ...constructionBriefPlaceholder,
-        ...multiOptionPlaceholders,
-        image_placeholder_NatureofProperty1: imageDataUri, // Add image data
+      const fullData = { 
+        ...values.data, 
+        commentary: values.commentary, 
+        constructionBrief: values.constructionBrief, 
+        marketValuation: values.marketValuation,
+        statutoryValuation: values.statutoryValuation,
+        ...placeholderData
       };
-      
+
       const result = await generateReportFromTemplate({
         templateFileName: values.templateFileName,
-        data: allDataForTemplate,
+        data: fullData,
       });
 
       toast({
         title: 'Report Generated Successfully',
-        description: `Your download will begin shortly.`,
+        description: `Replaced ${result.replacementsCount} placeholders. Your download will begin shortly.`,
       });
-
       const debugValue = values.data?.Info?.['Instructed By'];
       onReportGenerated(result.generatedDocxDataUri, result.replacementsCount, debugValue);
 
@@ -1019,54 +929,34 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                 </div>
             ) : (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                     <FormField
-                      control={form.control}
-                      name="templateFileName"
-                      render={({ field }) => (
-                          <FormItem>
-                          <FormLabel>Select Report Template</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
-                              <FormControl>
-                              <SelectTrigger>
-                                  <SelectValue placeholder="Select a .docx template to use..." />
-                              </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                              {templates.length === 0 ? (
-                                  <SelectItem value="no-templates" disabled>
-                                  No templates found. Upload in 'Manage Templates'.
-                                  </SelectItem>
-                              ) : (
-                                  templates.map(templateName => (
-                                  <SelectItem key={templateName} value={templateName}>{templateName}</SelectItem>
-                                  ))
-                              )}
-                              </SelectContent>
-                          </Select>
-                          <FormMessage />
-                          </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="propertyImage"
-                      render={({ field: { onChange, value } }) => (
+                    control={form.control}
+                    name="templateFileName"
+                    render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Replace Property Image</FormLabel>
-                          <FileUploader
-                            label=""
-                            value={value}
-                            onValueChange={onChange}
-                            options={{ accept: ACCEPTED_IMAGE_TYPES, maxSize: 1024 * 1024 * 4 }}
-                            maxFiles={1}
-                          />
-                          <FormMessage />
-                           <p className="text-xs text-muted-foreground">Upload a .png or .jpg to replace the image with the placeholder <code className="font-mono">{`{%image_placeholder_NatureofProperty1}`}</code> in the template.</p>
+                        <FormLabel>Select Report Template</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a .docx template to use..." />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            {templates.length === 0 ? (
+                                <SelectItem value="no-templates" disabled>
+                                No templates found. Upload in 'Manage Templates'.
+                                </SelectItem>
+                            ) : (
+                                templates.map(templateName => (
+                                <SelectItem key={templateName} value={templateName}>{templateName}</SelectItem>
+                                ))
+                            )}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
                         </FormItem>
-                      )}
+                    )}
                     />
-                  </div>
 
                     <Tabs defaultValue={defaultTab}>
                     <TabsList className="grid w-full grid-cols-1 md:grid-cols-7">
