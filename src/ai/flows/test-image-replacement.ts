@@ -1,16 +1,7 @@
 'use server';
 /**
- * Insert an image at a TEXT tag like {%report_logo} using
+ * Insert multiple images at specified TEXT tags like {%report_logo} using
  * docxtemplater-image-module-free.
- *
- * HOW TO USE:
- * 1) In the .docx template, put TEXT tag {%report_logo} at the target position.
- * 2) Call this flow with:
- *    - templateDataUri: data:... of the docx
- *    - imageDataUri: data:image/png;base64,... (or jpeg)
- *    - placeholder: "{%report_logo}"
- *    - width (optional): width in pixels
- *    - height (optional): height in pixels
  */
 
 import { ai } from '@/ai/genkit';
@@ -20,24 +11,18 @@ import Docxtemplater from 'docxtemplater';
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 const ImageModule = require('docxtemplater-image-module-free');
-const sizeOfLib = require('image-size');
-
-/* ---- 兼容 image-size 的导出差异（有的返回函数，有的是 { imageSize }） ---- */
-const imageSize: (buf: Buffer) => { width?: number; height?: number } = (() => {
-  if (typeof sizeOfLib === 'function') return sizeOfLib;
-  if (sizeOfLib && typeof sizeOfLib.imageSize === 'function') return sizeOfLib.imageSize;
-  return () => ({ width: undefined, height: undefined });
-})();
-
-const DEFAULT_WH: [number, number] = [600, 400]; // 兜底尺寸（没给预设且读不到原图尺寸时使用）
 
 /* ----------------------------- Schemas ----------------------------- */
+const ImageInfoSchema = z.object({
+  placeholder: z.string().describe('Text tag in template, e.g. {%report_logo}'),
+  imageDataUri: z.string().describe('Image as data URI, e.g. data:image/png;base64,...'),
+  width: z.number().describe('Width in pixels.'),
+  height: z.number().describe('Height in pixels.'),
+});
+
 const TestImageReplacementInputSchema = z.object({
   templateDataUri: z.string().describe('docx template as data URI'),
-  imageDataUri: z.string().describe('image as data URI, e.g. data:image/png;base64,...'),
-  placeholder: z.string().describe('text tag in template, e.g. {%report_logo}'),
-  width: z.number().optional().describe('Optional width in pixels.'),
-  height: z.number().optional().describe('Optional height in pixels.'),
+  images: z.array(ImageInfoSchema).describe('An array of image information to replace.'),
 });
 export type TestImageReplacementInput = z.infer<typeof TestImageReplacementInputSchema>;
 
@@ -59,13 +44,17 @@ const testImageReplacementFlow = ai.defineFlow(
     inputSchema: TestImageReplacementInputSchema,
     outputSchema: TestImageReplacementOutputSchema,
   },
-  async ({ templateDataUri, imageDataUri, placeholder, width, height }) => {
+  async ({ templateDataUri, images }) => {
     try {
-      // 1) 读取模板
       const templateBuffer = Buffer.from(templateDataUri.split(',')[1], 'base64');
       const zip = new PizZip(templateBuffer);
+      
+      const imageSizes = new Map<string, { width: number; height: number }>();
+      images.forEach(img => {
+          const key = img.placeholder.trim().replace(/^\{\%/, '').replace(/\}$/, '');
+          imageSizes.set(key, { width: img.width, height: img.height });
+      });
 
-      // 2) 配置免费版图片模块（必须提供 getImage + getSize）
       const imageModule = new ImageModule({
         fileType: 'docx',
         centered: false,
@@ -79,21 +68,13 @@ const testImageReplacementFlow = ai.defineFlow(
           throw new Error('getImage: expected Buffer or data URI string');
         },
 
-        getSize(img: Buffer /*, _tagValue: unknown, tagName: string */) {
-          // ① 若调用方显式传了 width 和 height，优先使用
-          if (width && height) {
-            return [width, height];
+        getSize(_img: Buffer, _tagValue: unknown, tagName: string) {
+          const size = imageSizes.get(tagName);
+          if (size) {
+            return [size.width, size.height];
           }
-
-          // ② 否则，尝试读原图像素；失败则回退到 DEFAULT_WH
-          try {
-            const meta = imageSize(img) || {};
-            const w = meta.width ?? DEFAULT_WH[0];
-            const h = meta.height ?? DEFAULT_WH[1];
-            return [w, h] as [number, number];
-          } catch {
-            return DEFAULT_WH;
-          }
+          // Fallback if size not found, though it should always be present with this logic
+          return [300, 200];
         },
       });
 
@@ -103,15 +84,16 @@ const testImageReplacementFlow = ai.defineFlow(
         linebreaks: true,
       });
 
-      // 3) 设置数据
-      // placeholder 形如 "{%report_logo}"，需要取出键名 "report_logo"
-      const key = placeholder.trim().replace(/^\{\%/, '').replace(/\}$/, '');
-      doc.setData({ [key]: imageDataUri });
+      const templateData: { [key: string]: string } = {};
+      images.forEach(img => {
+        const key = img.placeholder.trim().replace(/^\{\%/, '').replace(/\}$/, '');
+        templateData[key] = img.imageDataUri;
+      });
 
-      // 4) 渲染
+      doc.setData(templateData);
+
       doc.render();
 
-      // 5) 导出
       const out = doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' });
       const base64 = out.toString('base64');
       return {
