@@ -165,7 +165,9 @@ const prepareTemplateData = async (data: any) => {
 
   const countAndSetReplacement = (key: string, value: any): void => {
     const normalizedValue = normalizeNewlines(value);
-    templateData[key] = normalizedValue;
+    // Standardize key to always use Replace_ prefix for the template
+    const finalKey = key.replace(/^extracted_/, 'Replace_');
+    templateData[finalKey] = normalizedValue;
 
     if (Array.isArray(value)) {
       // 数组：只要数组里有任意项含非空值，就记一次
@@ -181,24 +183,24 @@ const prepareTemplateData = async (data: any) => {
       replacementCount++;
     }
   };
-
-  // 1) Handle data based on the dynamic jsonStructure
+  
+  // 1) Handle data from 'Info', 'General Info', 'Impro Info' based on jsonStructure
   Object.keys(jsonStructure).forEach((sectionKey) => {
     const sectionSchema = jsonStructure[sectionKey] || {};
     const dataSection = data?.[sectionKey];
 
     if (dataSection) {
-        Object.keys(sectionSchema).forEach((fieldKey) => {
-            const fieldConfig = sectionSchema[fieldKey];
-            if (fieldConfig && typeof fieldConfig === 'object' && fieldConfig.placeholder) {
-                // Standardize the placeholder to get the final template key
-                const templateKey = fieldConfig.placeholder.replace(/\[|\]/g, '').replace(/^extracted_/, 'Replace_');
-                const value = dataSection[fieldKey];
-                countAndSetReplacement(templateKey, value);
-            }
-        });
+      Object.keys(dataSection).forEach((fieldKey) => {
+        const fieldConfig = sectionSchema[fieldKey];
+        if (fieldConfig && typeof fieldConfig === 'object' && fieldConfig.placeholder) {
+          const templateKey = fieldConfig.placeholder.replace(/\[|\]/g, '');
+          const value = dataSection[fieldKey];
+          countAndSetReplacement(templateKey, value);
+        }
+      });
     }
   });
+
 
   // 2) 全局内容（manage-content）
   contentFields.forEach((field: any) => {
