@@ -1,1 +1,66 @@
-[]
+[
+  {
+    "id": "8fdb6e6c-4f14-4407-85a8-9b34a12e3d1e",
+    "cardName": "Strengths/Opportunities",
+    "placeholder": "[Replace_Strengths]",
+    "options": [
+      {
+        "id": "0426145a-41be-4f86-942d-cdbcfb7e69d7",
+        "label": "Modern, freestanding dwelling.",
+        "option": "Modern, freestanding dwelling."
+      },
+      {
+        "id": "234760ea-e420-4492-9f9e-e6a79da6af48",
+        "label": "Good outdoor living area. ",
+        "option": "Good outdoor living area. "
+      },
+      {
+        "id": "85eab53d-4ddf-47f8-9b37-55a5abf85432",
+        "label": "One designated parking space. ;",
+        "option": "One designated parking space. ;"
+      },
+      {
+        "id": "a6270030-ddac-4e4f-81b7-a2a1bf717ac4",
+        "label": "Additional off-street parking spaces. ; ",
+        "option": "Additional off-street parking spaces. ; "
+      },
+      {
+        "id": "22733e8e-733e-431f-bb01-50b8e51ffcd1",
+        "label": " Elevated urban views.",
+        "option": " Elevated urban views."
+      }
+    ]
+  },
+  {
+    "id": "293065e5-bb6f-4614-a9e5-a0fb0e3df9e2",
+    "cardName": "Weaknesses/Threats",
+    "placeholder": "[Replace_Weaknesses]",
+    "options": [
+      {
+        "id": "57a4cb98-6a7c-4d56-bd7d-89fd9adf8bc9",
+        "label": "New Option",
+        "option": " Subdued economic conditions and residential property market. ;"
+      },
+      {
+        "id": "142aa0dc-b6a8-473b-bbe9-ee5f782f63f5",
+        "label": "Cross Lease Tenure. ;",
+        "option": "Cross Lease Tenure. ;"
+      },
+      {
+        "id": "9a11720f-a926-4eab-83e8-dba13cef3e90",
+        "label": "High volume of similar,  ",
+        "option": "High volume of similar, competing townhouse and terrace house product in the surrounding area. ; "
+      },
+      {
+        "id": "4a9a8a99-ceca-48ac-815e-f56728577fcf",
+        "label": "Generally lower cost residential area. ; ",
+        "option": "Generally lower cost residential area. ; "
+      },
+      {
+        "id": "fab1e14e-f5d4-45cc-af7a-c9924e50bb5e",
+        "label": "Subdued economic and residential property market conditions.",
+        "option": "Subdued economic and residential property market conditions."
+      }
+    ]
+  }
+]

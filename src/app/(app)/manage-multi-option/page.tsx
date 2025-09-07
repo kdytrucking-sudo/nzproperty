@@ -64,7 +64,7 @@ export default function ManageMultiOptionPage() {
       id: crypto.randomUUID(),
       cardName: 'New Card',
       placeholder: '[Replace_NewPlaceholder]',
-      options: [{ id: crypto.randomUUID(), label: 'New Option', option: 'New Option Text' }],
+      options: [{ id: crypto.randomUUID(), label: '', option: '' }],
     });
   };
   
