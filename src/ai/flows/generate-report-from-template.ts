@@ -234,9 +234,15 @@ const prepareTemplateData = async (data: any) => {
   }
 
   // 4) constructionBrief
-  if ((data as any)?.constructionBrief?.finalBrief) {
-    countAndSetReplacement('Replace_ConstructionBrief', (data as any).constructionBrief.finalBrief);
+  if ((data as any)?.constructionBrief) {
+    if ((data as any).constructionBrief.finalBrief) {
+        countAndSetReplacement('Replace_ConstructionBrief', (data as any).constructionBrief.finalBrief);
+    }
+    if ((data as any).constructionBrief.chattelsBrief) {
+        countAndSetReplacement('Replace_Chattels', (data as any).constructionBrief.chattelsBrief);
+    }
   }
+
 
   // 5) marketValuation
   if ((data as any)?.marketValuation) {

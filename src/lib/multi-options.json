@@ -38,17 +38,17 @@
     "options": [
       {
         "id": "57a4cb98-6a7c-4d56-bd7d-89fd9adf8bc9",
-        "label": "New Option",
+        "label": " Subdued ",
         "option": " Subdued economic conditions and residential property market. ;"
       },
       {
         "id": "142aa0dc-b6a8-473b-bbe9-ee5f782f63f5",
-        "label": "Cross Lease Tenure. ;",
-        "option": "Cross Lease Tenure. ;"
+        "label": "Cross  ",
+        "option": "Cross Lease Tenure. ; "
       },
       {
         "id": "9a11720f-a926-4eab-83e8-dba13cef3e90",
-        "label": "High volume of similar,  ",
+        "label": "High  ",
         "option": "High volume of similar, competing townhouse and terrace house product in the surrounding area. ; "
       },
       {
@@ -60,6 +60,28 @@
         "id": "fab1e14e-f5d4-45cc-af7a-c9924e50bb5e",
         "label": "Subdued economic and residential property market conditions.",
         "option": "Subdued economic and residential property market conditions."
+      }
+    ]
+  },
+  {
+    "id": "fc62c714-2e6f-45da-9a1a-8345820367d8",
+    "cardName": "Searched Document",
+    "placeholder": "[Replace_SearchedDoc]",
+    "options": [
+      {
+        "id": "99c178da-878f-4adf-97c0-9642da49aed7",
+        "label": " searched a copy of the Record of Title Identifier",
+        "option": " searched a copy of the Record of Title Identifier"
+      },
+      {
+        "id": "389e3772-414c-498e-93a4-7d4307969df7",
+        "label": "searched a copy of the Record of Parent Title Identifier",
+        "option": "searched a copy of the Record of Parent Title Identifier"
+      },
+      {
+        "id": "12e04f62-6af1-47bd-bb62-73c717fd0dc0",
+        "label": "reviewed the supplied documentation",
+        "option": "reviewed the supplied documentation"
       }
     ]
   }

@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Retrieves the construction brief from a JSON file.
+ * @fileOverview Retrieves the construction and chattels briefs from a JSON file.
  */
 
 import { ai } from '@/ai/genkit';
@@ -9,7 +9,8 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const ConstructionBriefSchema = z.object({
-  brief: z.string(),
+  brief: z.string().optional(),
+  chattelsBrief: z.string().optional(),
 });
 
 type ConstructionBriefData = z.infer<typeof ConstructionBriefSchema>;
@@ -34,7 +35,8 @@ const getConstructionBriefFlow = ai.defineFlow(
       if (error.code === 'ENOENT') {
         // If the file doesn't exist, return a default structure.
         const defaultData: ConstructionBriefData = {
-            brief: ''
+            brief: '',
+            chattelsBrief: '',
         };
         // We don't write the file here, just return the default. It will be created on first save.
         return defaultData;
