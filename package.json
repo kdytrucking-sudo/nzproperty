@@ -48,7 +48,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
-    "docxtemplater": "^3.47.2",
+    "docx": "^8.5.0",
     "dotenv": "^16.5.0",
     "embla-carousel-react": "^8.6.0",
     "extract-zip": "^2.0.1",
@@ -57,7 +57,6 @@
     "genkit": "^1.14.1",
     "lucide-react": "^0.475.0",
     "next": "15.3.3",
-    "pizzip": "^3.1.7",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
@@ -70,10 +69,9 @@
   },
   "devDependencies": {
     "@types/node": "^20",
-    "@types/pizzip": "^3.0.5",
     "@types/react": "^18",
-    "@types/react-dom": "^18",
     "genkit-cli": "^1.14.1",
+    "@types/react-dom": "^18",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"

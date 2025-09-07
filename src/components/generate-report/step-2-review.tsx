@@ -21,7 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { listTemplates } from '@/ai/flows/list-templates';
-import { generateReportFromTemplate } from '@/ai/flows/generate-report-from-template';
+import { generateReportDocx } from '@/ai/flows/generate-report-docx';
 import type { PropertyData } from '@/lib/types';
 import { getCommentaryOptions } from '@/ai/flows/get-commentary-options';
 import type { CommentaryOptionsData } from '@/lib/commentary-schema';
@@ -421,19 +421,34 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         statutoryValuation: values.statutoryValuation,
         ...placeholderData
       };
+      
+      const comparableSales = Array.isArray(fullData.comparableSales) ? fullData.comparableSales : [];
+      
+      const textReplacements = {
+        ...Object.entries(fullData.Info || {}).reduce((acc, [key, value]) => ({...acc, [`[Replace_${key}]`]: value}), {}),
+        ...Object.entries(fullData['General Info'] || {}).reduce((acc, [key, value]) => ({...acc, [`[Replace_${key}]`]: value}), {}),
+        ...Object.entries(fullData['Impro Info'] || {}).reduce((acc, [key, value]) => ({...acc, [`[Replace_${key}]`]: value}), {}),
+        ...Object.entries(fullData.commentary || {}).reduce((acc, [key, value]) => ({...acc, [`[Replace_${key}]`]: value}), {}),
+        ...Object.entries(fullData.marketValuation || {}).reduce((acc, [key, value]) => ({...acc, [`[Replace_${key}]`]: value}), {}),
+        ...Object.entries(fullData.statutoryValuation || {}).reduce((acc, [key, value]) => ({...acc, [`[Replace_${key}]`]: value}), {}),
+        '[Replace_ConstructionBrief]': fullData.constructionBrief.finalBrief,
+        ...placeholderData,
+      };
 
-      const result = await generateReportFromTemplate({
+      const result = await generateReportDocx({
         templateFileName: values.templateFileName,
-        data: fullData,
-        imageDataUri: imageDataUri,
+        textReplacements,
+        comparableSales,
+        imageDataUri,
       });
 
       toast({
         title: 'Report Generated Successfully',
-        description: `Replaced ${result.replacementsCount} placeholders. Your download will begin shortly.`,
+        description: `Your download will begin shortly.`,
       });
+
       const debugValue = values.data?.Info?.['Instructed By'];
-      onReportGenerated(result.generatedDocxDataUri, result.replacementsCount, debugValue);
+      onReportGenerated(result.generatedDocxDataUri, 0, debugValue); // Replacements count is not available from this flow
 
     } catch (error: any) {
       console.error('Error generating report:', error);
@@ -994,7 +1009,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                             maxFiles={1}
                           />
                           <FormMessage />
-                           <p className="text-xs text-muted-foreground">Upload a .png or .jpg to replace the <code className="font-mono">{'{image_placeholder_NatureofProperty1}'}</code> in the template.</p>
+                           <p className="text-xs text-muted-foreground">Upload a .png or .jpg to replace the <code className="font-mono">[image_placeholder_NatureofProperty1]</code> in the template.</p>
                         </FormItem>
                       )}
                     />
