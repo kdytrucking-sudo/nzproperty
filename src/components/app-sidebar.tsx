@@ -54,11 +54,6 @@ export function AppSidebar() {
       icon: ListTodo,
     },
     {
-      href: '/construction-brief',
-      label: 'Construction Brief',
-      icon: Construction,
-    },
-    {
       href: '/manage-templates',
       label: 'Manage Templates',
       icon: FileText,

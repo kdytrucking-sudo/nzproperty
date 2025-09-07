@@ -573,7 +573,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   };
 
 
-  const renderConstructionBriefSection = () => {
+  const renderConstructChattelsSection = () => {
     return (
         <div className="space-y-8 pt-4">
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
@@ -968,7 +968,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                         <TabsTrigger value="marketValuation">Market Valuation</TabsTrigger>
                         <TabsTrigger value="commentary">Commentary</TabsTrigger>
                         <TabsTrigger value="multiOption">Multi Option</TabsTrigger>
-                        <TabsTrigger value="constructionBrief">Construction Brief</TabsTrigger>
+                        <TabsTrigger value="constructChattels">Construct/Chattels</TabsTrigger>
                     </TabsList>
 
                     {tabKeys.map(key => (
@@ -986,8 +986,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     <TabsContent value="multiOption">
                       {renderMultiOptionSection()}
                     </TabsContent>
-                     <TabsContent value="constructionBrief">
-                        {renderConstructionBriefSection()}
+                     <TabsContent value="constructChattels">
+                        {renderConstructChattelsSection()}
                     </TabsContent>
                     </Tabs>
 
