@@ -48,7 +48,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
-    "docx": "^8.5.0",
+    "docxtemplater": "^3.47.4",
+    "pizzip": "^3.1.7",
     "dotenv": "^16.5.0",
     "embla-carousel-react": "^8.6.0",
     "extract-zip": "^2.0.1",
@@ -69,6 +70,7 @@
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/pizzip": "^3.0.5",
     "@types/react": "^18",
     "genkit-cli": "^1.14.1",
     "@types/react-dom": "^18",

@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -21,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { listTemplates } from '@/ai/flows/list-templates';
-import { generateReportDocx } from '@/ai/flows/generate-report-docx';
+import { generateReportFromTemplate } from '@/ai/flows/generate-report-from-template';
 import type { PropertyData } from '@/lib/types';
 import { getCommentaryOptions } from '@/ai/flows/get-commentary-options';
 import type { CommentaryOptionsData } from '@/lib/commentary-schema';
@@ -403,43 +402,97 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       if (values.propertyImage && values.propertyImage.length > 0) {
         imageDataUri = await fileToDataUri(values.propertyImage[0]);
       }
+      
+      const flattenData = (obj: any, prefix = ''): Record<string, any> => {
+        return Object.keys(obj).reduce((acc, k) => {
+          const pre = prefix.length ? prefix + '.' : '';
+          if (typeof obj[k] === 'object' && obj[k] !== null && !Array.isArray(obj[k])) {
+            Object.assign(acc, flattenData(obj[k], pre + k));
+          } else {
+            // Replace placeholder keys with the correct format for docxtemplater
+            const newKey = pre.replace(/\./g, '_') + k;
+            const templateKey = `Replace_${newKey}`;
+            acc[templateKey] = obj[k];
+          }
+          return acc;
+        }, {} as Record<string, any>);
+      };
+
+       const createTemplatePlaceholders = (data: any, structure: any, path: string = ''): Record<string, any> => {
+          let placeholders: Record<string, any> = {};
+          for (const key in structure) {
+              const currentPath = path ? `${path}.${key}` : key;
+              const fieldConfig = structure[key];
+              
+              if (fieldConfig.placeholder) {
+                  // Get value from data
+                  const value = data[key];
+                  // Use placeholder from config (e.g., [Replace_Address]) and remove brackets
+                  const placeholderKey = fieldConfig.placeholder.replace(/\[|\]/g, '');
+                  placeholders[placeholderKey] = value;
+              } else if (typeof fieldConfig === 'object' && !Array.isArray(fieldConfig) && data[key]) {
+                  // Recurse for nested objects
+                  const nestedPlaceholders = createTemplatePlaceholders(data[key], fieldConfig, currentPath);
+                  placeholders = { ...placeholders, ...nestedPlaceholders };
+              }
+          }
+          return placeholders;
+      };
+
+      const extractedPlaceholders = createTemplatePlaceholders(values.data, jsonStructure);
+
+      const commentaryPlaceholders = {
+        'Replace_PurposeofValuation': values.commentary.PurposeofValuation,
+        'Replace_PrincipalUse': values.commentary.PrincipalUse,
+        'Replace_PreviousSale': values.commentary.PreviousSale,
+        'Replace_ContractSale': values.commentary.ContractSale,
+        'Replace_SuppliedDoc': values.commentary.SuppliedDocumentation,
+        'Replace_RecentOrProvided': values.commentary.RecentOrProvided,
+        'Replace_LIM': values.commentary.LIM,
+        'Replace_PC78': values.commentary.PC78,
+        'Replace_Zone': values.commentary.OperativeZone,
+        'Replace_ZoningOptionOperative': values.commentary.ZoningOptionOperative,
+        'Replace_ZoningOptionPC78': values.commentary.ZoningOptionPC78,
+        'Replace_ConditionAndRepair': values.commentary.ConditionAndRepair,
+      };
+
+      const valuationPlaceholders = {
+        'Replace_MarketValue': values.marketValuation.marketValue,
+        'Replace_MarketValuation': values.marketValuation.marketValuation,
+        'Replace_ImprovementValueByValuer': values.marketValuation.improvementsValueByValuer,
+        'Replace_LandValueByValuer': values.marketValuation.landValueByValuer,
+        'Replace_ChattelsByValuer': values.marketValuation.chattelsValueByValuer,
+        'Replace_MarketValueByValuer': values.marketValuation.marketValueByValuer,
+        'Replace_LandValueFromWeb': values.statutoryValuation.landValueByWeb,
+        'Replace_ValueofImprovementsFromWeb': values.statutoryValuation.improvementsValueByWeb,
+        'Replace_RatingValuationFromWeb': values.statutoryValuation.ratingValueByWeb,
+      };
+      
+      const constructionBriefPlaceholder = {
+        'Replace_ConstructionBrief': values.constructionBrief.finalBrief
+      };
 
       const multiOptionBriefs = values.multiOptionBriefs || {};
-      const placeholderData: Record<string, string> = {};
+      const multiOptionPlaceholders: Record<string, string> = {};
       if (multiOptions) {
         multiOptions.forEach(card => {
           const placeholderKey = card.placeholder.replace(/\[|\]/g, '');
-          placeholderData[placeholderKey] = multiOptionBriefs[card.id] || '';
+          multiOptionPlaceholders[placeholderKey] = multiOptionBriefs[card.id] || '';
         });
       }
 
-      const fullData = { 
-        ...values.data, 
-        commentary: values.commentary, 
-        constructionBrief: values.constructionBrief, 
-        marketValuation: values.marketValuation,
-        statutoryValuation: values.statutoryValuation,
-        ...placeholderData
+      const allDataForTemplate = {
+        ...extractedPlaceholders,
+        ...commentaryPlaceholders,
+        ...valuationPlaceholders,
+        ...constructionBriefPlaceholder,
+        ...multiOptionPlaceholders,
+        image_placeholder_NatureofProperty1: imageDataUri, // Add image data
       };
       
-      const comparableSales = Array.isArray(fullData.comparableSales) ? fullData.comparableSales : [];
-      
-      const textReplacements = {
-        ...Object.entries(fullData.Info || {}).reduce((acc, [key, value]) => ({...acc, [`[Replace_${key}]`]: value}), {}),
-        ...Object.entries(fullData['General Info'] || {}).reduce((acc, [key, value]) => ({...acc, [`[Replace_${key}]`]: value}), {}),
-        ...Object.entries(fullData['Impro Info'] || {}).reduce((acc, [key, value]) => ({...acc, [`[Replace_${key}]`]: value}), {}),
-        ...Object.entries(fullData.commentary || {}).reduce((acc, [key, value]) => ({...acc, [`[Replace_${key}]`]: value}), {}),
-        ...Object.entries(fullData.marketValuation || {}).reduce((acc, [key, value]) => ({...acc, [`[Replace_${key}]`]: value}), {}),
-        ...Object.entries(fullData.statutoryValuation || {}).reduce((acc, [key, value]) => ({...acc, [`[Replace_${key}]`]: value}), {}),
-        '[Replace_ConstructionBrief]': fullData.constructionBrief.finalBrief,
-        ...placeholderData,
-      };
-
-      const result = await generateReportDocx({
+      const result = await generateReportFromTemplate({
         templateFileName: values.templateFileName,
-        textReplacements,
-        comparableSales,
-        imageDataUri,
+        data: allDataForTemplate,
       });
 
       toast({
@@ -448,7 +501,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       });
 
       const debugValue = values.data?.Info?.['Instructed By'];
-      onReportGenerated(result.generatedDocxDataUri, 0, debugValue); // Replacements count is not available from this flow
+      onReportGenerated(result.generatedDocxDataUri, result.replacementsCount, debugValue);
 
     } catch (error: any) {
       console.error('Error generating report:', error);
@@ -1009,7 +1062,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                             maxFiles={1}
                           />
                           <FormMessage />
-                           <p className="text-xs text-muted-foreground">Upload a .png or .jpg to replace the <code className="font-mono">[image_placeholder_NatureofProperty1]</code> in the template.</p>
+                           <p className="text-xs text-muted-foreground">Upload a .png or .jpg to replace the image with the placeholder <code className="font-mono">{`{%image_placeholder_NatureofProperty1}`}</code> in the template.</p>
                         </FormItem>
                       )}
                     />
