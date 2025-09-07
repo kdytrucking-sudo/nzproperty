@@ -71,7 +71,7 @@ export default function ManageImagesPage() {
   const handlePlaceholderBlur = (e: React.FocusEvent<HTMLInputElement>, cardIndex: number) => {
     let value = e.target.value.trim();
     // Remove any existing delimiters to start clean
-    value = value.replace(/^\[\%?/, '').replace(/\]$/, '');
+    value = value.replace(/^\[%?/, '').replace(/\]$/, '');
     // Add the correct delimiters
     value = `[%${value}]`;
     form.setValue(`configs.${cardIndex}.placeholder`, value, { shouldDirty: true });
