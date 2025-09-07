@@ -13,7 +13,9 @@ import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import fs from 'fs/promises';
 import path from 'path';
-import { ImageOptionsSchema } from '@/lib/image-options-schema';
+import { ImageOptionsSchema, type ImageConfig } from '@/lib/image-options-schema';
+import type { MultiOptionCard } from '@/lib/multi-options-schema';
+
 
 // ESM compatibility for require
 const ImageModule = require('docxtemplater-image-module-free');
@@ -124,7 +126,7 @@ const prepareTextData = async (data: any) => {
     // Process multi-option briefs
     if (data?.multiOptionBriefs) {
         const multiOptions = await getMultiOptions();
-        multiOptions.forEach(card => {
+        multiOptions.forEach((card: MultiOptionCard) => {
             const placeholderKey = card.placeholder.replace(/\[|\]/g, '');
             const brief = data.multiOptionBriefs[card.id];
             if (brief) {
@@ -167,7 +169,7 @@ export async function generateReportFromTemplate(
 
 // Asynchronously load multi-options once
 const getMultiOptions = (() => {
-  let promise: Promise<any> | null = null;
+  let promise: Promise<MultiOptionCard[]> | null = null;
   return () => {
     if (!promise) {
       promise = fs.readFile(path.join(process.cwd(), 'src', 'lib', 'multi-options.json'), 'utf-8').then(JSON.parse);
@@ -199,8 +201,8 @@ const generateReportFromTemplateFlow = ai.defineFlow(
           const imageConfigs = ImageOptionsSchema.parse(JSON.parse(imageOptionsJson));
           
           const imageSizeMap = new Map<string, { width: number; height: number }>();
-          imageConfigs.forEach(config => {
-              const key = config.placeholder.trim().replace(/^\[\%/, '').replace(/\]$/, '');
+          imageConfigs.forEach((config: ImageConfig) => {
+              const key = config.placeholder.trim().replace(/^\[%/, '').replace(/\]$/, '');
               imageSizeMap.set(key, { width: config.width, height: config.height });
           });
 
@@ -232,7 +234,7 @@ const generateReportFromTemplateFlow = ai.defineFlow(
           const imageDataForTemplate: Record<string, string> = {};
           Object.entries(images).forEach(([placeholder, dataUri]) => {
               if (dataUri) {
-                  const key = placeholder.trim().replace(/^\[\%/, '').replace(/\]$/, '');
+                  const key = placeholder.trim().replace(/^\[%/, '').replace(/\]$/, '');
                   imageDataForTemplate[key] = dataUri;
                   imageReplacements++;
               }
