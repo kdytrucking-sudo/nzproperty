@@ -7,7 +7,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import * as React from 'react';
 import { FileUploader } from '@/components/file-uploader';
@@ -31,6 +31,7 @@ const ACCEPTED_IMAGE_TYPES = {
 const createFormSchema = (imageConfigs: ImageConfig[]) => {
   let imageSchemaPart = z.object({});
   imageConfigs.forEach(config => {
+    // The key here should be the placeholder, which is what's used in the form state
     imageSchemaPart = imageSchemaPart.extend({
       [config.placeholder]: z.array(z.instanceof(File)).min(1, `Image for ${config.cardName} is required.`),
     });
@@ -59,10 +60,18 @@ export default function ImageTestPage() {
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [imageConfigs, setImageConfigs] = React.useState<ImageConfig[]>([]);
   const [isLoadingConfigs, setIsLoadingConfigs] = React.useState(true);
-  const [formSchema, setFormSchema] = React.useState(z.object({
-    templateDocx: z.array(z.instanceof(File)).min(1, 'A .docx template is required.'),
-    images: z.object({}),
-  }));
+  
+  // Initialize with a base schema. It will be updated dynamically.
+  const [formSchema, setFormSchema] = React.useState(() => createFormSchema([]));
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    // Default values will be set in an effect after configs are loaded
+    defaultValues: {
+      templateDocx: [],
+      images: {},
+    },
+  });
 
   React.useEffect(() => {
     async function loadConfigs() {
@@ -70,6 +79,7 @@ export default function ImageTestPage() {
       try {
         const configs = await getImageOptions();
         setImageConfigs(configs);
+        // Update the schema before resetting the form
         setFormSchema(createFormSchema(configs));
       } catch (error: any) {
         toast({
@@ -83,19 +93,12 @@ export default function ImageTestPage() {
     }
     loadConfigs();
   }, [toast]);
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      templateDocx: [],
-      images: {},
-    },
-  });
   
-  // Effect to reset form defaultValues when configs load
+  // Effect to reset form with new schema and default values when configs load
   React.useEffect(() => {
     if (imageConfigs.length > 0) {
       const defaultImages = imageConfigs.reduce((acc, config) => {
+        // Use the placeholder as the key for the form state
         acc[config.placeholder] = [];
         return acc;
       }, {} as Record<string, File[]>);
@@ -105,9 +108,7 @@ export default function ImageTestPage() {
         images: defaultImages,
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [imageConfigs, form.reset]);
-
+  }, [imageConfigs, form.reset, form]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsGenerating(true);
