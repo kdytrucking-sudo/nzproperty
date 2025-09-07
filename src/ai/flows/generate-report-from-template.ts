@@ -50,8 +50,8 @@ const prepareTemplateData = async (data: any) => {
 
   const countAndSetReplacement = (key: string, value: any): void => {
     const normalizedValue = normalizeNewlines(value);
-    const finalKey = key.startsWith('Replace_') ? key : `Replace_${key}`;
-    templateData[finalKey] = normalizedValue;
+    // Use the key directly as it's already formatted (e.g., Replace_Address)
+    templateData[key] = normalizedValue;
 
     if (Array.isArray(value)) {
       const hasContent = value.some((item: any) =>
@@ -156,31 +156,18 @@ const prepareTemplateData = async (data: any) => {
         const imageDataUri = data.images[placeholder];
         if (imageDataUri) {
             // The key for docxtemplater should be the placeholder without the delimiters
-            const key = placeholder.trim().replace(/^\{\%/, '').replace(/\}$/, '');
+            const key = placeholder.trim().replace(/^\[\%/, '').replace(/\]$/, '');
             templateData[key] = imageDataUri;
             replacementCount++;
         }
     });
   }
 
+  // Handle any other top-level data properties that might exist
   Object.keys(data).forEach(key => {
-    if (key.startsWith('Replace_')) {
-      const alreadyHandled = [
-        'Replace_PurposeofValuation', 'Replace_PrincipalUse', 'Replace_PreviousSale', 'Replace_ContractSale',
-        'Replace_SuppliedDoc', 'Replace_RecentOrProvided', 'Replace_LIM', 'Replace_PC78', 'Replace_Zone',
-        'Replace_ZoningOptionOperative', 'Replace_ZoningOptionPC78', 'Replace_ConditionAndRepair',
-        'Replace_ConstructionBrief', 'Replace_MarketValue', 'Replace_MarketValuation', 'Replace_ImprovementValueByValuer',
-        'Replace_LandValueByValuer', 'Replace_ChattelsByValuer', 'Replace_MarketValueByValuer',
-        'Replace_LandValueFromWeb', 'Replace_ValueofImprovementsFromWeb', 'Replace_RatingValuationFromWeb'
-      ].includes(key);
-
-      const isFromJsonStructure = Object.values(jsonStructure).some((section: any) => 
-        Object.values(section).some((field: any) => field.placeholder?.replace(/\[|\]/g, '') === key)
-      );
-
-      if (!alreadyHandled && !isFromJsonStructure) {
-         countAndSetReplacement(key, data[key]);
-      }
+    // Check if it's not one of the complex objects we've already handled
+    if (!['Info', 'General Info', 'Impro Info', 'commentary', 'constructionBrief', 'marketValuation', 'statutoryValuation', 'comparableSales', 'images'].includes(key) && !templateData.hasOwnProperty(key)) {
+        countAndSetReplacement(key, data[key]);
     }
   });
 
@@ -218,17 +205,18 @@ const generateReportFromTemplateFlow = ai.defineFlow(
       
       const imageSizeMap = new Map<string, { width: number; height: number }>();
       imageConfigs.forEach(config => {
-        // The key for the map should also be the placeholder without delimiters.
-        const key = config.placeholder.trim().replace(/^\{\%/, '').replace(/\}$/, '');
+        const key = config.placeholder.trim().replace(/^\[\%/, '').replace(/\]$/, '');
         imageSizeMap.set(key, { width: config.width, height: config.height });
       });
 
       const imageModule = new ImageModule({
         fileType: 'docx',
         centered: false,
+        // THIS IS THE CRITICAL FIX: The image module needs to know which character to look for inside the delimiters.
+        // Since our delimiters are [ and ], and our placeholder is [%Image_...], the module needs to look for '%'.
+        tag: '%',
         getImage(tagValue: unknown) {
           if (Buffer.isBuffer(tagValue)) return tagValue;
-          // tagValue is the a data URI string in our case
           if (typeof tagValue === 'string' && tagValue.startsWith('data:')) {
             const b64 = tagValue.split(',')[1] ?? '';
             return Buffer.from(b64, 'base64');
@@ -236,20 +224,18 @@ const generateReportFromTemplateFlow = ai.defineFlow(
           throw new Error('getImage: expected Buffer or data URI string');
         },
         getSize(_img: Buffer, _tagValue: unknown, tagName: string) {
-          // tagName is the placeholder key, e.g. "Image_NatureofProperty1"
           const size = imageSizeMap.get(tagName);
           if (size) {
             return [size.width, size.height];
           }
-          // Fallback size if no configuration is found
-          return [300, 200];
+          return [300, 200]; // Fallback size
         },
       });
       
       const doc = new Docxtemplater(zip, {
         modules: [imageModule],
+        // Set the delimiters for the ENTIRE document, including images.
         delimiters: { start: '[', end: ']' },
-        // Use paragraphLoop for looping over sales data
         paragraphLoop: true,
       });
 

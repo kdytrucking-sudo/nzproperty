@@ -62,21 +62,19 @@ export default function ManageImagesPage() {
     append({
       id: crypto.randomUUID(),
       cardName: 'New Image',
-      placeholder: '{%new_image}',
+      placeholder: '[%new_image]',
       width: 600,
       height: 400,
     });
   };
   
   const handlePlaceholderBlur = (e: React.FocusEvent<HTMLInputElement>, cardIndex: number) => {
-    let value = e.target.value;
-    if (value && !value.startsWith('{%')) {
-        value = `{%${value}`;
-    }
-    if (value && !value.endsWith('}')) {
-        value = `${value}}`;
-    }
-    form.setValue(`configs.${cardIndex}.placeholder`, value);
+    let value = e.target.value.trim();
+    // Remove any existing delimiters to start clean
+    value = value.replace(/^\[\%?/, '').replace(/\]$/, '');
+    // Add the correct delimiters
+    value = `[%${value}]`;
+    form.setValue(`configs.${cardIndex}.placeholder`, value, { shouldDirty: true });
   };
 
   async function onSave(values: FormValues) {
@@ -181,7 +179,7 @@ export default function ManageImagesPage() {
                           <FormItem>
                               <FormLabel>Placeholder Tag</FormLabel>
                               <FormControl>
-                                  <Input {...field} onBlur={(e) => handlePlaceholderBlur(e, cardIndex)} className="font-mono text-sm" placeholder="e.g., {%property_photo}" />
+                                  <Input {...field} onBlur={(e) => handlePlaceholderBlur(e, cardIndex)} className="font-mono text-sm" placeholder="e.g., [%property_photo]" />
                               </FormControl>
                               <FormMessage />
                           </FormItem>
