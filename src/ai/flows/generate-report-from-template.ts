@@ -166,7 +166,7 @@ const prepareTemplateData = async (data: any) => {
   const countAndSetReplacement = (key: string, value: any): void => {
     const normalizedValue = normalizeNewlines(value);
     // Standardize key to always use Replace_ prefix for the template
-    const finalKey = key.replace(/^extracted_/, 'Replace_');
+    const finalKey = key.startsWith('Replace_') ? key : `Replace_${key}`;
     templateData[finalKey] = normalizedValue;
 
     if (Array.isArray(value)) {
@@ -190,7 +190,7 @@ const prepareTemplateData = async (data: any) => {
     const dataSection = data?.[sectionKey];
 
     if (dataSection) {
-      Object.keys(dataSection).forEach((fieldKey) => {
+      Object.keys(sectionSchema).forEach((fieldKey) => {
         const fieldConfig = sectionSchema[fieldKey];
         if (fieldConfig && typeof fieldConfig === 'object' && fieldConfig.placeholder) {
           const templateKey = fieldConfig.placeholder.replace(/\[|\]/g, '');
@@ -280,6 +280,15 @@ const prepareTemplateData = async (data: any) => {
     countAndSetReplacement('Replace_LandValueFromWeb', (data as any).statutoryValuation.landValueByWeb);
     countAndSetReplacement('Replace_ValueofImprovementsFromWeb', (data as any).statutoryValuation.improvementsValueByWeb);
     countAndSetReplacement('Replace_RatingValuationFromWeb', (data as any).statutoryValuation.ratingValueByWeb);
+  }
+  
+  // 8) Multi-options
+  if ((data as any)?.multiOptions) {
+    Object.keys((data as any).multiOptions).forEach(key => {
+      const placeholder = (data as any).multiOptions[key].placeholder.replace(/\[|\]/g, '');
+      const value = (data as any).multiOptions[key].value;
+      countAndSetReplacement(placeholder, value);
+    });
   }
 
   return { templateData, replacementCount };

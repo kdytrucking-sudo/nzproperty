@@ -3,6 +3,7 @@
 import {
   FileJson,
   LayoutDashboard,
+  ListTodo,
   PanelLeft,
   Settings,
   Pencil,
@@ -50,6 +51,11 @@ export function AppSidebar() {
       href: '/manage-templates',
       label: 'Manage Templates',
       icon: FileText,
+    },
+     {
+      href: '/manage-multi-option',
+      label: 'Manage Multi Options',
+      icon: ListTodo,
     },
     {
       href: '/json-editor',

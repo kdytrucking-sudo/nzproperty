@@ -29,6 +29,8 @@ import { convertNumberToWords } from '@/ai/flows/convert-number-to-words';
 import { Separator } from '@/components/ui/separator';
 import { getExtractionConfig } from '@/ai/flows/get-extraction-config';
 import { cn } from '@/lib/utils';
+import { getMultiOptions } from '@/ai/flows/get-multi-options';
+import type { MultiOptionsData, MultiOptionCard } from '@/lib/multi-options-schema';
 
 // Main form schema
 const formSchema = z.any();
@@ -121,6 +123,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   const [templates, setTemplates] = React.useState<string[]>([]);
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [commentaryOptions, setCommentaryOptions] = React.useState<CommentaryOptionsData | null>(null);
+  const [multiOptions, setMultiOptions] = React.useState<MultiOptionsData | null>(null);
   const [isLoadingInitialData, setIsLoadingInitialData] = React.useState(true);
   const [isConvertingToWords, setIsConvertingToWords] = React.useState(false);
   const [valuationCheckStatus, setValuationCheckStatus] = React.useState<'Equal' | 'Error' | null>(null);
@@ -164,6 +167,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         ratingValueByWeb: '',
       },
       marketValuationRaw: '',
+      multiOptions: {} as Record<string, { placeholder: string, value: string }>,
     },
   });
 
@@ -313,9 +317,10 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     async function fetchInitialData() {
       setIsLoadingInitialData(true);
       try {
-        const [templateList, commentaryOpts, config] = await Promise.all([
+        const [templateList, commentaryOpts, multiOpts, config] = await Promise.all([
           listTemplates(),
           getCommentaryOptions(),
+          getMultiOptions(),
           getExtractionConfig()
         ]);
         
@@ -328,6 +333,14 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         }
         
         setCommentaryOptions(commentaryOpts);
+        setMultiOptions(multiOpts);
+        
+        const initialMultiOptionsState: Record<string, { placeholder: string, value: string }> = {};
+        multiOpts.forEach(card => {
+            initialMultiOptionsState[card.id] = { placeholder: card.placeholder, value: '' };
+        });
+        form.setValue('multiOptions', initialMultiOptionsState);
+
         // Set default values for commentary textareas
         form.setValue('commentary.PurposeofValuation', commentaryOpts.PurposeofValuation?.[0] || '');
         form.setValue('commentary.PrincipalUse', commentaryOpts.PrincipalUse?.[0] || '');
@@ -371,6 +384,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         constructionBrief: values.constructionBrief, 
         marketValuation: values.marketValuation,
         statutoryValuation: values.statutoryValuation,
+        multiOptions: values.multiOptions,
       };
       const result = await generateReportFromTemplate({
         templateFileName: values.templateFileName,
@@ -805,6 +819,66 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     );
   }
 
+  const renderMultiOptionSection = () => {
+    if (isLoadingInitialData) {
+        return <div className="text-center py-10 text-muted-foreground">Loading Multi-Options...</div>;
+    }
+    if (!multiOptions || multiOptions.length === 0) {
+        return <div className="text-center py-10 text-muted-foreground">No options defined. Please define them on the 'Manage Multi Options' page.</div>;
+    }
+
+    return (
+        <div className="space-y-6 pt-4">
+            {multiOptions.map((card, cardIndex) => (
+                <Card key={card.id}>
+                    <CardHeader>
+                        <CardTitle>{card.cardName}</CardTitle>
+                        <CardDescription>Placeholder: <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{card.placeholder}</code></CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          {card.options.map((option) => (
+                            <FormItem key={option.id} className="flex flex-row items-start space-x-3 space-y-0">
+                               <FormControl>
+                                 <Checkbox
+                                    onCheckedChange={(checked) => {
+                                        const currentVal = form.getValues(`multiOptions.${card.id}.value`) || '';
+                                        const lines = currentVal.split('\n').filter(line => line.trim() !== '');
+                                        let newLines;
+                                        if (checked) {
+                                            newLines = [...lines, option.option];
+                                        } else {
+                                            newLines = lines.filter(line => line !== option.option);
+                                        }
+                                        form.setValue(`multiOptions.${card.id}.value`, newLines.join('\n'));
+                                    }}
+                                  />
+                               </FormControl>
+                               <FormLabel className="font-normal">{option.label}</FormLabel>
+                            </FormItem>
+                          ))}
+                        </div>
+                        <FormField
+                            control={form.control}
+                            name={`multiOptions.${card.id}.value`}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="sr-only">Selected options for {card.cardName}</FormLabel>
+                                    <FormControl>
+                                        <Textarea {...field} rows={6} className="font-mono text-sm" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    );
+};
+
+
   return (
     <Card>
       <CardHeader>
@@ -854,7 +928,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     />
 
                     <Tabs defaultValue={defaultTab}>
-                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-6">
+                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-7">
                         {tabKeys.map(key => (
                         <TabsTrigger key={key} value={key}>
                             {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
@@ -863,6 +937,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                         <TabsTrigger value="marketValuation">Market Valuation</TabsTrigger>
                         <TabsTrigger value="commentary">Commentary</TabsTrigger>
                         <TabsTrigger value="constructionBrief">Construction Brief</TabsTrigger>
+                        <TabsTrigger value="multiOption">Multi Option</TabsTrigger>
                     </TabsList>
 
                     {tabKeys.map(key => (
@@ -879,6 +954,9 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     </TabsContent>
                      <TabsContent value="constructionBrief">
                         {renderConstructionBriefSection()}
+                    </TabsContent>
+                    <TabsContent value="multiOption">
+                        {renderMultiOptionSection()}
                     </TabsContent>
                     </Tabs>
 
