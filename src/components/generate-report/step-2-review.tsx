@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, PlusCircle, Trash2, Copy, CalendarIcon } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Copy, CalendarIcon, FileUp } from 'lucide-react';
 import { useForm, useFieldArray, Control, FieldValues, Path, UseFormSetValue } from 'react-hook-form';
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -32,6 +32,12 @@ import { getExtractionConfig } from '@/ai/flows/get-extraction-config';
 import { cn } from '@/lib/utils';
 import { getMultiOptions } from '@/ai/flows/get-multi-options';
 import type { MultiOptionsData, MultiOptionCard, MultiOptionItem } from '@/lib/multi-options-schema';
+import { FileUploader } from '../file-uploader';
+
+const ACCEPTED_IMAGE_TYPES = {
+  'image/png': ['.png'],
+  'image/jpeg': ['.jpg', '.jpeg'],
+};
 
 // Main form schema
 const formSchema = z.any();
@@ -135,6 +141,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     defaultValues: {
       templateFileName: '',
       data: extractedData,
+      propertyImage: [] as File[],
       commentary: {
         PurposeofValuation: '',
         PrincipalUse: '',
@@ -373,6 +380,15 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   const tabKeys = jsonStructure ? Object.keys(jsonStructure) : [];
   const defaultTab = tabKeys.length > 0 ? tabKeys[0] : 'marketValuation';
 
+  const fileToDataUri = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsGenerating(true);
 
@@ -383,6 +399,11 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     }
 
     try {
+      let imageDataUri: string | undefined;
+      if (values.propertyImage && values.propertyImage.length > 0) {
+        imageDataUri = await fileToDataUri(values.propertyImage[0]);
+      }
+
       const multiOptionBriefs = values.multiOptionBriefs || {};
       const placeholderData: Record<string, string> = {};
       if (multiOptions) {
@@ -404,6 +425,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       const result = await generateReportFromTemplate({
         templateFileName: values.templateFileName,
         data: fullData,
+        imageDataUri: imageDataUri,
       });
 
       toast({
@@ -929,34 +951,54 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                 </div>
             ) : (
                 <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                     <FormField
-                    control={form.control}
-                    name="templateFileName"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Select Report Template</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a .docx template to use..." />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                            {templates.length === 0 ? (
-                                <SelectItem value="no-templates" disabled>
-                                No templates found. Upload in 'Manage Templates'.
-                                </SelectItem>
-                            ) : (
-                                templates.map(templateName => (
-                                <SelectItem key={templateName} value={templateName}>{templateName}</SelectItem>
-                                ))
-                            )}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
+                      control={form.control}
+                      name="templateFileName"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Select Report Template</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                              <FormControl>
+                              <SelectTrigger>
+                                  <SelectValue placeholder="Select a .docx template to use..." />
+                              </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                              {templates.length === 0 ? (
+                                  <SelectItem value="no-templates" disabled>
+                                  No templates found. Upload in 'Manage Templates'.
+                                  </SelectItem>
+                              ) : (
+                                  templates.map(templateName => (
+                                  <SelectItem key={templateName} value={templateName}>{templateName}</SelectItem>
+                                  ))
+                              )}
+                              </SelectContent>
+                          </Select>
+                          <FormMessage />
+                          </FormItem>
+                      )}
                     />
+                    <FormField
+                      control={form.control}
+                      name="propertyImage"
+                      render={({ field: { onChange, value } }) => (
+                        <FormItem>
+                          <FormLabel>Replace Property Image</FormLabel>
+                          <FileUploader
+                            label=""
+                            value={value}
+                            onValueChange={onChange}
+                            options={{ accept: ACCEPTED_IMAGE_TYPES, maxSize: 1024 * 1024 * 4 }}
+                            maxFiles={1}
+                          />
+                          <FormMessage />
+                           <p className="text-xs text-muted-foreground">Upload a .png or .jpg to replace the <code className="font-mono">{'{image_placeholder_NatureofProperty1}'}</code> in the template.</p>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                     <Tabs defaultValue={defaultTab}>
                     <TabsList className="grid w-full grid-cols-1 md:grid-cols-7">

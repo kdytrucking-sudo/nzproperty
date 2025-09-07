@@ -144,6 +144,7 @@ const convertSoftBreaksToHardParagraphs = (
 const GenerateReportInputSchema = z.object({
   templateFileName: z.string().describe('The file name of the .docx template stored on the server.'),
   data: z.any().describe('The JSON data to populate the template with.'),
+  imageDataUri: z.string().optional().describe('An optional image for replacement, as a data URI.'),
 });
 export type GenerateReportInput = z.infer<typeof GenerateReportInputSchema>;
 
@@ -157,13 +158,19 @@ export type GenerateReportOutput = z.infer<typeof GenerateReportOutputSchema>;
  * Data preparation for Docxtemplater
  * ----------------------------- */
 
-const prepareTemplateData = async (data: any) => {
+const prepareTemplateData = async (data: any, imageDataUri?: string) => {
   const templateData: Record<string, any> = {};
   let replacementCount = 0;
   
   const jsonStructurePath = path.join(process.cwd(), 'src', 'lib', 'json-structure.json');
   const jsonString = await fs.readFile(jsonStructurePath, 'utf-8');
   const jsonStructure = JSON.parse(jsonString);
+
+  // Handle image data if provided
+  if (imageDataUri) {
+     templateData['image_placeholder_NatureofProperty1'] = imageDataUri;
+     replacementCount++;
+  }
 
 
   const countAndSetReplacement = (key: string, value: any): void => {
@@ -330,21 +337,22 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     inputSchema: GenerateReportInputSchema,
     outputSchema: GenerateReportOutputSchema,
   },
-  async ({ templateFileName, data }) => {
+  async ({ templateFileName, data, imageDataUri }) => {
     const templatesDir = path.join(process.cwd(), 'src', 'lib', 'templates');
     const templatePath = path.join(templatesDir, templateFileName);
 
     try {
       const buffer = await fs.readFile(templatePath);
       const zip = new PizZip(buffer);
-
+      
       const doc = new Docxtemplater(zip, {
-        delimiters: { start: '[', end: ']' },
-        linebreaks: true, // 先把 \n 变 <w:br/>，随后升级为新段落
-        nullGetter: () => '',
+        delimiters: { start: '{', end: '}' },
+        linebreaks: true,
+        paragraphLoop: true,
       });
 
-      const { templateData, replacementCount } = await prepareTemplateData(data);
+      const { templateData, replacementCount } = await prepareTemplateData(data, imageDataUri);
+      
       doc.setData(templateData);
 
       try {
