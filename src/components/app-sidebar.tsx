@@ -73,14 +73,6 @@ export function AppSidebar() {
     },
   ];
 
-  const testMenuItems = [
-     {
-      href: '/image-test',
-      label: 'Image Replacement Test',
-      icon: TestTube2,
-    },
-  ]
-
   return (
     <Sidebar>
       <SidebarHeader>
@@ -96,21 +88,6 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarMenu>
           {menuItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === item.href}
-                tooltip={{ children: item.label, side: 'right' }}
-              >
-                <Link href={item.href}>
-                  <item.icon />
-                  <span>{item.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-          <SidebarSeparator />
-           {testMenuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
