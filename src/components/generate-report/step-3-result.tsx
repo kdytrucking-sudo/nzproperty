@@ -11,9 +11,10 @@ type Step3ResultProps = {
   onStartOver: () => void;
   replacementsCount: number;
   debugInstructedBy?: string;
+  debugImagePlaceholders?: Record<string, string>;
 };
 
-export function Step3Result({ reportDataUri, fileName, onStartOver, replacementsCount, debugInstructedBy }: Step3ResultProps) {
+export function Step3Result({ reportDataUri, fileName, onStartOver, replacementsCount, debugInstructedBy, debugImagePlaceholders }: Step3ResultProps) {
   
   const handleDownload = () => {
     const link = document.createElement("a");
@@ -43,12 +44,26 @@ export function Step3Result({ reportDataUri, fileName, onStartOver, replacements
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center space-y-4">
-        {debugInstructedBy !== undefined && (
-          <div className="w-full rounded-md border border-dashed border-yellow-500 bg-yellow-50 p-4">
+        {(debugInstructedBy !== undefined || debugImagePlaceholders) && (
+          <div className="w-full rounded-md border border-dashed border-yellow-500 bg-yellow-50 p-4 text-yellow-900">
             <h4 className="font-bold text-yellow-800">Debug Information:</h4>
-            <p className="font-mono text-sm text-yellow-900">
-              Value of "Instructed By": <span className="font-semibold">{debugInstructedBy || '"" (Empty String)'}</span>
-            </p>
+            {debugInstructedBy !== undefined && (
+              <p className="font-mono text-sm">
+                Value of "Instructed By": <span className="font-semibold">{debugInstructedBy || '"" (Empty String)'}</span>
+              </p>
+            )}
+            {debugImagePlaceholders && Object.keys(debugImagePlaceholders).length > 0 && (
+                <div className="mt-2">
+                    <p className="font-mono text-sm font-semibold">Image Placeholders Sent to Backend:</p>
+                    <ul className="list-disc pl-5 font-mono text-xs">
+                        {Object.entries(debugImagePlaceholders).map(([placeholder, fileName]) => (
+                            <li key={placeholder}>
+                                <code className="bg-yellow-200/50 p-0.5 rounded-sm">{placeholder}</code>: {fileName}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
           </div>
         )}
         <div className="flex w-full space-x-4">

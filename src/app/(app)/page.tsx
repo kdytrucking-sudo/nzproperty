@@ -14,6 +14,7 @@ function GenerateReportFlow() {
   const [generatedFileName, setGeneratedFileName] = React.useState<string>('');
   const [replacementsCount, setReplacementsCount] = React.useState(0);
   const [debugValue, setDebugValue] = React.useState<string | undefined>(undefined);
+  const [debugImagePlaceholders, setDebugImagePlaceholders] = React.useState<Record<string, string> | undefined>(undefined);
 
 
   const handleDataExtracted = (data: PropertyData) => {
@@ -21,7 +22,7 @@ function GenerateReportFlow() {
     setStep('review');
   };
 
-  const handleReportGenerated = (reportDataUri: string, count: number, instructedBy: string | undefined) => {
+  const handleReportGenerated = (reportDataUri: string, count: number, instructedBy: string | undefined, imagePlaceholders: Record<string, string> | undefined) => {
     const address = propertyData?.Info?.['Property Address'] || 'Report';
     const date = new Date().toISOString().split('T')[0];
     const fileName = `${address} - ${date}.docx`;
@@ -30,6 +31,7 @@ function GenerateReportFlow() {
     setGeneratedFileName(fileName);
     setReplacementsCount(count);
     setDebugValue(instructedBy);
+    setDebugImagePlaceholders(imagePlaceholders);
     setStep('result');
   };
 
@@ -39,6 +41,7 @@ function GenerateReportFlow() {
     setGeneratedFileName('');
     setReplacementsCount(0);
     setDebugValue(undefined);
+    setDebugImagePlaceholders(undefined);
     setStep('input');
   };
 
@@ -112,6 +115,7 @@ function GenerateReportFlow() {
                 onStartOver={handleStartOver} 
                 replacementsCount={replacementsCount}
                 debugInstructedBy={debugValue}
+                debugImagePlaceholders={debugImagePlaceholders}
               />
             </motion.div>
           )}

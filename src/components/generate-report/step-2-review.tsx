@@ -46,7 +46,7 @@ const formSchema = z.any();
 
 type Step2ReviewProps = {
   extractedData: PropertyData;
-  onReportGenerated: (reportDataUri: string, replacementsCount: number, instructedBy: string | undefined) => void;
+  onReportGenerated: (reportDataUri: string, replacementsCount: number, instructedBy: string | undefined, imagePlaceholders: Record<string, string> | undefined) => void;
   onBack: () => void;
 };
 
@@ -413,11 +413,13 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     try {
       // Prepare image data by converting files to data URIs
       const imagesData: { [key: string]: string } = {};
+      const imagePlaceholdersForDebug: Record<string, string> = {};
       if (values.images) {
         for (const placeholder in values.images) {
             const fileList = values.images[placeholder];
             if (fileList && fileList.length > 0) {
                 imagesData[placeholder] = await fileToDataUri(fileList[0]);
+                imagePlaceholdersForDebug[placeholder] = fileList[0].name;
             }
         }
       }
@@ -443,7 +445,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         description: `Replaced ${result.replacementsCount} placeholders. Your download will begin shortly.`,
       });
       const debugValue = values.data?.Info?.['Instructed By'];
-      onReportGenerated(result.generatedDocxDataUri, result.replacementsCount, debugValue);
+      onReportGenerated(result.generatedDocxDataUri, result.replacementsCount, debugValue, imagePlaceholdersForDebug);
 
     } catch (error: any) {
       console.error('Error generating report:', error);
