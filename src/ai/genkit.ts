@@ -35,23 +35,33 @@ export async function getModelConfig() {
   };
 }
 
-// Export a proxy object that delegates to the dynamic instance
-export const ai = new Proxy(
-  {},
-  {
-    get: (_, prop) => {
-      return async (...args: any[]) => {
-        const instance = await getAiInstance();
-        // @ts-ignore
-        const method = instance[prop];
-        if (typeof method === 'function') {
-          return method.apply(instance, args);
-        }
-        return method;
-      };
-    },
-  }
-) as ModelArgument<any>;
+// Re-exporting ai functions wrapping them in a dynamic initializer
+async function getInitializedAi() {
+  return getAiInstance();
+}
+
+async function defineFlow(options: any, fn: any) {
+  const ai = await getInitializedAi();
+  return ai.defineFlow(options, fn);
+}
+
+async function definePrompt(options: any) {
+  const ai = await getInitializedAi();
+  return ai.definePrompt(options);
+}
+
+async function generate(options: any) {
+    const ai = await getInitializedAi();
+    return ai.generate(options);
+}
+
+
+export const ai = {
+    defineFlow,
+    definePrompt,
+    generate,
+};
+
 
 /*
  * ----------------------------------------------------------------

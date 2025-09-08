@@ -71,24 +71,21 @@ export type ExtractPropertyDataInput = z.infer<typeof ExtractPropertyDataInputSc
 // The output type will be dynamic based on the schema
 export type ExtractPropertyDataOutput = z.infer<Awaited<ReturnType<typeof getOutputSchema>>>;
 
-// Exported function to be used by the client
-export async function extractPropertyData(input: ExtractPropertyDataInput): Promise<ExtractPropertyDataOutput> {
-  const outputSchema = await getOutputSchema();
-  const extractPropertyDataFlow = ai.defineFlow(
-    {
-      name: 'extractPropertyDataFlow',
-      inputSchema: ExtractPropertyDataInputSchema,
-      outputSchema: outputSchema,
-    },
-    async (flowInput) => {
-        const jsonStructurePath = path.join(process.cwd(), 'src', 'lib', 'json-structure.json');
-        const jsonFormat = await fs.readFile(jsonStructurePath, 'utf-8');
+let extractPropertyDataFlow: ((input: ExtractPropertyDataInput) => Promise<ExtractPropertyDataOutput>) | null = null;
 
-        const promptsPath = path.join(process.cwd(), 'src', 'lib', 'prompts.json');
-        const promptsJson = await fs.readFile(promptsPath, 'utf-8');
-        const prompts = JSON.parse(promptsJson);
 
-        const finalPrompt = `${prompts.user_prompt}
+async function initializeFlow() {
+    if (extractPropertyDataFlow) {
+        return;
+    }
+    const outputSchema = await getOutputSchema();
+    const jsonStructurePath = path.join(process.cwd(), 'src', 'lib', 'json-structure.json');
+    const jsonFormat = await fs.readFile(jsonStructurePath, 'utf-8');
+    const promptsPath = path.join(process.cwd(), 'src', 'lib', 'prompts.json');
+    const promptsJson = await fs.readFile(promptsPath, 'utf-8');
+    const prompts = JSON.parse(promptsJson);
+
+    const finalPrompt = `${prompts.user_prompt}
 ---
 **${prompts.extraction_hints_title}**
 ${prompts.extraction_hints}
@@ -106,17 +103,26 @@ ${jsonFormat}
 **Document 2 (Brief Information):**
 {{media url=briefInformationPdfDataUri}}
 `;
-        
-        const modelConfig = await getModelConfig();
+    
+    const modelConfig = await getModelConfig();
 
-        const prompt = ai.definePrompt({
-            name: 'extractPropertyDataPrompt',
-            system: prompts.system_prompt,
-            input: {schema: ExtractPropertyDataInputSchema },
-            output: {schema: outputSchema},
-            prompt: finalPrompt,
-            config: modelConfig,
-        });
+    const prompt = await ai.definePrompt({
+        name: 'extractPropertyDataPrompt',
+        system: prompts.system_prompt,
+        input: {schema: ExtractPropertyDataInputSchema },
+        output: {schema: outputSchema},
+        prompt: finalPrompt,
+        config: modelConfig,
+    });
+
+
+    extractPropertyDataFlow = await ai.defineFlow(
+      {
+        name: 'extractPropertyDataFlow',
+        inputSchema: ExtractPropertyDataInputSchema,
+        outputSchema: outputSchema,
+      },
+      async (flowInput) => {
 
         const { output } = await prompt(flowInput);
 
@@ -125,8 +131,16 @@ ${jsonFormat}
         }
 
         return output;
-    }
-  );
+      }
+    );
+}
 
+
+// Exported function to be used by the client
+export async function extractPropertyData(input: ExtractPropertyDataInput): Promise<ExtractPropertyDataOutput> {
+  await initializeFlow();
+  if (!extractPropertyDataFlow) {
+      throw new Error("Flow not initialized");
+  }
   return extractPropertyDataFlow(input);
 }
