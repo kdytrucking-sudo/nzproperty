@@ -33,5 +33,19 @@
     "placeholder": "{%Image_BriefDescription}",
     "width": 100,
     "height": 69
+  },
+  {
+    "id": "3735aaab-f723-4946-9690-f64b245f2bab",
+    "cardName": "Site Description1",
+    "placeholder": "{%Image_SiteDescription1}",
+    "width": 300,
+    "height": 200
+  },
+  {
+    "id": "b8eb16b0-6cc6-4f72-a816-66f37920e5a7",
+    "cardName": "Site Description2",
+    "placeholder": "{%Image_SiteDescription2}",
+    "width": 300,
+    "height": 200
   }
 ]

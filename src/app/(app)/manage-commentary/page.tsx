@@ -250,19 +250,19 @@ export default function ManageCommentaryPage() {
                 label="Condition & Repair"
                 description="Manage options for the [Replace_ConditionAndRepair] section."
             />
-            <CommentaryFieldArray 
+             <CommentaryFieldArray 
                 control={form.control}
                 name="SiteDescription1"
                 label="Site Description 1st things"
                 description="Manage options for the [Replace_SiteDescription1] section."
             />
-            <CommentaryFieldArray 
+             <CommentaryFieldArray 
                 control={form.control}
                 name="SiteDescription2"
                 label="Site Description 2nd things"
                 description="Manage options for the [Replace_SiteDescription2] section."
             />
-            <CommentaryFieldArray 
+             <CommentaryFieldArray 
                 control={form.control}
                 name="ConclusionOnSalesEvidence"
                 label="Conclusion on Sales Evidence"

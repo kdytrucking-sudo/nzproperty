@@ -4,6 +4,7 @@
 import {
   FileJson,
   LayoutDashboard,
+  PanelLeft,
   Settings,
   Pencil,
   FileText,
@@ -52,7 +53,7 @@ export function AppSidebar() {
     },
     {
       href: '/manage-multi-option',
-      label: 'Manage Options',
+      label: 'Multi-Select',
       icon: ListTodo,
     },
     {
@@ -75,7 +76,7 @@ export function AppSidebar() {
   const testMenuItems = [
      {
       href: '/image-test',
-      label: 'Image Replacement Test',
+      label: 'Image Upload',
       icon: TestTube2,
     },
   ]
