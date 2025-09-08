@@ -20,7 +20,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { listTemplates } from '@/ai/flows/list-templates';
 import { generateReportFromTemplate } from '@/ai/flows/generate-report-from-template';
 import type { PropertyData } from '@/lib/types';
 import { getCommentaryOptions } from '@/ai/flows/get-commentary-options';
@@ -32,7 +31,8 @@ import { getExtractionConfig } from '@/ai/flows/get-extraction-config';
 import { cn } from '@/lib/utils';
 import { getMultiOptions } from '@/ai/flows/get-multi-options';
 import type { MultiOptionsData, MultiOptionCard, MultiOptionItem } from '@/lib/multi-options-schema';
-import { Step3ImageReplacement } from './step-3-image-replacement';
+import { listTemplates } from '@/ai/flows/list-templates';
+
 
 // Main form schema
 const formSchema = z.any();
@@ -176,11 +176,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       multiOptionSelections: {} as Record<string, string[]>,
       multiOptionBriefs: {} as Record<string, string>,
     },
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: 'data.comparableSales',
   });
   
   const parseCurrency = (value: string | undefined): number => {
@@ -751,7 +746,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                             />
                             <div className="mt-auto flex justify-end pt-4">
                                 <Button type="button" onClick={generateChattelsBrief}>
-                                    Generate Chattels Brief
+                                    Generate Chattels
                                 </Button>
                             </div>
                         </div>
@@ -1075,3 +1070,5 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     </Card>
   );
 }
+
+    
