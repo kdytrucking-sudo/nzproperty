@@ -76,7 +76,7 @@ export function AppSidebar() {
   const testMenuItems = [
      {
       href: '/image-test',
-      label: 'Image Replace',
+      label: 'Image Replacement Test',
       icon: TestTube2,
     },
   ]

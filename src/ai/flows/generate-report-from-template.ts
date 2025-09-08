@@ -1,5 +1,4 @@
 
-
 'use server';
 /**
  * 生成 Word 报告（稳定版：软回车 -> 硬回车，保样式，避坑）
@@ -149,8 +148,8 @@ const GenerateReportInputSchema = z.object({
 export type GenerateReportInput = z.infer<typeof GenerateReportInputSchema>;
 
 const GenerateReportOutputSchema = z.object({
-  tempFileName: z.string().describe('The name of the temporary .docx file saved on the server.'),
-  replacementsCount: z.number().describe('The number of text placeholders that were replaced.'),
+  generatedDocxDataUri: z.string().describe('The generated .docx file as a data URI.'),
+  replacementsCount: z.number().describe('The number of placeholders that were replaced.'),
 });
 export type GenerateReportOutput = z.infer<typeof GenerateReportOutputSchema>;
 
@@ -237,10 +236,12 @@ const prepareTemplateData = async (data: any) => {
     });
   }
 
-  // 4) constructionBrief & chattels
+  // 4) constructionBrief
   if ((data as any)?.constructionBrief?.finalBrief) {
     countAndSetReplacement('Replace_ConstructionBrief', (data as any).constructionBrief.finalBrief);
   }
+  
+  // 4.5) chattels
   if ((data as any)?.chattels?.finalBrief) {
     countAndSetReplacement('Replace_Chattels', (data as any).chattels.finalBrief);
   }
@@ -378,19 +379,15 @@ const generateReportFromTemplateFlow = ai.defineFlow(
         type: 'nodebuffer',
         compression: 'DEFLATE',
       });
-      
-      const tmpDir = path.join(process.cwd(), 'tmp');
-      await fs.mkdir(tmpDir, { recursive: true });
-      const tempFileName = `temp_${Date.now()}_${Math.floor(Math.random() * 1000)}.docx`;
-      const tempFilePath = path.join(tmpDir, tempFileName);
 
-      await fs.writeFile(tempFilePath, outputBuffer);
+      const outputBase64 = outputBuffer.toString('base64');
+      const outputDataUri =
+        `data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${outputBase64}`;
 
       return {
-        tempFileName: tempFileName,
+        generatedDocxDataUri: outputDataUri,
         replacementsCount: replacementCount,
       };
-
     } catch (error: any) {
       console.error(`Error processing template file ${templateFileName}:`, error);
       if (error.code === 'ENOENT') {

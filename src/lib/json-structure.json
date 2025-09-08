@@ -172,10 +172,7 @@
         "type": "string",
         "required": false
       }
-    }
-  },
-  "Impro Info": {
-    "Property Description": {
+    },"Property Description": {
       "label": "Property Description",
       "placeholder": "[Replace_PropertySummary]",
       "displayType": "textarea",
@@ -230,4 +227,5 @@
       }
     }
   }
+ 
 }
