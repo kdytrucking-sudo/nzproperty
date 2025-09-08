@@ -204,7 +204,7 @@
       { "id": "c10-opt4", "label": "Single House", "option": "Residential – Single House " },
       { "id": "c10-opt5", "label": "THAB", "option": "Residential – Terrace Housing and Apartment Buildings" },
       { "id": "c10-opt6", "label": "Mixed Use", "option": "Business - Mixed Use" },
-      { "id": c10-opt7", "label": "Neighbourhood Centre", "option": "Business - Neighbourhood Centre zone" },
+      { "id": "c10-opt7", "label": "Neighbourhood Centre", "option": "Business - Neighbourhood Centre zone" },
       { "id": "c10-opt8", "label": "Town Centre", "option": "Business - Town Centre" },
       { "id": "c10-opt9", "label": "Informal Recreation", "option": "Open Space - Informal Recreation" }
     ]
@@ -251,5 +251,3 @@
     "options": []
   }
 ]
-
-    
