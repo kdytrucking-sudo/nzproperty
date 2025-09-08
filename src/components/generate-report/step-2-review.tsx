@@ -23,8 +23,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { listTemplates } from '@/ai/flows/list-templates';
 import { generateReportFromTemplate } from '@/ai/flows/generate-report-from-template';
 import type { PropertyData } from '@/lib/types';
-import { getCommentaryOptions } from '@/ai/flows/get-commentary-options';
-import type { CommentaryOptionsData } from '@/lib/commentary-schema';
+import { getCommentaryCards } from '@/ai/flows/get-commentary-cards';
+import type { CommentaryCardsData, CommentaryCard } from '@/lib/commentary-card-schema';
 import { Checkbox } from '@/components/ui/checkbox';
 import { convertNumberToWords } from '@/ai/flows/convert-number-to-words';
 import { Separator } from '@/components/ui/separator';
@@ -123,7 +123,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   const { toast } = useToast();
   const [templates, setTemplates] = React.useState<string[]>([]);
   const [isGenerating, setIsGenerating] = React.useState(false);
-  const [commentaryOptions, setCommentaryOptions] = React.useState<CommentaryOptionsData | null>(null);
+  const [commentaryCards, setCommentaryCards] = React.useState<CommentaryCardsData | null>(null);
   const [isLoadingInitialData, setIsLoadingInitialData] = React.useState(true);
   const [isConvertingToWords, setIsConvertingToWords] = React.useState(false);
   const [valuationCheckStatus, setValuationCheckStatus] = React.useState<'Equal' | 'Error' | null>(null);
@@ -135,23 +135,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     defaultValues: {
       templateFileName: '',
       data: extractedData,
-      commentary: {
-        PurposeofValuation: '',
-        PrincipalUse: '',
-        PreviousSale: '',
-        ContractSale: '',
-        SuppliedDocumentation: '',
-        RecentOrProvided: '',
-        LIM: '',
-        PC78: '',
-        OperativeZone: '',
-        ZoningOptionOperative: '',
-        ZoningOptionPC78: '',
-        ConditionAndRepair: '',
-        SiteDescription1: '',
-        SiteDescription2: '',
-        ConclusionOnSalesEvidence: '',
-      },
+      commentarySelections: {} as Record<string, string>,
       constructionBrief: {
         generalConstruction: [],
         interior: [],
@@ -344,9 +328,9 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     async function fetchInitialData() {
       setIsLoadingInitialData(true);
       try {
-        const [templateList, commentaryOpts, config, multiOpts] = await Promise.all([
+        const [templateList, commentaryData, config, multiOpts] = await Promise.all([
           listTemplates(),
-          getCommentaryOptions(),
+          getCommentaryCards(),
           getExtractionConfig(),
           getMultiOptions(),
         ]);
@@ -359,23 +343,15 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
           form.setValue('templateFileName', templateList[0]);
         }
         
-        setCommentaryOptions(commentaryOpts);
-        // Set default values for commentary textareas
-        form.setValue('commentary.PurposeofValuation', commentaryOpts.PurposeofValuation?.[0] || '');
-        form.setValue('commentary.PrincipalUse', commentaryOpts.PrincipalUse?.[0] || '');
-        form.setValue('commentary.PreviousSale', commentaryOpts.PreviousSale?.[0] || '');
-        form.setValue('commentary.ContractSale', commentaryOpts.ContractSale?.[0] || '');
-        form.setValue('commentary.SuppliedDocumentation', commentaryOpts.SuppliedDocumentation?.[0] || '');
-        form.setValue('commentary.RecentOrProvided', commentaryOpts.RecentOrProvided?.[0] || '');
-        form.setValue('commentary.LIM', commentaryOpts.LIM?.[0] || '');
-        form.setValue('commentary.PC78', commentaryOpts.PC78?.[0] || '');
-        form.setValue('commentary.OperativeZone', commentaryOpts.OperativeZone?.[0] || '');
-        form.setValue('commentary.ZoningOptionOperative', commentaryOpts.ZoningOptionOperative?.[0] || '');
-        form.setValue('commentary.ZoningOptionPC78', commentaryOpts.ZoningOptionPC78?.[0] || '');
-        form.setValue('commentary.ConditionAndRepair', commentaryOpts.ConditionAndRepair?.[0] || '');
-        form.setValue('commentary.SiteDescription1', commentaryOpts.SiteDescription1?.[0] || '');
-        form.setValue('commentary.SiteDescription2', commentaryOpts.SiteDescription2?.[0] || '');
-        form.setValue('commentary.ConclusionOnSalesEvidence', commentaryOpts.ConclusionOnSalesEvidence?.[0] || '');
+        setCommentaryCards(commentaryData);
+        // Initialize form state for commentary
+        const initialCommentarySelections: Record<string, string> = {};
+        commentaryData.forEach(card => {
+            if (card.options.length > 0) {
+                initialCommentarySelections[card.id] = card.options[0].option;
+            }
+        });
+        form.setValue('commentarySelections', initialCommentarySelections);
         
         setMultiOptions(multiOpts);
         // Initialize form state for multi-options
@@ -412,6 +388,17 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
 
     try {
       const placeholderData: Record<string, string> = {};
+      
+      // 1. Add Commentary selections
+      if (commentaryCards) {
+        commentaryCards.forEach(card => {
+           const placeholderKey = card.placeholder.replace(/\[|\]/g, '');
+           const selectedOption = values.commentarySelections[card.id] || '';
+           placeholderData[placeholderKey] = selectedOption;
+        });
+      }
+
+      // 2. Add Multi-Option selections
       if (multiOptions) {
         multiOptions.forEach(card => {
           const placeholderKey = card.placeholder.replace(/\[|\]/g, '');
@@ -421,7 +408,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
 
       const fullData = { 
         ...values.data, 
-        commentary: values.commentary, 
         constructionBrief: values.constructionBrief, 
         marketValuation: values.marketValuation,
         statutoryValuation: values.statutoryValuation,
@@ -457,54 +443,30 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     if (isLoadingInitialData) {
         return <div className="text-center py-10 text-muted-foreground">Loading Commentary Options...</div>
     }
-    if (!commentaryOptions) {
+    if (!commentaryCards || commentaryCards.length === 0) {
         return <div className="text-center py-10 text-muted-foreground">Could not load commentary options. Please define them in the 'Manage Commentary' page.</div>
     }
-    
-    const commentaryFields: { key: keyof CommentaryOptionsData, label: string, placeholder?: string }[] = [
-        { key: 'PurposeofValuation', label: 'Purpose of Valuation', placeholder: '[Replace_PurposeofValuation]' },
-        { key: 'PrincipalUse', label: 'Principal Use', placeholder: '[Replace_PrincipalUse]' },
-        { key: 'PreviousSale', label: 'Previous Sale', placeholder: '[Replace_PreviousSale]' },
-        { key: 'ContractSale', label: 'Contract for Sale', placeholder: '[Replace_ContractSale]' },
-        { key: 'SuppliedDocumentation', label: 'Supplied Documentation', placeholder: '[Replace_SuppliedDoc]' },
-        { key: 'RecentOrProvided', label: 'Recent/Provided', placeholder: '[Replace_RecentOrProvided]' },
-        { key: 'LIM', label: 'Land Information Memorandum', placeholder: '[Replace_LIM]' },
-        { key: 'PC78', label: 'Plan Change 78: Intensification', placeholder: '[Replace_PC78]' },
-        { key: 'OperativeZone', label: 'Operative Zone', placeholder: '[Replace_Zone]' },
-        { key: 'ZoningOptionOperative', label: 'Zoning Option Operative', placeholder: '[Replace_ZoningOptionOperative]' },
-        { key: 'ZoningOptionPC78', label: 'Zoning Option PC78', placeholder: '[Replace_ZoningOptionPC78]' },
-        { key: 'ConditionAndRepair', label: 'Condition & Repair', placeholder: '[Replace_ConditionAndRepair]' },
-        { key: 'SiteDescription1', label: 'Site Description 1st things', placeholder: '[Replace_SiteDescription1]' },
-        { key: 'SiteDescription2', label: 'Site Description 2nd things', placeholder: '[Replace_SiteDescription2]' },
-        { key: 'ConclusionOnSalesEvidence', label: 'Conclusion on Sales Evidence', placeholder: '[Replace_ConclusionOnSalesEvidence]' },
-    ];
 
     return (
       <div className="space-y-6 pt-4">
-        {commentaryFields.map(({ key, label, placeholder }) => {
-          const options = commentaryOptions[key as keyof CommentaryOptionsData] || [];
-          // Skip rendering if the key doesn't exist in commentaryOptions
-          if (!commentaryOptions.hasOwnProperty(key)) {
-            return null;
-          }
-          return (
-            <div key={key} className="space-y-4 rounded-md border p-4">
-              <h3 className="font-medium">{label} {placeholder && <code className="ml-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{placeholder}</code>}</h3>
+        {commentaryCards.map((card) => (
+            <div key={card.id} className="space-y-4 rounded-md border p-4">
+              <h3 className="font-medium">{card.cardName} <code className="ml-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{card.placeholder}</code></h3>
               <FormField
                 control={form.control}
-                name={`commentary.${key}`}
+                name={`commentarySelections.${card.id}`}
                 render={({ field }) => (
                   <>
-                    {options.length > 0 ? (
+                    {card.options.length > 0 ? (
                       <RadioGroup
                           onValueChange={field.onChange}
                           defaultValue={field.value}
                           className="flex flex-col space-y-2"
                         >
-                          {options.map((option, index) => (
-                            <FormItem key={`${key}-${index}`} className="flex items-center space-x-3 space-y-0">
-                              <FormControl><RadioGroupItem value={option} /></FormControl>
-                              <FormLabel className="font-normal">{option.length > 100 ? `${option.substring(0, 100)}...` : option}</FormLabel>
+                          {card.options.map((option) => (
+                            <FormItem key={option.id} className="flex items-center space-x-3 space-y-0">
+                              <FormControl><RadioGroupItem value={option.option} /></FormControl>
+                              <FormLabel className="font-normal">{option.label}</FormLabel>
                             </FormItem>
                           ))}
                         </RadioGroup>
@@ -512,7 +474,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                       <p className="text-sm text-muted-foreground">No options defined for this category.</p>
                     )}
                     <FormItem className="mt-4">
-                        <FormLabel className="sr-only">Editable Commentary for {label}</FormLabel>
+                        <FormLabel className="sr-only">Editable Commentary for {card.cardName}</FormLabel>
                         <FormControl>
                             <Textarea {...field} rows={6} className="font-mono text-sm" />
                         </FormControl>
@@ -522,8 +484,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                 )}
               />
             </div>
-          )
-        })}
+          ))}
       </div>
     );
   }

@@ -1,4 +1,5 @@
 
+
 'use server';
 /**
  * 生成 Word 报告（稳定版：软回车 -> 硬回车，保样式，避坑）
@@ -12,7 +13,6 @@ import fs from 'fs/promises';
 import path from 'path';
 import globalContent from '@/lib/global-content.json';
 import { contentFields } from '@/lib/content-config';
-import { multiOptionsSchema, type MultiOptionsData } from '@/lib/multi-options-schema';
 
 
 /* -----------------------------
@@ -187,7 +187,7 @@ const prepareTemplateData = async (data: any) => {
     }
   };
   
-  // 1) Handle data from 'Info', 'General Info', 'Impro Info' based on jsonStructure
+  // 1) Handle data from 'Info', 'General Info' based on jsonStructure
   Object.keys(jsonStructure).forEach((sectionKey) => {
     const sectionSchema = jsonStructure[sectionKey] || {};
     const dataSection = data?.[sectionKey];
@@ -212,39 +212,12 @@ const prepareTemplateData = async (data: any) => {
     countAndSetReplacement(templateKey, contentValue);
   });
 
-  // 3) commentary
-  if ((data as any)?.commentary) {
-    const placeholderMapping: Record<string, string> = {
-      PurposeofValuation: 'Replace_PurposeofValuation',
-      PrincipalUse: 'Replace_PrincipalUse',
-      PreviousSale: 'Replace_PreviousSale',
-      ContractSale: 'Replace_ContractSale',
-      SuppliedDocumentation: 'Replace_SuppliedDoc',
-      RecentOrProvided: 'Replace_RecentOrProvided',
-      LIM: 'Replace_LIM',
-      PC78: 'Replace_PC78',
-      OperativeZone: 'Replace_Zone',
-      ZoningOptionOperative: 'Replace_ZoningOptionOperative',
-      ZoningOptionPC78: 'Replace_ZoningOptionPC78',
-      ConditionAndRepair: 'Replace_ConditionAndRepair',
-      SiteDescription1: 'Replace_SiteDescription1',
-      SiteDescription2: 'Replace_SiteDescription2',
-      ConclusionOnSalesEvidence: 'Replace_ConclusionOnSalesEvidence',
-    };
-    Object.keys((data as any).commentary).forEach((key: string) => {
-      const templateKey = placeholderMapping[key];
-      if (templateKey) {
-        countAndSetReplacement(templateKey, (data as any).commentary[key]);
-      }
-    });
-  }
-
-  // 4) constructionBrief
+  // 3) constructionBrief
   if ((data as any)?.constructionBrief?.finalBrief) {
     countAndSetReplacement('Replace_ConstructionBrief', (data as any).constructionBrief.finalBrief);
   }
   
-  // 4.5) chattels
+  // 4) chattels
   if ((data as any)?.chattels?.finalBrief) {
     countAndSetReplacement('Replace_Chattels', (data as any).chattels.finalBrief);
   }
@@ -293,27 +266,25 @@ const prepareTemplateData = async (data: any) => {
     countAndSetReplacement('Replace_RatingValuationFromWeb', (data as any).statutoryValuation.ratingValueByWeb);
   }
 
-  // 8) Multi-options
-  // The placeholders are dynamic, so we loop through the data object keys
+  // 8) Dynamic placeholders from commentary, multi-options etc.
+  // Loop through all top-level keys in the data object
   Object.keys(data).forEach(key => {
-    // We identify multi-option placeholders by checking if they start with 'Replace_'
-    // and are not part of the other structured data we've already handled.
-    if (key.startsWith('Replace_')) {
+    // Check if the value is a string and the key starts with 'Replace_'
+    if (typeof data[key] === 'string' && key.startsWith('Replace_')) {
+      // Check if it's already handled by other sections to avoid double counting
       const alreadyHandled = [
-        'Replace_PurposeofValuation', 'Replace_PrincipalUse', 'Replace_PreviousSale', 'Replace_ContractSale',
-        'Replace_SuppliedDoc', 'Replace_RecentOrProvided', 'Replace_LIM', 'Replace_PC78', 'Replace_Zone',
-        'Replace_ZoningOptionOperative', 'Replace_ZoningOptionPC78', 'Replace_ConditionAndRepair',
         'Replace_ConstructionBrief', 'Replace_Chattels', 'Replace_MarketValue', 'Replace_MarketValuation', 'Replace_ImprovementValueByValuer',
         'Replace_LandValueByValuer', 'Replace_ChattelsByValuer', 'Replace_MarketValueByValuer',
         'Replace_LandValueFromWeb', 'Replace_ValueofImprovementsFromWeb', 'Replace_RatingValuationFromWeb',
-        'Replace_SiteDescription1', 'Replace_SiteDescription2', 'Replace_ConclusionOnSalesEvidence'
       ].includes(key);
 
       const isFromJsonStructure = Object.values(jsonStructure).some((section: any) => 
         Object.values(section).some((field: any) => field.placeholder?.replace(/\[|\]/g, '') === key)
       );
+      
+      const isFromGlobalContent = contentFields.some(field => field.templateKey === key);
 
-      if (!alreadyHandled && !isFromJsonStructure) {
+      if (!alreadyHandled && !isFromJsonStructure && !isFromGlobalContent) {
          countAndSetReplacement(key, data[key]);
       }
     }
