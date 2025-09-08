@@ -5,22 +5,18 @@ import {googleAI} from '@genkit-ai/googleai';
 import {getAiConfig} from './flows/get-ai-config';
 import type {AIConfig} from '@/lib/ai-config-schema';
 
-// We wrap the genkit initialization in a function to dynamically
-// load the configuration from a file. This allows the model and
-// its parameters to be configured from the UI.
-
-let aiInstance: ModelArgument<any> | null = null;
+let ai: ModelArgument<any> | null = null;
 let aiConfig: AIConfig | null = null;
 
-async function getAiInstance() {
-  if (!aiInstance) {
+async function getInitializedAi() {
+  if (!ai) {
     aiConfig = await getAiConfig();
-    aiInstance = genkit({
+    ai = genkit({
       plugins: [googleAI()],
       model: aiConfig.model,
     });
   }
-  return aiInstance;
+  return ai;
 }
 
 export async function getModelConfig() {
@@ -35,33 +31,20 @@ export async function getModelConfig() {
   };
 }
 
-// Re-exporting ai functions wrapping them in a dynamic initializer
-async function getInitializedAi() {
-  return getAiInstance();
+export async function defineFlow(options: any, fn: any) {
+  const instance = await getInitializedAi();
+  return instance.defineFlow(options, fn);
 }
 
-async function defineFlow(options: any, fn: any) {
-  const ai = await getInitializedAi();
-  return ai.defineFlow(options, fn);
+export async function definePrompt(options: any) {
+  const instance = await getInitializedAi();
+  return instance.definePrompt(options);
 }
 
-async function definePrompt(options: any) {
-  const ai = await getInitializedAi();
-  return ai.definePrompt(options);
+export async function generate(options: any) {
+    const instance = await getInitializedAi();
+    return instance.generate(options);
 }
-
-async function generate(options: any) {
-    const ai = await getInitializedAi();
-    return ai.generate(options);
-}
-
-
-export const ai = {
-    defineFlow,
-    definePrompt,
-    generate,
-};
-
 
 /*
  * ----------------------------------------------------------------
