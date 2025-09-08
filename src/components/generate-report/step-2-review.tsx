@@ -423,22 +423,25 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       }
 
       // Prepare image data for backend
-      const imagesToUpload = await Promise.all(
-        Object.entries(values.images)
-          .filter(([, files]) => files && files.length > 0)
-          .map(async ([placeholder, files]) => {
-            if (!files || files.length === 0) return null;
-            const imageDataUri = await fileToDataUri(files[0]);
-            const config = imageConfigs.find(c => c.placeholder === placeholder);
-            return {
-              placeholder,
-              imageDataUri,
-              width: config?.width || 200,
-              height: config?.height || 150,
-            };
-          })
-      );
-      const validImages = imagesToUpload.filter(Boolean) as { placeholder: string; imageDataUri: string; width: number; height: number; }[];
+      let validImages: { placeholder: string; imageDataUri: string; width: number; height: number; }[] = [];
+      if (values.images && Object.keys(values.images).length > 0) {
+        const imagesToUpload = await Promise.all(
+          Object.entries(values.images)
+            .filter(([, files]) => files && files.length > 0)
+            .map(async ([placeholder, files]) => {
+              if (!files || files.length === 0) return null;
+              const imageDataUri = await fileToDataUri(files[0]);
+              const config = imageConfigs.find(c => c.placeholder === placeholder);
+              return {
+                placeholder,
+                imageDataUri,
+                width: config?.width || 200,
+                height: config?.height || 150,
+              };
+            })
+        );
+        validImages = imagesToUpload.filter(Boolean) as { placeholder: string; imageDataUri: string; width: number; height: number; }[];
+      }
 
 
       const fullData = { 
