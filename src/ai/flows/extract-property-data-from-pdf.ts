@@ -7,7 +7,7 @@
  * - ExtractPropertyDataOutput - The return type for the extractPropertyData function.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai, getModelConfig} from '@/ai/genkit';
 import {z} from 'genkit';
 import fs from 'fs/promises';
 import path from 'path';
@@ -106,6 +106,8 @@ ${jsonFormat}
 **Document 2 (Brief Information):**
 {{media url=briefInformationPdfDataUri}}
 `;
+        
+        const modelConfig = await getModelConfig();
 
         const prompt = ai.definePrompt({
             name: 'extractPropertyDataPrompt',
@@ -113,6 +115,7 @@ ${jsonFormat}
             input: {schema: ExtractPropertyDataInputSchema },
             output: {schema: outputSchema},
             prompt: finalPrompt,
+            config: modelConfig,
         });
 
         const { output } = await prompt(flowInput);

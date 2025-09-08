@@ -1,28 +1,31 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Save, TestTube2, AlertCircle } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import * as React from 'react';
 import { FileUploader } from '@/components/file-uploader';
 import { Textarea } from '@/components/ui/textarea';
 import { saveExtractionConfig } from '@/ai/flows/save-json-structure';
 import { extractPropertyData } from '@/ai/flows/extract-property-data-from-pdf';
-import initialJsonStructure from '@/lib/json-structure.json';
-import initialPrompts from '@/lib/prompts.json';
+import { getExtractionConfig } from '@/ai/flows/get-extraction-config';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { getAiConfig } from '@/ai/flows/get-ai-config';
+import { saveAiConfig } from '@/ai/flows/save-ai-config';
+import { AIConfigSchema } from '@/lib/ai-config-schema';
 
 const ACCEPTED_FILE_TYPES = {
   'application/pdf': ['.pdf'],
 };
-
-// Convert initial JSON object to a nicely formatted string
-const defaultJsonString = JSON.stringify(initialJsonStructure, null, 2);
 
 const formSchema = z.object({
   jsonStructure: z.string().refine((val) => {
@@ -39,7 +42,10 @@ const formSchema = z.object({
   extractionHints: z.string().min(1, 'Extraction hints are required.'),
   testPropertyTitlePdf: z.array(z.instanceof(File)).min(1, 'Property Title PDF is required for testing.'),
   testBriefInformationPdf: z.array(z.instanceof(File)).min(1, 'Brief Information PDF is required for testing.'),
+  aiConfig: AIConfigSchema,
 });
+
+type FormValues = z.infer<typeof formSchema>;
 
 const fileToDataUri = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -54,27 +60,50 @@ export default function JsonEditorPage() {
   const { toast } = useToast();
   const [isTesting, setIsTesting] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [testResult, setTestResult] = React.useState<string | null>(null);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      jsonStructure: defaultJsonString,
-      systemPrompt: initialPrompts.system_prompt,
-      userPrompt: initialPrompts.user_prompt,
-      extractionHintsTitle: initialPrompts.extraction_hints_title,
-      extractionHints: initialPrompts.extraction_hints,
-      testPropertyTitlePdf: [],
-      testBriefInformationPdf: [],
-    },
   });
 
-  async function onTestRun(values: z.infer<typeof formSchema>) {
+  const { formState: { isDirty } } = form;
+  
+  React.useEffect(() => {
+    async function loadConfig() {
+        setIsLoading(true);
+        try {
+            const [extractionConfig, aiConfig] = await Promise.all([
+                getExtractionConfig(),
+                getAiConfig()
+            ]);
+            form.reset({
+                ...extractionConfig,
+                aiConfig,
+                testPropertyTitlePdf: [],
+                testBriefInformationPdf: [],
+            });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Failed to load configuration', description: error.message });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    loadConfig();
+  }, [form, toast]);
+
+
+  async function onTestRun(values: FormValues) {
     setIsTesting(true);
     setTestResult(null);
     try {
         if (!values.testPropertyTitlePdf?.[0] || !values.testBriefInformationPdf?.[0]) {
             throw new Error('PDF files are missing for the test.');
+        }
+        
+        // Temporarily save configs for the test run if they are dirty
+        if (isDirty) {
+             await onSave(values, true);
         }
 
         const [propertyTitlePdfDataUri, briefInformationPdfDataUri] = await Promise.all([
@@ -105,17 +134,24 @@ export default function JsonEditorPage() {
     }
   }
 
-  async function onSave(values: z.infer<typeof formSchema>) {
+  async function onSave(values: FormValues, isTestSave = false) {
     setIsSaving(true);
     try {
-        await saveExtractionConfig({ 
-            jsonStructure: values.jsonStructure,
-            systemPrompt: values.systemPrompt,
-            userPrompt: values.userPrompt,
-            extractionHintsTitle: values.extractionHintsTitle,
-            extractionHints: values.extractionHints,
-        });
-        toast({ title: 'Configuration Saved', description: 'The AI will now use the new structure and prompts.' });
+        await Promise.all([
+            saveExtractionConfig({ 
+                jsonStructure: values.jsonStructure,
+                systemPrompt: values.systemPrompt,
+                userPrompt: values.userPrompt,
+                extractionHintsTitle: values.extractionHintsTitle,
+                extractionHints: values.extractionHints,
+            }),
+            saveAiConfig(values.aiConfig)
+        ]);
+
+        if (!isTestSave) {
+            form.reset(values); // This resets the 'dirty' state
+            toast({ title: 'Configuration Saved', description: 'The AI will now use the new structure and prompts.' });
+        }
     } catch (error: any) {
         console.error('Failed to save:', error);
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
@@ -123,88 +159,108 @@ export default function JsonEditorPage() {
         setIsSaving(false);
     }
   }
+  
+  if (isLoading) {
+      return (
+          <div className="space-y-8">
+              <Skeleton className="h-12 w-1/2" />
+              <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+                  <div className="space-y-6">
+                      <Skeleton className="h-96 w-full" />
+                      <Skeleton className="h-96 w-full" />
+                  </div>
+                   <div className="space-y-6">
+                      <Skeleton className="h-96 w-full" />
+                  </div>
+              </div>
+          </div>
+      )
+  }
 
   return (
     <div className="space-y-8">
       <header>
         <h1 className="font-headline text-3xl font-bold text-foreground">AI Configuration</h1>
         <p className="text-muted-foreground">
-          Edit and test the JSON structure and prompts for AI data extraction. Your saved changes will be used globally.
+          Edit and test the AI model, parameters, JSON structure and prompts. Your saved changes will be used globally.
         </p>
       </header>
       <main>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onTestRun)}>
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>AI Prompts</CardTitle>
-                    <CardDescription>Define the instructions for the AI extractor.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                     <FormField
-                        control={form.control}
-                        name="systemPrompt"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>System Prompt (AI's Role)</FormLabel>
-                                <Textarea {...field} className="min-h-[100px] font-mono text-xs" />
-                            </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="userPrompt"
-                        render={({ field }) => (
-                           <FormItem>
-                                <FormLabel>User Prompt (Main Task)</FormLabel>
-                                <Textarea {...field} className="min-h-[150px] font-mono text-xs" />
-                           </FormItem>
-                        )}
-                      />
-                       <FormField
-                        control={form.control}
-                        name="extractionHintsTitle"
-                        render={({ field }) => (
-                           <FormItem>
-                                <FormLabel>Extraction Hints Title</FormLabel>
-                                <Input {...field} className="font-mono text-xs" />
-                           </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="extractionHints"
-                        render={({ field }) => (
-                           <FormItem>
-                                <FormLabel>Extraction Hints (Detailed Instructions)</FormLabel>
-                                <Textarea {...field} className="min-h-[200px] font-mono text-xs" />
-                           </FormItem>
-                        )}
-                      />
-                  </CardContent>
-                </Card>
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 xl:grid-cols-3">
+              <div className="space-y-6 xl:col-span-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>AI Prompts</CardTitle>
+                        <CardDescription>Define the instructions for the AI extractor.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                         <FormField control={form.control} name="systemPrompt" render={({ field }) => ( <FormItem> <FormLabel>System Prompt (AI's Role)</FormLabel> <Textarea {...field} className="min-h-[100px] font-mono text-xs" /> </FormItem> )} />
+                         <FormField control={form.control} name="userPrompt" render={({ field }) => ( <FormItem> <FormLabel>User Prompt (Main Task)</FormLabel> <Textarea {...field} className="min-h-[150px] font-mono text-xs" /> </FormItem> )} />
+                         <FormField control={form.control} name="extractionHintsTitle" render={({ field }) => ( <FormItem> <FormLabel>Extraction Hints Title</FormLabel> <Input {...field} className="font-mono text-xs" /> </FormItem> )} />
+                         <FormField control={form.control} name="extractionHints" render={({ field }) => ( <FormItem> <FormLabel>Extraction Hints (Detailed Instructions)</FormLabel> <Textarea {...field} className="min-h-[200px] font-mono text-xs" /> </FormItem> )} />
+                      </CardContent>
+                    </Card>
+                     <Card>
+                      <CardHeader>
+                        <CardTitle>AI Output Structure (JSON)</CardTitle>
+                        <CardDescription>Define the JSON output format for the AI.</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <FormField control={form.control} name="jsonStructure" render={({ field }) => ( <Textarea {...field} className="min-h-[580px] font-mono text-xs" /> )} />
+                      </CardContent>
+                    </Card>
+                </div>
                  <Card>
-                  <CardHeader>
-                    <CardTitle>AI Output Structure (JSON)</CardTitle>
-                    <CardDescription>Define the JSON output format for the AI.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <FormField
-                      control={form.control}
-                      name="jsonStructure"
-                      render={({ field }) => (
-                        <Textarea {...field} className="min-h-[400px] font-mono text-xs" />
-                      )}
-                    />
-                  </CardContent>
+                    <CardHeader>
+                        <CardTitle>AI Model Configuration</CardTitle>
+                        <CardDescription>Select the model and adjust its generation parameters.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                         <FormField
+                            control={form.control}
+                            name="aiConfig.model"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Model</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger><SelectValue placeholder="Select a model" /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="googleai/gemini-1.5-pro">Gemini 1.5 Pro (Recommended)</SelectItem>
+                                            <SelectItem value="googleai/gemini-1.5-flash">Gemini 1.5 Flash (Fast)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="aiConfig.temperature"
+                            render={({ field }) => (
+                               <FormItem>
+                                    <FormLabel>Temperature: {field.value}</FormLabel>
+                                    <FormControl>
+                                        <Slider
+                                            defaultValue={[field.value]}
+                                            onValueChange={(value) => field.onChange(value[0])}
+                                            max={1}
+                                            step={0.05}
+                                        />
+                                    </FormControl>
+                               </FormItem>
+                            )}
+                        />
+                        <div className="grid grid-cols-3 gap-4">
+                             <FormField control={form.control} name="aiConfig.topP" render={({ field }) => ( <FormItem> <FormLabel>Top P</FormLabel> <Input type="number" step="0.05" {...field} /> </FormItem> )} />
+                             <FormField control={form.control} name="aiConfig.topK" render={({ field }) => ( <FormItem> <FormLabel>Top K</FormLabel> <Input type="number" {...field} /> </FormItem> )} />
+                             <FormField control={form.control} name="aiConfig.maxOutputTokens" render={({ field }) => ( <FormItem> <FormLabel>Max Tokens</FormLabel> <Input type="number" {...field} /> </FormItem> )} />
+                        </div>
+                    </CardContent>
                 </Card>
-                 <div className="flex justify-end rounded-md border bg-card p-4 text-card-foreground shadow-sm">
-                    <Button type="button" variant="secondary" onClick={() => onSave(form.getValues())} disabled={isSaving}>
-                      {isSaving ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving Config...</>) : 'Save Global AI Configuration'}
-                    </Button>
-                  </div>
               </div>
               <div className="space-y-6">
                 <Card>
@@ -217,7 +273,7 @@ export default function JsonEditorPage() {
                       <FormField control={form.control} name="testBriefInformationPdf" render={() => (<Controller name="testBriefInformationPdf" control={form.control} render={({field}) => (<FileUploader label="Test Brief Information (PDF)" value={field.value} onValueChange={field.onChange} options={{ accept: ACCEPTED_FILE_TYPES }} maxFiles={1} />)} />)} />
                        <div className="flex justify-start pt-4">
                          <Button type="submit" disabled={isTesting}>
-                          {isTesting ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Testing...</>) : 'Run Test'}
+                          {isTesting ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Testing...</>) : <><TestTube2 className="mr-2 h-4 w-4" /> Run Test</>}
                         </Button>
                       </div>
                     </CardContent>
@@ -241,6 +297,22 @@ export default function JsonEditorPage() {
                 </Card>
               </div>
             </div>
+             {isDirty && (
+                 <div className="fixed bottom-6 right-6 z-50 w-full max-w-md">
+                     <Alert variant="destructive" className="bg-destructive/95 text-destructive-foreground shadow-lg backdrop-blur-sm">
+                        <AlertTitle className="font-bold">You have unsaved changes!</AlertTitle>
+                        <AlertDescription className="text-destructive-foreground/90">
+                           Save your changes to make them available across the app.
+                        </AlertDescription>
+                        <div className="mt-4 flex gap-x-2 justify-end">
+                            <Button type="button" variant="secondary" size="sm" disabled={isSaving} className="bg-destructive-foreground text-destructive hover:bg-destructive-foreground/90" onClick={() => onSave(form.getValues())}>
+                                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4"/>}
+                                Save Changes
+                            </Button>
+                        </div>
+                    </Alert>
+                </div>
+            )}
           </form>
         </Form>
       </main>

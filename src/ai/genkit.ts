@@ -1,10 +1,57 @@
-import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
+'use server';
 
-export const ai = genkit({
-  plugins: [googleAI()],
-  model: 'googleai/gemini-1.5-pro',
-});
+import {genkit, type ModelArgument} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
+import {getAiConfig} from './flows/get-ai-config';
+import type {AIConfig} from '@/lib/ai-config-schema';
+
+// We wrap the genkit initialization in a function to dynamically
+// load the configuration from a file. This allows the model and
+// its parameters to be configured from the UI.
+
+let aiInstance: ModelArgument<any> | null = null;
+let aiConfig: AIConfig | null = null;
+
+async function getAiInstance() {
+  if (!aiInstance) {
+    aiConfig = await getAiConfig();
+    aiInstance = genkit({
+      plugins: [googleAI()],
+      model: aiConfig.model,
+    });
+  }
+  return aiInstance;
+}
+
+export async function getModelConfig() {
+  if (!aiConfig) {
+    aiConfig = await getAiConfig();
+  }
+  return {
+    temperature: aiConfig.temperature,
+    topP: aiConfig.topP,
+    topK: aiConfig.topK,
+    maxOutputTokens: aiConfig.maxOutputTokens,
+  };
+}
+
+// Export a proxy object that delegates to the dynamic instance
+export const ai = new Proxy(
+  {},
+  {
+    get: (_, prop) => {
+      return async (...args: any[]) => {
+        const instance = await getAiInstance();
+        // @ts-ignore
+        const method = instance[prop];
+        if (typeof method === 'function') {
+          return method.apply(instance, args);
+        }
+        return method;
+      };
+    },
+  }
+) as ModelArgument<any>;
 
 /*
  * ----------------------------------------------------------------
