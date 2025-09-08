@@ -3,25 +3,17 @@
 import * as React from 'react';
 import { Step1Input } from '@/components/generate-report/step-1-input';
 import { Step2Review } from '@/components/generate-report/step-2-review';
-import { Step3ImageReplacement } from '@/components/generate-report/step-3-image-replacement';
-import { Step4Result } from '@/components/generate-report/step-4-result';
+import { Step3Result } from '@/components/generate-report/step-3-result';
 import type { PropertyData } from '@/lib/types';
 import { AnimatePresence, motion } from 'framer-motion';
-
-type Step = 'input' | 'review' | 'image_replacement' | 'result';
 
 function GenerateReportFlow() {
   const [step, setStep] = React.useState<Step>('input');
   const [propertyData, setPropertyData] = React.useState<PropertyData | null>(null);
-  
-  // State for intermediate file
-  const [tempFileName, setTempFileName] = React.useState<string | null>(null);
-  const [instructedBy, setInstructedBy] = React.useState<string | undefined>(undefined);
-
-  // State for final result
-  const [finalReportDataUri, setFinalReportDataUri] = React.useState<string | null>(null);
-  const [finalFileName, setFinalFileName] = React.useState<string>('');
+  const [generatedReportDataUri, setGeneratedReportDataUri] = React.useState<string | null>(null);
+  const [generatedFileName, setGeneratedFileName] = React.useState<string>('');
   const [replacementsCount, setReplacementsCount] = React.useState(0);
+  const [debugValue, setDebugValue] = React.useState<string | undefined>(undefined);
 
 
   const handleDataExtracted = (data: PropertyData) => {
@@ -29,31 +21,24 @@ function GenerateReportFlow() {
     setStep('review');
   };
 
-  const handleTextReportGenerated = (tempFile: string, initialReplacements: number, instructedByValue: string | undefined) => {
-    setTempFileName(tempFile);
-    setReplacementsCount(initialReplacements); // Store initial count
-    setInstructedBy(instructedByValue);
-    setStep('image_replacement');
-  };
-
-  const handleImageReportGenerated = (finalUri: string, finalReplacements: number) => {
+  const handleReportGenerated = (reportDataUri: string, count: number, instructedBy: string | undefined) => {
     const address = propertyData?.Info?.['Property Address'] || 'Report';
     const date = new Date().toISOString().split('T')[0];
     const fileName = `${address} - ${date}.docx`;
 
-    setFinalReportDataUri(finalUri);
-    setFinalFileName(fileName);
-    setReplacementsCount(finalReplacements); // Update with final count
+    setGeneratedReportDataUri(reportDataUri);
+    setGeneratedFileName(fileName);
+    setReplacementsCount(count);
+    setDebugValue(instructedBy);
     setStep('result');
-  }
+  };
 
   const handleStartOver = () => {
     setPropertyData(null);
-    setTempFileName(null);
-    setFinalReportDataUri(null);
-    setFinalFileName('');
+    setGeneratedReportDataUri(null);
+    setGeneratedFileName('');
     setReplacementsCount(0);
-    setInstructedBy(undefined);
+    setDebugValue(undefined);
     setStep('input');
   };
 
@@ -61,6 +46,8 @@ function GenerateReportFlow() {
     setStep('input');
   }
   
+  type Step = 'input' | 'review' | 'result';
+
   const variants = {
     enter: { opacity: 0, y: 20 },
     center: { opacity: 1, y: 0 },
@@ -104,31 +91,13 @@ function GenerateReportFlow() {
             >
               <Step2Review 
                 extractedData={propertyData} 
-                onReportGenerated={handleTextReportGenerated}
+                onReportGenerated={handleReportGenerated}
                 onBack={handleBackToInput}
               />
             </motion.div>
           )}
 
-          {step === 'image_replacement' && tempFileName && (
-             <motion.div
-              key="image_replacement"
-              initial="enter"
-              animate="center"
-              exit="exit"
-              variants={variants}
-              transition={{ duration: 0.3 }}
-            >
-              <Step3ImageReplacement 
-                tempFileName={tempFileName}
-                initialReplacements={replacementsCount}
-                onReportGenerated={handleImageReportGenerated}
-                onBack={() => setStep('review')}
-              />
-            </motion.div>
-          )}
-
-          {step === 'result' && finalReportDataUri && (
+          {step === 'result' && generatedReportDataUri && (
              <motion.div
               key="result"
               initial="enter"
@@ -137,12 +106,12 @@ function GenerateReportFlow() {
               variants={variants}
               transition={{ duration: 0.3 }}
             >
-              <Step4Result 
-                reportDataUri={finalReportDataUri}
-                fileName={finalFileName}
+              <Step3Result 
+                reportDataUri={generatedReportDataUri}
+                fileName={generatedFileName}
                 onStartOver={handleStartOver} 
                 replacementsCount={replacementsCount}
-                debugInstructedBy={instructedBy}
+                debugInstructedBy={debugValue}
               />
             </motion.div>
           )}

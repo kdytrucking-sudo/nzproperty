@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -31,13 +32,14 @@ import { getExtractionConfig } from '@/ai/flows/get-extraction-config';
 import { cn } from '@/lib/utils';
 import { getMultiOptions } from '@/ai/flows/get-multi-options';
 import type { MultiOptionsData, MultiOptionCard, MultiOptionItem } from '@/lib/multi-options-schema';
+import { Step3ImageReplacement } from './step-3-image-replacement';
 
 // Main form schema
 const formSchema = z.any();
 
 type Step2ReviewProps = {
   extractedData: PropertyData;
-  onReportGenerated: (tempFileName: string, replacementsCount: number, instructedBy: string | undefined) => void;
+  onReportGenerated: (tempFileName: string, replacementsCount: number) => void;
   onBack: () => void;
 };
 
@@ -153,6 +155,10 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         interior: [],
         finalBrief: '',
       },
+      chattels: {
+        selection: [],
+        finalBrief: '',
+      },
       marketValuation: {
         marketValue: '',
         marketValuation: '',
@@ -248,6 +254,17 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     form.setValue('statutoryValuation.ratingValueByWeb', formatCurrency(total));
   };
 
+  const generateChattelsBrief = () => {
+      const { selection } = form.getValues('chattels');
+      if (selection.length === 0) {
+        form.setValue('chattels.finalBrief', 'We have included in our valuation an allowance for chattels.');
+        return;
+      }
+      
+      const itemsString = selection.join(', ');
+      const fullBrief = `We have included in our valuation an allowance for chattels including ${itemsString}.`;
+      form.setValue('chattels.finalBrief', fullBrief);
+  };
 
   const generalConstructionOptions = [
     { id: 'concrete slab foundation', label: 'concrete slab foundation' },
@@ -261,7 +278,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     { id: 'horizontal timber cladding', label: 'horizontal timber cladding' },
     { id: 'plaster cladding', label: 'plaster cladding' },
     { id: 'concrete cladding', label: 'concrete cladding' },
-    { id: 'fibre cement sheet cladding', label: 'fibre cement sheet cladding' },
+    { id: 'fibre cement sheet cladding', label: 'fibre cement sheet cladding' },
     { id: 'tile cladding', label: 'tile cladding' },
     { id: 'steel cladding', label: 'steel cladding' },
     { id: 'concrete block cladding', label: 'concrete block cladding' },
@@ -281,6 +298,13 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       { id: 'hard board', label: 'hard board' },
       { id: 'tile ceiling', label: 'tile ceiling' },
       { id: 'plaster ceiling', label: 'plaster ceiling' },
+  ];
+
+  const chattelsOptions = [
+    { id: 'carpets', label: 'carpets' },
+    { id: 'lightings', label: 'lightings' },
+    { id: 'blinds', label: 'blinds' },
+    { id: 'curtains', label: 'curtains' },
   ];
 
   const generateBrief = () => {
@@ -394,7 +418,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       const fullData = { 
         ...values.data, 
         commentary: values.commentary, 
-        constructionBrief: values.constructionBrief, 
+        constructionBrief: values.constructionBrief,
+        chattels: values.chattels, 
         marketValuation: values.marketValuation,
         statutoryValuation: values.statutoryValuation,
         ...placeholderData
@@ -406,11 +431,11 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       });
 
       toast({
-        title: 'Text Replacement Complete',
-        description: `Replaced ${result.replacementsCount} placeholders. Proceeding to image replacement.`,
+        title: 'Text Replacement Successful',
+        description: 'Proceed to the next step to add images.',
       });
-      const debugValue = values.data?.Info?.['Instructed By'];
-      onReportGenerated(result.tempFileName, result.replacementsCount, debugValue);
+
+      onReportGenerated(result.tempFileName, result.replacementsCount);
 
     } catch (error: any) {
       console.error('Error generating report:', error);
@@ -575,125 +600,165 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   const renderConstructChattelsSection = () => {
     return (
         <div className="space-y-8 pt-4">
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>General Construction Elements</CardTitle>
-                        <CardDescription>Select the elements for the first sentence.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                        <FormField
-                            control={form.control}
-                            name="constructionBrief.generalConstruction"
-                            render={() => (
-                                <div className="grid grid-cols-2 gap-4">
-                                    {generalConstructionOptions.map((item) => (
-                                        <FormField
-                                            key={item.id}
-                                            control={form.control}
-                                            name="constructionBrief.generalConstruction"
-                                            render={({ field }) => (
-                                                <FormItem
-                                                    key={item.id}
-                                                    className="flex flex-row items-start space-x-3 space-y-0"
-                                                >
-                                                    <FormControl>
-                                                        <Checkbox
-                                                            checked={field.value?.includes(item.id)}
-                                                            onCheckedChange={(checked) => {
-                                                                return checked
-                                                                    ? field.onChange([...(field.value || []), item.id])
-                                                                    : field.onChange(
-                                                                        field.value?.filter(
-                                                                            (value) => value !== item.id
-                                                                        )
-                                                                    )
-                                                            }}
-                                                        />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal">
-                                                        {item.label}
-                                                    </FormLabel>
-                                                </FormItem>
-                                            )}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                        />
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Interior Elements</CardTitle>
-                        <CardDescription>Select the elements for the second sentence.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                         <FormField
-                            control={form.control}
-                            name="constructionBrief.interior"
-                            render={() => (
-                                <div className="grid grid-cols-2 gap-4">
-                                    {interiorOptions.map((item) => (
-                                        <FormField
-                                            key={item.id}
-                                            control={form.control}
-                                            name="constructionBrief.interior"
-                                            render={({ field }) => (
-                                                <FormItem
-                                                    key={item.id}
-                                                    className="flex flex-row items-start space-x-3 space-y-0"
-                                                >
-                                                    <FormControl>
-                                                        <Checkbox
-                                                            checked={field.value?.includes(item.id)}
-                                                            onCheckedChange={(checked) => {
-                                                                return checked
-                                                                    ? field.onChange([...(field.value || []), item.id])
-                                                                    : field.onChange(
-                                                                        field.value?.filter(
-                                                                            (value) => value !== item.id
-                                                                        )
-                                                                    )
-                                                            }}
-                                                        />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal">
-                                                        {item.label}
-                                                    </FormLabel>
-                                                </FormItem>
-                                            )}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                        />
-                    </CardContent>
-                </Card>
-            </div>
-            
-            <div className="flex justify-center">
-                <Button type="button" onClick={generateBrief}>
-                    Generate Brief
-                </Button>
-            </div>
-
             <Card>
                 <CardHeader>
-                    <CardTitle>Generated Construction Brief</CardTitle>
-                    <CardDescription>Review and edit the generated text below. This content will be used for the [Replace_ConstructionBrief] placeholder.</CardDescription>
+                    <CardTitle>Construction Brief Generator</CardTitle>
+                    <CardDescription>Select the elements to generate the construction brief for the [Replace_ConstructionBrief] placeholder.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <FormField
+                    <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+                        <div>
+                            <FormLabel className="text-base font-semibold">General Construction Elements</FormLabel>
+                            <p className="text-sm text-muted-foreground">Select the elements for the first sentence.</p>
+                            <FormField
+                                control={form.control}
+                                name="constructionBrief.generalConstruction"
+                                render={() => (
+                                    <div className="mt-4 grid grid-cols-2 gap-4 rounded-md border p-4">
+                                        {generalConstructionOptions.map((item) => (
+                                            <FormField
+                                                key={item.id}
+                                                control={form.control}
+                                                name="constructionBrief.generalConstruction"
+                                                render={({ field }) => (
+                                                    <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
+                                                        <FormControl>
+                                                            <Checkbox
+                                                                checked={field.value?.includes(item.id)}
+                                                                onCheckedChange={(checked) => {
+                                                                    return checked
+                                                                        ? field.onChange([...(field.value || []), item.id])
+                                                                        : field.onChange(field.value?.filter((value) => value !== item.id))
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormLabel className="font-normal">{item.label}</FormLabel>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            />
+                        </div>
+                        <div>
+                            <FormLabel className="text-base font-semibold">Interior Elements</FormLabel>
+                            <p className="text-sm text-muted-foreground">Select the elements for the second sentence.</p>
+                             <FormField
+                                control={form.control}
+                                name="constructionBrief.interior"
+                                render={() => (
+                                    <div className="mt-4 grid grid-cols-2 gap-4 rounded-md border p-4">
+                                        {interiorOptions.map((item) => (
+                                            <FormField
+                                                key={item.id}
+                                                control={form.control}
+                                                name="constructionBrief.interior"
+                                                render={({ field }) => (
+                                                    <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
+                                                        <FormControl>
+                                                            <Checkbox
+                                                                checked={field.value?.includes(item.id)}
+                                                                onCheckedChange={(checked) => {
+                                                                    return checked
+                                                                        ? field.onChange([...(field.value || []), item.id])
+                                                                        : field.onChange(field.value?.filter((value) => value !== item.id))
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormLabel className="font-normal">{item.label}</FormLabel>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            />
+                        </div>
+                    </div>
+                    <div className="mt-6 flex justify-center">
+                        <Button type="button" onClick={generateBrief}>
+                            Generate Construction Brief
+                        </Button>
+                    </div>
+                     <FormField
                         control={form.control}
                         name="constructionBrief.finalBrief"
                         render={({ field }) => (
-                            <Textarea {...field} rows={8} className="font-mono"/>
+                           <FormItem className="mt-6">
+                                <FormLabel className="text-base font-semibold">Generated Brief</FormLabel>
+                                <FormControl>
+                                    <Textarea {...field} rows={6} className="font-mono"/>
+                                </FormControl>
+                           </FormItem>
                         )}
                     />
                 </CardContent>
             </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Chattels Brief Generator</CardTitle>
+                    <CardDescription>Select chattels to include in the valuation for the [Replace_Chattels] placeholder.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <div>
+                            <FormLabel className="font-semibold">Chattel Options</FormLabel>
+                            <FormField
+                                control={form.control}
+                                name="chattels.selection"
+                                render={() => (
+                                    <div className="mt-2 space-y-2 rounded-md border p-4">
+                                        {chattelsOptions.map((item) => (
+                                            <FormField
+                                                key={item.id}
+                                                control={form.control}
+                                                name="chattels.selection"
+                                                render={({ field }) => (
+                                                    <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
+                                                        <FormControl>
+                                                            <Checkbox
+                                                                checked={field.value?.includes(item.id)}
+                                                                onCheckedChange={(checked) => {
+                                                                    return checked
+                                                                        ? field.onChange([...(field.value || []), item.id])
+                                                                        : field.onChange(field.value?.filter((value) => value !== item.id))
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormLabel className="font-normal">{item.label}</FormLabel>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            />
+                        </div>
+                        <div className="flex flex-col">
+                             <FormField
+                                control={form.control}
+                                name="chattels.finalBrief"
+                                render={({ field }) => (
+                                <FormItem className="flex-grow">
+                                    <FormLabel className="font-semibold">Generated Chattels Brief</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} placeholder="Generated brief will appear here..." />
+                                    </FormControl>
+                                </FormItem>
+                                )}
+                            />
+                            <div className="mt-auto flex justify-end pt-4">
+                                <Button type="button" onClick={generateChattelsBrief}>
+                                    Generate Chattels Brief
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
         </div>
     );
   };
@@ -914,7 +979,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       <CardHeader>
         <CardTitle>2. Review & Edit Extracted Data</CardTitle>
         <CardDescription>
-          Review the data, make corrections, and select a template to generate the text-only report.
+          Review the data, make corrections, and select a template to generate the final report.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -992,7 +1057,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
 
                     <div className="flex justify-between pt-4">
                     <Button type="button" variant="outline" onClick={onBack}>
-                        Back to Start
+                        Back
                     </Button>
                     <Button type="submit" disabled={isGenerating || templates.length === 0}>
                         {isGenerating ? (

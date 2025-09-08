@@ -146,9 +146,9 @@ export default function ImageTestPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="font-headline text-3xl font-bold text-foreground">Image Replacement Test</h1>
+        <h1 className="font-headline text-3xl font-bold text-foreground">Image Replacement</h1>
         <p className="text-muted-foreground">
-          An isolated environment to test .docx image replacement functionality using your global configurations.
+          Replace the image with image replaceholder.
         </p>
       </header>
 
@@ -157,9 +157,11 @@ export default function ImageTestPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>1. Upload Template</CardTitle>
+                <CardTitle>1. Upload the downloaded report file after text replaced</CardTitle>
                 <CardDescription>
-                  Upload the master .docx template that contains the image placeholders.
+                <h2 className="font-headline text-2xl font-bold text-foreground">
+                  Please Run Generate report first, then Upload the downloaded report file that contains the image placeholders.
+                  </h2>
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -236,7 +238,7 @@ export default function ImageTestPage() {
                 {isProcessing ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
                 ) : (
-                  <><TestTube2 className="mr-2 h-4 w-4" /> Run Test</>
+                  <><TestTube2 className="mr-2 h-4 w-4" />Replace Image</>
                 )}
               </Button>
               {resultUri && (

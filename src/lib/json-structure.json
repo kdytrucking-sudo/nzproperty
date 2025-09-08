@@ -220,7 +220,6 @@
         "required": false
       }
     },
-
     "Location Description": {
       "label": "Location Description",
       "placeholder": "[Replace_LocationDescription]",
