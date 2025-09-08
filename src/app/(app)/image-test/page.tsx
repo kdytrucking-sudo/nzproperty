@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -146,9 +147,9 @@ export default function ImageTestPage() {
   return (
     <div className="space-y-8">
       <header>
-      <h1 className="font-headline text-3xl font-bold text-foreground">Image Replacement Test</h1>
+        <h1 className="font-headline text-3xl font-bold text-foreground">Image Replacement Test</h1>
         <p className="text-muted-foreground">
-        Image Replacement
+          An isolated environment to test the image replacement functionality with a template and dynamic images.
         </p>
       </header>
 
@@ -159,7 +160,7 @@ export default function ImageTestPage() {
               <CardHeader>
                 <CardTitle>1. Upload Template</CardTitle>
                 <CardDescription>
-                Upload the downloaded report file after text replaced，Please Run Generate report first, then Upload the downloaded report file that contains the image placeholders.
+                  Upload the master .docx template that contains the image placeholders you want to test.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -236,7 +237,7 @@ export default function ImageTestPage() {
                 {isProcessing ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
                 ) : (
-                  <><TestTube2 className="mr-2 h-4 w-4" /> Replace the Images inside of templeate</>
+                  <><TestTube2 className="mr-2 h-4 w-4" /> Run Test</>
                 )}
               </Button>
               {resultUri && (
