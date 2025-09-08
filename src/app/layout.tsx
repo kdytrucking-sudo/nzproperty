@@ -3,7 +3,6 @@ import { Inter, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
-import { TemplatesProvider } from '@/hooks/use-templates.tsx';
 
 const fontInter = Inter({
   subsets: ['latin'],
@@ -34,10 +33,8 @@ export default function RootLayout({
           fontSpaceGrotesk.variable
         )}
       >
-        <TemplatesProvider>
-          {children}
-          <Toaster />
-        </TemplatesProvider>
+        {children}
+        <Toaster />
       </body>
     </html>
   );
