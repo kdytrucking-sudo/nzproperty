@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -32,6 +31,7 @@ import { getExtractionConfig } from '@/ai/flows/get-extraction-config';
 import { cn } from '@/lib/utils';
 import { getMultiOptions } from '@/ai/flows/get-multi-options';
 import type { MultiOptionsData, MultiOptionCard, MultiOptionItem } from '@/lib/multi-options-schema';
+import { roomOptionsConfig, roomTypes } from '@/lib/room-options-config';
 
 // Main form schema
 const formSchema = z.any();
@@ -129,6 +129,8 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   const [valuationCheckStatus, setValuationCheckStatus] = React.useState<'Equal' | 'Error' | null>(null);
   const [jsonStructure, setJsonStructure] = React.useState<any>(null);
   const [multiOptions, setMultiOptions] = React.useState<MultiOptionsData | null>(null);
+  const [selectedRoomType, setSelectedRoomType] = React.useState<string>(roomTypes[0]);
+
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -161,14 +163,58 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         selected: [] as string[],
         finalBrief: '',
       },
+       roomOptions: [] as {
+        id: string;
+        roomType: string;
+        roomName: string;
+        selectedOptions: string[];
+      }[],
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, remove: removeSale } = useFieldArray({
     control: form.control,
     name: 'data.comparableSales',
   });
+
+  const { fields: roomOptionFields, append: appendRoomOption, remove: removeRoomOption } = useFieldArray({
+    control: form.control,
+    name: 'roomOptions'
+  });
+
+  const handleAddRoomOption = () => {
+    if (roomOptionFields.length >= 20) {
+      toast({
+        variant: 'destructive',
+        title: 'Room Limit Reached',
+        description: 'You can add a maximum of 20 rooms.',
+      });
+      return;
+    }
+    appendRoomOption({
+      id: crypto.randomUUID(),
+      roomType: selectedRoomType,
+      roomName: selectedRoomType,
+      selectedOptions: [],
+    });
+  };
   
+  const handleRoomOptionsCheckboxChange = (
+    checked: boolean,
+    option: string,
+    fieldIndex: number
+  ) => {
+    const currentSelections = form.getValues(`roomOptions.${fieldIndex}.selectedOptions`) || [];
+    let newSelections: string[];
+
+    if (checked) {
+      newSelections = [...currentSelections, option];
+    } else {
+      newSelections = currentSelections.filter((sel) => sel !== option);
+    }
+    form.setValue(`roomOptions.${fieldIndex}.selectedOptions`, newSelections);
+  };
+
   const parseCurrency = (value: string | undefined): number => {
     if (!value) return 0;
     return Number(String(value).replace(/[^0-9.-]+/g,""));
@@ -405,6 +451,17 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
           placeholderData[placeholderKey] = values.multiOptionBriefs[card.id] || '';
         });
       }
+
+       // 3. Add Room Option selections
+       if (values.roomOptions) {
+        values.roomOptions.forEach((room: any, index: number) => {
+          const namePlaceholder = `Replace_RoomOptionName${index + 1}`;
+          const textPlaceholder = `Replace_RoomOptionText${index + 1}`;
+          placeholderData[namePlaceholder] = room.roomName;
+          placeholderData[textPlaceholder] = room.selectedOptions.join(', ');
+        });
+      }
+
 
       const fullData = { 
         ...values.data, 
@@ -980,6 +1037,112 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       </div>
     );
   }
+   const renderRoomOptionSection = () => {
+    return (
+      <div className="space-y-6 pt-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Add Room</CardTitle>
+            <CardDescription>Select a room type and click Add to create a new room option card below.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <Select value={selectedRoomType} onValueChange={setSelectedRoomType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a room type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {roomTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={handleAddRoomOption}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-4">
+          {roomOptionFields.map((field, index) => {
+             const roomOptions = roomOptionsConfig[field.roomType as keyof typeof roomOptionsConfig] || [];
+             const selectedOptions = form.watch(`roomOptions.${index}.selectedOptions`);
+             const roomOptionText = selectedOptions.join(', ');
+
+            return (
+              <Card key={field.id}>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                         <CardTitle>Room Option {index + 1}</CardTitle>
+                         <Button variant="destructive" size="icon" onClick={() => removeRoomOption(index)}>
+                            <Trash2 className="h-4 w-4" />
+                         </Button>
+                    </div>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                     <FormField
+                      control={form.control}
+                      name={`roomOptions.${index}.roomName`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex items-center justify-between">
+                             <FormLabel>Room Name</FormLabel>
+                             <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{`[Replace_RoomOptionName${index + 1}]`}</code>
+                          </div>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormItem>
+                        <div className="flex items-center justify-between">
+                            <FormLabel>Room Option Text</FormLabel>
+                            <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{`[Replace_RoomOptionText${index + 1}]`}</code>
+                        </div>
+                        <FormControl>
+                           <Input readOnly value={roomOptionText} />
+                        </FormControl>
+                    </FormItem>
+                  </div>
+
+                  <div className="space-y-2">
+                    <FormLabel>Room Options</FormLabel>
+                    <div className="space-y-2 rounded-md border p-4 h-48 overflow-y-auto">
+                      {roomOptions.map((option) => (
+                        <FormField
+                          key={option}
+                          control={form.control}
+                          name={`roomOptions.${index}.selectedOptions`}
+                          render={() => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={selectedOptions.includes(option)}
+                                  onCheckedChange={(checked) => handleRoomOptionsCheckboxChange(!!checked, option, index)}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">{option}</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
 
   return (
     <Card>
@@ -1030,7 +1193,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     />
 
                     <Tabs defaultValue={defaultTab}>
-                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-7">
+                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-8">
                         {tabKeys.map(key => (
                         <TabsTrigger key={key} value={key}>
                             {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
@@ -1040,6 +1203,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                         <TabsTrigger value="commentary">Commentary</TabsTrigger>
                         <TabsTrigger value="multiOption">Multi Option</TabsTrigger>
                         <TabsTrigger value="constructChattels">Construct/Chattels</TabsTrigger>
+                         <TabsTrigger value="roomOption">Room Option</TabsTrigger>
                     </TabsList>
 
                     {tabKeys.map(key => (
@@ -1059,6 +1223,9 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     </TabsContent>
                      <TabsContent value="constructChattels">
                         {renderConstructChattelsSection()}
+                    </TabsContent>
+                     <TabsContent value="roomOption">
+                        {renderRoomOptionSection()}
                     </TabsContent>
                     </Tabs>
 

@@ -75,5 +75,47 @@
     "placeholder": "{%Image_SiteDevelopment4}",
     "width": 400,
     "height": 300
+  },
+  {
+    "id": "bd650ff2-03d1-40e2-b56a-63e92f974683",
+    "cardName": "Layout/Amenities Photo1",
+    "placeholder": "{%Image_LayoutAmenities1}",
+    "width": 288,
+    "height": 216
+  },
+  {
+    "id": "72dfe497-5b12-4aad-be7e-254407293def",
+    "cardName": "Layout/Amenities Photo2",
+    "placeholder": "{%Image_LayoutAmenities2}",
+    "width": 288,
+    "height": 216
+  },
+  {
+    "id": "5e717d27-f8e6-4c09-8222-dc4e8cd4f6d0",
+    "cardName": "Layout/Amenities Photo3",
+    "placeholder": "{%Image_LayoutAmenities3}",
+    "width": 288,
+    "height": 216
+  },
+  {
+    "id": "32c53ea7-cc06-484e-a1b2-957be06b5adb",
+    "cardName": "Layout/Amenities Photo4",
+    "placeholder": "{%Image_LayoutAmenities4}",
+    "width": 288,
+    "height": 216
+  },
+  {
+    "id": "023d74d2-a093-4b3f-9e64-949e5a3d25d5",
+    "cardName": "Layout/Amenities Photo5",
+    "placeholder": "{%Image_LayoutAmenities5}",
+    "width": 288,
+    "height": 216
+  },
+  {
+    "id": "09b1f59d-99d9-4c78-a90a-eaba8bedcc8f",
+    "cardName": "Layout/Amenities Photo6",
+    "placeholder": "{%Image_LayoutAmenities6}",
+    "width": 288,
+    "height": 216
   }
 ]
