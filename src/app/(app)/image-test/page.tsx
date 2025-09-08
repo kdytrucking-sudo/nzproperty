@@ -147,9 +147,9 @@ export default function ImageTestPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="font-headline text-3xl font-bold text-foreground">图片替换测试</h1>
+        <h1 className="font-headline text-3xl font-bold text-foreground">Image Replacement Test</h1>
         <p className="text-muted-foreground">
-         这是一个独立的环境，用于测试模板和动态图像的图像替换功能.
+         An isolated environment to test the image replacement functionality with templates and dynamic images.
         </p>
       </header>
 
@@ -158,9 +158,9 @@ export default function ImageTestPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>1. 上传模板</CardTitle>
+                <CardTitle>1. Upload Template</CardTitle>
                 <CardDescription>
-                  上传包含要测试的图像占位符的主 .docx 模板.
+                  Upload the master .docx template that contains the image placeholders you want to test.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -183,9 +183,9 @@ export default function ImageTestPage() {
             
             <Card>
               <CardHeader>
-                <CardTitle>2. 上传图片</CardTitle>
+                <CardTitle>2. Upload Images</CardTitle>
                 <CardDescription>
-                  这些配置是从“管理图像”页面加载的。为您要测试的每个占位符上传一个图像.
+                  These configurations are loaded from the "Manage Images" page. Upload one image for each placeholder you want to test.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -237,12 +237,12 @@ export default function ImageTestPage() {
                 {isProcessing ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
                 ) : (
-                  <><TestTube2 className="mr-2 h-4 w-4" /> 运行测试</>
+                  <><TestTube2 className="mr-2 h-4 w-4" /> Run Test</>
                 )}
               </Button>
               {resultUri && (
                 <Button type="button" variant="secondary" onClick={handleDownload}>
-                  <FileDown className="mr-2 h-4 w-4" /> 下载结果
+                  <FileDown className="mr-2 h-4 w-4" /> Download Result
                 </Button>
               )}
             </div>

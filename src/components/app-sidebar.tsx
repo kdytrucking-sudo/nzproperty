@@ -37,37 +37,37 @@ export function AppSidebar() {
   const menuItems = [
     {
       href: '/',
-      label: '生成报告',
+      label: 'Generate Report',
       icon: LayoutDashboard,
     },
     {
       href: '/manage-content',
-      label: '管理内容',
+      label: 'Manage Content',
       icon: Pencil,
     },
      {
       href: '/manage-commentary',
-      label: '管理评论',
+      label: 'Manage Commentary',
       icon: MessageSquareQuote,
     },
     {
       href: '/manage-multi-option',
-      label: '管理选项',
+      label: 'Manage Options',
       icon: ListTodo,
     },
     {
       href: '/manage-templates',
-      label: '管理模板',
+      label: 'Manage Templates',
       icon: FileText,
     },
     {
       href: '/manage-images',
-      label: '管理图片',
+      label: 'Manage Images',
       icon: Image,
     },
     {
       href: '/json-editor',
-      label: 'AI 设置',
+      label: 'AI Settings',
       icon: FileJson,
     },
   ];
@@ -75,7 +75,7 @@ export function AppSidebar() {
   const testMenuItems = [
      {
       href: '/image-test',
-      label: '图片替换测试',
+      label: 'Image Replacement Test',
       icon: TestTube2,
     },
   ]
