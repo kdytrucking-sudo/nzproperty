@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { CheckCircle2, Download } from 'lucide-react';
 import * as React from 'react';
 
-type Step3ResultProps = {
+type Step4ResultProps = {
   reportDataUri: string;
   fileName: string;
   onStartOver: () => void;
@@ -13,7 +13,7 @@ type Step3ResultProps = {
   debugInstructedBy?: string;
 };
 
-export function Step3Result({ reportDataUri, fileName, onStartOver, replacementsCount, debugInstructedBy }: Step3ResultProps) {
+export function Step4Result({ reportDataUri, fileName, onStartOver, replacementsCount, debugInstructedBy }: Step4ResultProps) {
   
   const handleDownload = () => {
     const link = document.createElement("a");
@@ -38,7 +38,7 @@ export function Step3Result({ reportDataUri, fileName, onStartOver, replacements
         </div>
         <CardTitle className="mt-4 text-2xl">Report Generated Successfully!</CardTitle>
         <CardDescription>
-            {`Successfully replaced ${replacementsCount} placeholders. `}
+            {`Successfully replaced ${replacementsCount} total placeholders. `}
             Your download should start automatically. If it doesn't, use the button below.
         </CardDescription>
       </CardHeader>

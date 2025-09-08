@@ -1,9 +1,8 @@
-
 'use client';
 
 import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, PlusCircle, Trash2, Copy, CalendarIcon, Image as ImageIcon } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Copy, CalendarIcon } from 'lucide-react';
 import { useForm, useFieldArray, Control, FieldValues, Path, UseFormSetValue } from 'react-hook-form';
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -32,24 +31,13 @@ import { getExtractionConfig } from '@/ai/flows/get-extraction-config';
 import { cn } from '@/lib/utils';
 import { getMultiOptions } from '@/ai/flows/get-multi-options';
 import type { MultiOptionsData, MultiOptionCard, MultiOptionItem } from '@/lib/multi-options-schema';
-import { getImageOptions } from '@/ai/flows/get-image-options';
-import type { ImageConfig } from '@/lib/image-options-schema';
-import { FileUploader } from '../file-uploader';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
-
-const ACCEPTED_IMAGE_TYPES = {
-  'image/png': ['.png'],
-  'image/jpeg': ['.jpg', '.jpeg'],
-};
-
 
 // Main form schema
 const formSchema = z.any();
 
 type Step2ReviewProps = {
   extractedData: PropertyData;
-  onReportGenerated: (reportDataUri: string, replacementsCount: number, instructedBy: string | undefined) => void;
+  onReportGenerated: (tempFileName: string, replacementsCount: number, instructedBy: string | undefined) => void;
   onBack: () => void;
 };
 
@@ -140,7 +128,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   const [valuationCheckStatus, setValuationCheckStatus] = React.useState<'Equal' | 'Error' | null>(null);
   const [jsonStructure, setJsonStructure] = React.useState<any>(null);
   const [multiOptions, setMultiOptions] = React.useState<MultiOptionsData | null>(null);
-  const [imageConfigs, setImageConfigs] = React.useState<ImageConfig[]>([]);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -182,7 +169,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       marketValuationRaw: '',
       multiOptionSelections: {} as Record<string, string[]>,
       multiOptionBriefs: {} as Record<string, string>,
-      images: {} as Record<string, File[] | null>,
     },
   });
 
@@ -327,26 +313,16 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       form.setValue('constructionBrief.finalBrief', fullBrief);
   };
 
-  const fileToDataUri = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
 
   React.useEffect(() => {
     async function fetchInitialData() {
       setIsLoadingInitialData(true);
       try {
-        const [templateList, commentaryOpts, config, multiOpts, imgConfigs] = await Promise.all([
+        const [templateList, commentaryOpts, config, multiOpts] = await Promise.all([
           listTemplates(),
           getCommentaryOptions(),
           getExtractionConfig(),
           getMultiOptions(),
-          getImageOptions(),
         ]);
         
         const loadedJsonStructure = JSON.parse(config.jsonStructure);
@@ -383,13 +359,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         form.setValue('multiOptionSelections', initialSelections);
         form.setValue('multiOptionBriefs', initialBriefs);
 
-        setImageConfigs(imgConfigs);
-        const initialImages: Record<string, File[] | null> = {};
-        imgConfigs.forEach(config => {
-          initialImages[config.placeholder] = null;
-        });
-        form.setValue('images', initialImages);
-
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load initial data', description: error.message });
       } finally {
@@ -422,28 +391,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         });
       }
 
-      // Prepare image data for backend
-      let validImages: { placeholder: string; imageDataUri: string; width: number; height: number; }[] = [];
-      if (values.images && Object.keys(values.images).length > 0) {
-        const imagesToUpload = await Promise.all(
-          Object.entries(values.images)
-            .filter(([, files]) => files && files.length > 0)
-            .map(async ([placeholder, files]) => {
-              if (!files || files.length === 0) return null;
-              const imageDataUri = await fileToDataUri(files[0]);
-              const config = imageConfigs.find(c => c.placeholder === placeholder);
-              return {
-                placeholder,
-                imageDataUri,
-                width: config?.width || 200,
-                height: config?.height || 150,
-              };
-            })
-        );
-        validImages = imagesToUpload.filter(Boolean) as { placeholder: string; imageDataUri: string; width: number; height: number; }[];
-      }
-
-
       const fullData = { 
         ...values.data, 
         commentary: values.commentary, 
@@ -456,15 +403,14 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       const result = await generateReportFromTemplate({
         templateFileName: values.templateFileName,
         data: fullData,
-        images: validImages,
       });
 
       toast({
-        title: 'Report Generated Successfully',
-        description: `Replaced ${result.replacementsCount} placeholders. Your download will begin shortly.`,
+        title: 'Text Replacement Complete',
+        description: `Replaced ${result.replacementsCount} placeholders. Proceeding to image replacement.`,
       });
       const debugValue = values.data?.Info?.['Instructed By'];
-      onReportGenerated(result.generatedDocxDataUri, result.replacementsCount, debugValue);
+      onReportGenerated(result.tempFileName, result.replacementsCount, debugValue);
 
     } catch (error: any) {
       console.error('Error generating report:', error);
@@ -751,56 +697,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         </div>
     );
   };
-
-  const renderImagesSection = () => {
-    if (isLoadingInitialData) {
-      return (
-        <div className="grid grid-cols-1 gap-6 pt-4 lg:grid-cols-2">
-            <Skeleton className="h-48 w-full" />
-            <Skeleton className="h-48 w-full" />
-        </div>
-      )
-    }
-
-    if (imageConfigs.length === 0) {
-      return (
-         <Alert variant="destructive" className="mt-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>No Configurations Found</AlertTitle>
-            <AlertDescription>
-              Please go to the "Manage Images" page to create at least one image configuration.
-            </AlertDescription>
-          </Alert>
-      );
-    }
-
-    return (
-      <div className="grid grid-cols-1 gap-x-6 gap-y-8 pt-4 lg:grid-cols-2">
-        {imageConfigs.map((config) => (
-          <FormField
-            key={config.id}
-            control={form.control}
-            name={`images.${config.placeholder}`}
-            render={({ field }) => (
-              <FormItem>
-                  <FileUploader
-                    label={`${config.cardName} (${config.width}x${config.height}px)`}
-                    value={field.value ?? null}
-                    onValueChange={field.onChange}
-                    options={{ accept: ACCEPTED_IMAGE_TYPES }}
-                    maxFiles={1}
-                  />
-                  <FormLabel className="text-xs text-muted-foreground">
-                    Placeholder: <code className="bg-muted px-1 py-0.5 rounded-sm">{config.placeholder}</code>
-                  </FormLabel>
-                  <FormMessage />
-              </FormItem>
-            )}
-          />
-        ))}
-      </div>
-    );
-  }
   
   const handleCopy = async (text: string) => {
     try {
@@ -1018,7 +914,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       <CardHeader>
         <CardTitle>2. Review & Edit Extracted Data</CardTitle>
         <CardDescription>
-          Review the data, make corrections, and select a template to generate the final report.
+          Review the data, make corrections, and select a template to generate the text-only report.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -1062,7 +958,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     />
 
                     <Tabs defaultValue={defaultTab}>
-                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-8">
+                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-7">
                         {tabKeys.map(key => (
                         <TabsTrigger key={key} value={key}>
                             {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
@@ -1072,7 +968,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                         <TabsTrigger value="commentary">Commentary</TabsTrigger>
                         <TabsTrigger value="multiOption">Multi Option</TabsTrigger>
                         <TabsTrigger value="constructChattels">Construct/Chattels</TabsTrigger>
-                        <TabsTrigger value="images">Images</TabsTrigger>
                     </TabsList>
 
                     {tabKeys.map(key => (
@@ -1093,20 +988,17 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                      <TabsContent value="constructChattels">
                         {renderConstructChattelsSection()}
                     </TabsContent>
-                    <TabsContent value="images">
-                        {renderImagesSection()}
-                    </TabsContent>
                     </Tabs>
 
                     <div className="flex justify-between pt-4">
                     <Button type="button" variant="outline" onClick={onBack}>
-                        Back
+                        Back to Start
                     </Button>
                     <Button type="submit" disabled={isGenerating || templates.length === 0}>
                         {isGenerating ? (
                         <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</>
                         ) : (
-                        'Generate Final Report'
+                        'Next: Replace Images'
                         )}
                     </Button>
                     </div>

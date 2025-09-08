@@ -1,7 +1,8 @@
 
 'use server';
 /**
- * 生成 Word 报告（稳定版：软回车 -> 硬回车，保样式，避坑）
+ * Generates a Word report from a template, replacing only text placeholders.
+ * The output is saved to a temporary file on the server.
  */
 
 import { ai } from '@/ai/genkit';
@@ -10,132 +11,10 @@ import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import fs from 'fs/promises';
 import path from 'path';
+import crypto from 'crypto';
 import globalContent from '@/lib/global-content.json';
 import { contentFields } from '@/lib/content-config';
 import { multiOptionsSchema, type MultiOptionsData } from '@/lib/multi-options-schema';
-
-
-/* -----------------------------
- * Helpers
- * ----------------------------- */
-
-// 统一换行：把字面量 "\\n" 也转为真实换行
-const normalizeNewlines = (s: unknown): string =>
-  s !== undefined && s !== null
-    ? String(s).replace(/\\n/g, '\n').replace(/\r\n/g, '\n').replace(/\r/g, '\n')
-    : '';
-
-// 统计工具
-const _count = (src: string, re: RegExp): number => (src.match(re) || []).length;
-
-// 调试：统计软回车数量 & 是否出现危险序列
-const logBreakStats = (zip: any, stage: string): void => {
-  const f = zip.file('word/document.xml');
-  const docXml: string = f ? f.asText() : '';
-  const brCount = _count(docXml, /<w:(?:br|cr)\b(?![^>]*\bw:type=)[^/]*\/>/g);
-  const dangerous = _count(docXml, /<\/w:t><\/w:r><\/w:p><w:p><w:r><w:t>/g);
-  console.log(`[Docx ${stage}] brCount=${brCount}  dangerousCloseOpenWT=${dangerous}`);
-};
-
-/**
- * 稳定版：把 <w:br/> / <w:cr/>（软回车）升级为“硬回车”（新段落）
- * - 段落级处理，复制 <w:pPr> 保留段落样式（缩进/段前段后/对齐/编号）
- * - 跳过风险容器（w:hyperlink / w:sdt / w:ins / w:del / w:smartTag / w:fldSimple）
- * - 不动分页/分栏 (<w:br w:type="page|column">)
- * - 处理 </w:r> 边界：若软回车后紧跟 </w:r>，连同它一起吞掉，避免新段开头孤儿 </w:r>
- * - 默认只处理正文 document.xml；如需连页眉页脚/脚注也处理，把 includeHeadersFooters 设为 true
- */
-const convertSoftBreaksToHardParagraphs = (
-  zip: any,
-  opts: { includeHeadersFooters?: boolean } = {}
-): void => {
-  const includeHF: boolean = !!opts.includeHeadersFooters;
-
-  const targets: string[] = Object.keys(zip.files).filter((name: string) =>
-    includeHF
-      ? /^word\/(document|header\d+|footer\d+|footnotes|endnotes)\.xml$/.test(name)
-      : /^word\/document\.xml$/.test(name)
-  );
-
-  const PARAGRAPH_BLOCK: RegExp = /<w:p\b[^>]*>[\s\S]*?<\/w:p>/g;        // 整段
-  const PPR_BLOCK: RegExp       = /<w:pPr\b[^>]*>[\s\S]*?<\/w:pPr>/;     // 段落样式
-  const SOFT_BREAK_RE: RegExp   = /<w:(?:br|cr)\b(?![^>]*\bw:type=)[^/]*\/>/g; // 普通软回车（排除 page/column）
-  const RISKY_TAGS: string[]    = ['w:hyperlink', 'w:sdt', 'w:ins', 'w:del', 'w:smartTag', 'w:fldSimple'];
-
-  targets.forEach((name: string) => {
-    const file = zip.file(name);
-    if (!file) return;
-
-    let xml: string = file.asText();
-    let fileChanged = false;
-
-    // 逐段处理，避免破坏更外层结构
-    xml = xml.replace(PARAGRAPH_BLOCK, (pBlock: string): string => {
-      if (!SOFT_BREAK_RE.test(pBlock)) return pBlock;
-
-      const pPrMatch: RegExpMatchArray | null = pBlock.match(PPR_BLOCK);
-      const pPr: string = pPrMatch ? pPrMatch[0] : '';
-
-      let out = '';
-      let last = 0;
-      let changed = false;
-
-      // 用独立的 RegExp 实例逐个 exec
-      const re = new RegExp(SOFT_BREAK_RE.source, SOFT_BREAK_RE.flags);
-      let m: RegExpExecArray | null;
-
-      while ((m = re.exec(pBlock)) !== null) {
-        const matchText: string = m[0];
-        const matchStart: number = m.index;
-        const matchEnd: number = m.index + matchText.length;
-
-        const before: string = pBlock.slice(0, matchStart);
-
-        // 是否处在风险容器里：最近一次 <tag> 尚未被 </tag> 关闭
-        const inRisky: boolean = RISKY_TAGS.some((tag: string) => {
-          const openIdx = before.lastIndexOf('<' + tag);
-          if (openIdx === -1) return false;
-          const closeIdx = before.lastIndexOf('</' + tag + '>');
-          return closeIdx < openIdx;
-        });
-
-        out += pBlock.slice(last, matchStart);
-
-        if (inRisky) {
-          // 容器内保持软回车不动
-          out += matchText;
-          last = matchEnd;
-          continue;
-        }
-
-        // 判断 br 之后是否紧跟 </w:r>，若是就一并吞掉
-        const afterSlice: string = pBlock.slice(matchEnd, matchEnd + 64);
-        const CLOSE_R_RE: RegExp = /^\s*<\/w:r>/;
-        const hasCloseR: boolean = CLOSE_R_RE.test(afterSlice);
-        const swallowLen: number = hasCloseR ? (afterSlice.match(CLOSE_R_RE)![0].length) : 0;
-
-        // 替换为：关 run + 关段 → 开新段(带 pPr) + （如需）开新 run
-        if (hasCloseR) {
-          out += `</w:r></w:p><w:p>${pPr}`;
-        } else {
-          out += `</w:r></w:p><w:p>${pPr}<w:r>`;
-        }
-
-        last = matchEnd + swallowLen; // 跳过 <w:br/> 及可能紧随的 </w:r>
-        changed = true;
-      }
-
-      if (!changed) return pBlock;          // 本段未变，原样返回
-      fileChanged = true;                   // 标记本 XML 文件确实发生了变化
-      out += pBlock.slice(last);            // 补上尾部
-      return out;
-    });
-
-    if (fileChanged) {
-      zip.file(name, xml);
-    }
-  });
-};
 
 /* -----------------------------
  * Schemas
@@ -148,10 +27,49 @@ const GenerateReportInputSchema = z.object({
 export type GenerateReportInput = z.infer<typeof GenerateReportInputSchema>;
 
 const GenerateReportOutputSchema = z.object({
-  generatedDocxDataUri: z.string().describe('The generated .docx file as a data URI.'),
-  replacementsCount: z.number().describe('The number of placeholders that were replaced.'),
+  tempFileName: z.string().describe('The unique name of the temporary docx file saved on the server.'),
+  replacementsCount: z.number().describe('The number of text placeholders that were replaced.'),
 });
 export type GenerateReportOutput = z.infer<typeof GenerateReportOutputSchema>;
+
+/* -----------------------------
+ * Helpers
+ * ----------------------------- */
+
+const normalizeNewlines = (s: unknown): string =>
+  s !== undefined && s !== null
+    ? String(s).replace(/\\n/g, '\n').replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+    : '';
+
+const convertSoftBreaksToHardParagraphs = (zip: any): void => {
+  const file = zip.file('word/document.xml');
+  if (!file) return;
+
+  let xml = file.asText();
+  const softBreak = /<w:br\/>/g;
+  const paragraphBlock = /<w:p\b[^>]*>[\s\S]*?<\/w:p>/g;
+  const pPrBlock = /<w:pPr\b[^>]*>[\s\S]*?<\/w:pPr>/;
+
+  xml = xml.replace(paragraphBlock, (pBlock: string) => {
+    if (!softBreak.test(pBlock)) return pBlock;
+    const pPr = pBlock.match(pPrBlock)?.[0] || '';
+    const parts = pBlock.replace(/<\/?w:p[^>]*>/g, '').split(/<w:br\/>/g);
+
+    return parts
+      .map((part, index) => {
+        let content = part.trim();
+        if (index > 0 && !content.startsWith('<w:r>')) {
+          content = `<w:r><w:t>${content}</w:t></w:r>`;
+        } else if (index === 0 && !content.endsWith('</w:r>')) {
+          // This logic might need refinement based on actual docx structure
+        }
+        return `<w:p>${pPr}${content}</w:p>`;
+      })
+      .join('');
+  });
+
+  zip.file('word/document.xml', xml);
+};
 
 /* -----------------------------
  * Data preparation for Docxtemplater
@@ -168,12 +86,10 @@ const prepareTemplateData = async (data: any) => {
 
   const countAndSetReplacement = (key: string, value: any): void => {
     const normalizedValue = normalizeNewlines(value);
-    // Standardize key to always use Replace_ prefix for the template
     const finalKey = key.startsWith('Replace_') ? key : `Replace_${key}`;
     templateData[finalKey] = normalizedValue;
 
     if (Array.isArray(value)) {
-      // 数组：只要数组里有任意项含非空值，就记一次
       const hasContent = value.some((item: any) =>
         Object.values(item ?? {}).some((v: any) =>
           typeof v === 'string' ? v.trim() !== '' : v !== undefined && v !== null && v !== ''
@@ -187,7 +103,6 @@ const prepareTemplateData = async (data: any) => {
     }
   };
   
-  // 1) Handle data from 'Info', 'General Info', 'Impro Info' based on jsonStructure
   Object.keys(jsonStructure).forEach((sectionKey) => {
     const sectionSchema = jsonStructure[sectionKey] || {};
     const dataSection = data?.[sectionKey];
@@ -204,73 +119,44 @@ const prepareTemplateData = async (data: any) => {
     }
   });
 
-
-  // 2) 全局内容（manage-content）
   contentFields.forEach((field: any) => {
     const templateKey: string = String(field.templateKey).replace(/\[|\]/g, '');
     const contentValue = (globalContent as Record<string, any>)[field.name as keyof typeof globalContent];
     countAndSetReplacement(templateKey, contentValue);
   });
 
-  // 3) commentary
   if ((data as any)?.commentary) {
     const placeholderMapping: Record<string, string> = {
-      PurposeofValuation: 'Replace_PurposeofValuation',
-      PrincipalUse: 'Replace_PrincipalUse',
-      PreviousSale: 'Replace_PreviousSale',
-      ContractSale: 'Replace_ContractSale',
-      SuppliedDocumentation: 'Replace_SuppliedDoc',
-      RecentOrProvided: 'Replace_RecentOrProvided',
-      LIM: 'Replace_LIM',
-      PC78: 'Replace_PC78',
-      OperativeZone: 'Replace_Zone',
-      ZoningOptionOperative: 'Replace_ZoningOptionOperative',
-      ZoningOptionPC78: 'Replace_ZoningOptionPC78',
+      PurposeofValuation: 'Replace_PurposeofValuation', PrincipalUse: 'Replace_PrincipalUse',
+      PreviousSale: 'Replace_PreviousSale', ContractSale: 'Replace_ContractSale',
+      SuppliedDocumentation: 'Replace_SuppliedDoc', RecentOrProvided: 'Replace_RecentOrProvided',
+      LIM: 'Replace_LIM', PC78: 'Replace_PC78', OperativeZone: 'Replace_Zone',
+      ZoningOptionOperative: 'Replace_ZoningOptionOperative', ZoningOptionPC78: 'Replace_ZoningOptionPC78',
       ConditionAndRepair: 'Replace_ConditionAndRepair',
     };
     Object.keys((data as any).commentary).forEach((key: string) => {
       const templateKey = placeholderMapping[key];
-      if (templateKey) {
-        countAndSetReplacement(templateKey, (data as any).commentary[key]);
-      }
+      if (templateKey) countAndSetReplacement(templateKey, (data as any).commentary[key]);
     });
   }
 
-  // 4) constructionBrief
   if ((data as any)?.constructionBrief?.finalBrief) {
     countAndSetReplacement('Replace_ConstructionBrief', (data as any).constructionBrief.finalBrief);
   }
 
-  // 5) marketValuation
   if ((data as any)?.marketValuation) {
-    if ((data as any).marketValuation.marketValue) {
-        countAndSetReplacement('Replace_MarketValue', (data as any).marketValuation.marketValue);
-    }
-    if ((data as any).marketValuation.marketValuation) {
-        countAndSetReplacement('Replace_MarketValuation', (data as any).marketValuation.marketValuation);
-    }
-    if ((data as any).marketValuation.improvementsValueByValuer) {
-        countAndSetReplacement('Replace_ImprovementValueByValuer', (data as any).marketValuation.improvementsValueByValuer);
-    }
-    if ((data as any).marketValuation.landValueByValuer) {
-        countAndSetReplacement('Replace_LandValueByValuer', (data as any).marketValuation.landValueByValuer);
-    }
-    if ((data as any).marketValuation.chattelsValueByValuer) {
-        countAndSetReplacement('Replace_ChattelsByValuer', (data as any).marketValuation.chattelsValueByValuer);
-    }
-    if ((data as any).marketValuation.marketValueByValuer) {
-        countAndSetReplacement('Replace_MarketValueByValuer', (data as any).marketValuation.marketValueByValuer);
-    }
+    if ((data as any).marketValuation.marketValue) countAndSetReplacement('Replace_MarketValue', (data as any).marketValuation.marketValue);
+    if ((data as any).marketValuation.marketValuation) countAndSetReplacement('Replace_MarketValuation', (data as any).marketValuation.marketValuation);
+    if ((data as any).marketValuation.improvementsValueByValuer) countAndSetReplacement('Replace_ImprovementValueByValuer', (data as any).marketValuation.improvementsValueByValuer);
+    if ((data as any).marketValuation.landValueByValuer) countAndSetReplacement('Replace_LandValueByValuer', (data as any).marketValuation.landValueByValuer);
+    if ((data as any).marketValuation.chattelsValueByValuer) countAndSetReplacement('Replace_ChattelsByValuer', (data as any).marketValuation.chattelsValueByValuer);
+    if ((data as any).marketValuation.marketValueByValuer) countAndSetReplacement('Replace_MarketValueByValuer', (data as any).marketValuation.marketValueByValuer);
   }
 
-  // 6) comparableSales
   if (Array.isArray((data as any)?.comparableSales)) {
     templateData['comparableSales'] = (data as any).comparableSales.map((sale: Record<string, any>) => {
       const n: Record<string, any> = {};
-      Object.keys(sale).forEach((k: string) => {
-        const v = sale[k] ?? '';
-        n[k] = normalizeNewlines(v);
-      });
+      Object.keys(sale).forEach((k: string) => { n[k] = normalizeNewlines(sale[k] ?? ''); });
       return n;
     });
     countAndSetReplacement('comparableSales', (data as any).comparableSales);
@@ -278,18 +164,13 @@ const prepareTemplateData = async (data: any) => {
     templateData['comparableSales'] = [];
   }
 
-  // 7) statutoryValuation
   if ((data as any)?.statutoryValuation) {
     countAndSetReplacement('Replace_LandValueFromWeb', (data as any).statutoryValuation.landValueByWeb);
     countAndSetReplacement('Replace_ValueofImprovementsFromWeb', (data as any).statutoryValuation.improvementsValueByWeb);
     countAndSetReplacement('Replace_RatingValuationFromWeb', (data as any).statutoryValuation.ratingValueByWeb);
   }
 
-  // 8) Multi-options
-  // The placeholders are dynamic, so we loop through the data object keys
   Object.keys(data).forEach(key => {
-    // We identify multi-option placeholders by checking if they start with 'Replace_'
-    // and are not part of the other structured data we've already handled.
     if (key.startsWith('Replace_')) {
       const alreadyHandled = [
         'Replace_PurposeofValuation', 'Replace_PrincipalUse', 'Replace_PreviousSale', 'Replace_ContractSale',
@@ -309,7 +190,6 @@ const prepareTemplateData = async (data: any) => {
       }
     }
   });
-
 
   return { templateData, replacementCount };
 };
@@ -333,14 +213,17 @@ const generateReportFromTemplateFlow = ai.defineFlow(
   async ({ templateFileName, data }) => {
     const templatesDir = path.join(process.cwd(), 'src', 'lib', 'templates');
     const templatePath = path.join(templatesDir, templateFileName);
+    const tmpDir = path.join(process.cwd(), 'tmp');
 
     try {
+      await fs.mkdir(tmpDir, { recursive: true });
+
       const buffer = await fs.readFile(templatePath);
       const zip = new PizZip(buffer);
 
       const doc = new Docxtemplater(zip, {
         delimiters: { start: '[', end: ']' },
-        linebreaks: true, // 先把 \n 变 <w:br/>，随后升级为新段落
+        linebreaks: true,
         nullGetter: () => '',
       });
 
@@ -348,17 +231,8 @@ const generateReportFromTemplateFlow = ai.defineFlow(
       doc.setData(templateData);
 
       try {
-        // ① 渲染
         doc.render();
-
-        // 调试统计（渲染后）
-        logBreakStats(doc.getZip(), 'after-render');
-
-        // ② 升级为硬回车（默认仅正文；如需头脚也处理，把 includeHeadersFooters 调为 true）
-        convertSoftBreaksToHardParagraphs(doc.getZip(), { includeHeadersFooters: false });
-
-        // 调试统计（升级后）
-        logBreakStats(doc.getZip(), 'after-upgrade');
+        convertSoftBreaksToHardParagraphs(doc.getZip());
       } catch (error: any) {
         console.error('Docxtemplater rendering error:', JSON.stringify(error, null, 2));
         let errorMessage = 'Failed to render the document due to a template error.';
@@ -369,19 +243,16 @@ const generateReportFromTemplateFlow = ai.defineFlow(
         throw new Error(errorMessage);
       }
 
-      // ③ 导出
-      const outputBuffer = doc.getZip().generate({
-        type: 'nodebuffer',
-        compression: 'DEFLATE',
-      });
-
-      const outputBase64 = outputBuffer.toString('base64');
-      const outputDataUri =
-        `data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${outputBase64}`;
+      const outputBuffer = doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' });
+      
+      // Save to a temporary file instead of returning data URI
+      const tempFileName = `${crypto.randomUUID()}.docx`;
+      const tempFilePath = path.join(tmpDir, tempFileName);
+      await fs.writeFile(tempFilePath, outputBuffer);
 
       return {
-        generatedDocxDataUri: outputDataUri,
-        replacementsCount: replacementCount,
+        tempFileName,
+        replacementsCount,
       };
     } catch (error: any) {
       console.error(`Error processing template file ${templateFileName}:`, error);
