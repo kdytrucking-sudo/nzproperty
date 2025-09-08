@@ -198,15 +198,51 @@
     "cardName": "Zoning Option Operative",
     "placeholder": "[Replace_ZoningOptionOperative]",
     "options": [
-      { "id": "c10-opt1", "label": "Large Lot", "option": "Residential – Large Lot " },
-      { "id": "c10-opt2", "label": "Mixed Housing Suburban", "option": "Residential – Mixed Housing Suburban" },
-      { "id": "c10-opt3", "label": "Mixed Housing Urban", "option": "Residential – Mixed Housing Urban " },
-      { "id": "c10-opt4", "label": "Single House", "option": "Residential – Single House " },
-      { "id": "c10-opt5", "label": "THAB", "option": "Residential – Terrace Housing and Apartment Buildings" },
-      { "id": "c10-opt6", "label": "Mixed Use", "option": "Business - Mixed Use" },
-      { "id": "c10-opt7", "label": "Neighbourhood Centre", "option": "Business - Neighbourhood Centre zone" },
-      { "id": "c10-opt8", "label": "Town Centre", "option": "Business - Town Centre" },
-      { "id": "c10-opt9", "label": "Informal Recreation", "option": "Open Space - Informal Recreation" }
+      {
+        "id": "c10-opt1",
+        "label": "Large Lot",
+        "option": "Residential – Large Lot "
+      },
+      {
+        "id": "c10-opt2",
+        "label": "Mixed Housing Suburban",
+        "option": "Residential – Mixed Housing Suburban"
+      },
+      {
+        "id": "c10-opt3",
+        "label": "Mixed Housing Urban",
+        "option": "Residential – Mixed Housing Urban "
+      },
+      {
+        "id": "c10-opt4",
+        "label": "Single House",
+        "option": "Residential – Single House "
+      },
+      {
+        "id": "c10-opt5",
+        "label": "THAB",
+        "option": "Residential – Terrace Housing and Apartment Buildings"
+      },
+      {
+        "id": "c10-opt6",
+        "label": "Mixed Use",
+        "option": "Business - Mixed Use"
+      },
+      {
+        "id": "c10-opt7",
+        "label": "Neighbourhood Centre",
+        "option": "Business - Neighbourhood Centre zone"
+      },
+      {
+        "id": "c10-opt8",
+        "label": "Town Centre",
+        "option": "Business - Town Centre"
+      },
+      {
+        "id": "c10-opt9",
+        "label": "Informal Recreation",
+        "option": "Open Space - Informal Recreation"
+      }
     ]
   },
   {
@@ -214,12 +250,36 @@
     "cardName": "Zoning Option PC78",
     "placeholder": "[Replace_ZoningOptionPC78]",
     "options": [
-      { "id": "c11-opt1", "label": "Mixed Housing Suburban", "option": "Residential – Mixed Housing Suburban" },
-      { "id": "c11-opt2", "label": "Mixed Housing Urban", "option": "Residential – Mixed Housing Urban " },
-      { "id": "c11-opt3", "label": "THAB", "option": "Residential – Terrace Housing and Apartment Buildings" },
-      { "id": "c11-opt4", "label": "No Proposed Zone", "option": "No Proposed Zone" },
-      { "id": "c11-opt5", "label": "LDR", "option": "Low-Density Residential (LDR) Zone" },
-      { "id": "c11-opt6", "label": "MDRS", "option": "Medium Density Residential Standards (MDRS)" }
+      {
+        "id": "c11-opt1",
+        "label": "Mixed Housing Suburban",
+        "option": "Residential – Mixed Housing Suburban"
+      },
+      {
+        "id": "c11-opt2",
+        "label": "Mixed Housing Urban",
+        "option": "Residential – Mixed Housing Urban "
+      },
+      {
+        "id": "c11-opt3",
+        "label": "THAB",
+        "option": "Residential – Terrace Housing and Apartment Buildings"
+      },
+      {
+        "id": "c11-opt4",
+        "label": "No Proposed Zone",
+        "option": "No Proposed Zone"
+      },
+      {
+        "id": "c11-opt5",
+        "label": "LDR",
+        "option": "Low-Density Residential (LDR) Zone"
+      },
+      {
+        "id": "c11-opt6",
+        "label": "MDRS",
+        "option": "Medium Density Residential Standards (MDRS)"
+      }
     ]
   },
   {
@@ -227,27 +287,104 @@
     "cardName": "Condition & Repair",
     "placeholder": "[Replace_ConditionAndRepair]",
     "options": [
-      { "id": "c12-opt1", "label": "New and good", "option": "a. The property is presented to a new standard and good condition, both externally and internally. " },
-      { "id": "c12-opt2", "label": "Tidy interior, average exterior", "option": "b. The property is internally presented in tidy condition, with the exterior maintained to an average standard. " },
-      { "id": "c12-opt3", "label": "Good quality, new standard", "option": "c. The property is presented to a good quality, new standard, both externally and internally. d. Both externally and internally, the subject property is presented in good condition. " }
+      {
+        "id": "c12-opt1",
+        "label": "New and good",
+        "option": "a. The property is presented to a new standard and good condition, both externally and internally. "
+      },
+      {
+        "id": "c12-opt2",
+        "label": "Tidy interior, average exterior",
+        "option": "b. The property is internally presented in tidy condition, with the exterior maintained to an average standard. "
+      },
+      {
+        "id": "c12-opt3",
+        "label": "Good quality, new standard",
+        "option": "c. The property is presented to a good quality, new standard, both externally and internally. d. Both externally and internally, the subject property is presented in good condition. "
+      }
     ]
   },
   {
     "id": "c13-site-desc-1",
     "cardName": "Site Description 1st things",
     "placeholder": "[Replace_SiteDescription1]",
-    "options": []
+    "options": [
+      {
+        "id": "48173f3c-57ea-4931-a4d1-f7c0a2d0f9a5",
+        "label": "Freehold 1 : As shown above, the property currentl...",
+        "option": "Freehold 1 : As shown above, the property currently comprises an irregular shaped site of approximately 1,070 sm. It has a narrow road frontage off Mander Place of around 3.2 metres, providing vehicle access to the site. The northern boundary measures approximately 46.4 metres, while the southern boundary is around 25.7 metres. The eastern boundary extends approximately 28.9 metres, and the southwestern boundary measures roughly 40 metres. Contourwise, the site is generally level."
+      },
+      {
+        "id": "36beab52-cc9e-4154-b9f6-cd136696f11e",
+        "label": "\"Freehold - Townhouse:  As shown above, the subjec...",
+        "option": "\"Freehold - Townhouse:  As shown above, the subject Lot 7 comprises a rectangular-shaped site of approximately 59 sm, with an average width of 4.05 metres and a depth of about 14.66 metres. It is positioned within a relatively large townhouse development comprising 63 lots.\nThe lot includes a designated car park marked “FE” and is associated with Lot 100 (3,168 sm), which provides vehicular and pedestrian access from Great North Road. The ownership includes a 1/62 share in Lot 100.\""
+      },
+      {
+        "id": "c792bf83-0928-4804-ad62-f7e8fb231755",
+        "label": "\"Freehold - Townhouse 2: As shown above, the subje...",
+        "option": "\"Freehold - Townhouse 2: As shown above, the subject Lot 2 is positioned within a four-lot development, occupying the northern corner of the site with frontage to East Coast Road. The site is near-rectangular in shape, comprising approximately 166 sm, with a frontage to East Coast Road of around 14.97 metres and a depth along the north-eastern boundary of approximately 10.31 metres. In addition, the subject lot has a direct pedestrian access off East Coast Road.\nThe lot is associated with Lot 100 (78 sm), which provides shared vehicular and pedestrian access from Maxwelton Drive. Lot 100 is held in equal shares by the owners of Lots 1–4. \nIn terms of contour, the development is level throughout, sitting slightly below the road level of East Coast Road. The site is also subject to various proposed rights of way and easements relating primarily to use of the jointly owned access lot and shared services easements, which are set down as follows:\""
+      },
+      {
+        "id": "0c1b96f2-1e41-48b7-9a19-ed0a8b4d599d",
+        "label": "\"Cross Lease:  As shown above, the subject propert...",
+        "option": "\"Cross Lease:  As shown above, the subject property, Flat 2, is positioned at the rear of a cross-lease site with a total area of approximately 1,214 sm. Access to the property is via a shared driveway, marked as “Common Area,” measuring some 35 metres from the street frontage. The subject property occupies the exclusive land use area “C,” with an estimated site area of approximately 530 sm. The site has an eastern boundary / width of approximately 16.4 metres and an average depth of around 32 metres, with the dwelling positioned towards the front of the site.\nContourwise, the site falls steeply towards the rear.\""
+      },
+      {
+        "id": "c5e62395-eb3f-46af-b61e-bd5a1a0eb05b",
+        "label": "\"Unit Title : As shown above, the subject unit occ...",
+        "option": "\"Unit Title : As shown above, the subject unit occupies an eastern end position within the building block and benefits from having the largest courtyard area in the development. It has one designated car park, marked “C4”, located within the parking area positioned at the front of the site along Don Croot Street. The common property for the development comprises the vehicle and pedestrian accessways together with manoeuvrability areas.\nContour-wise, the development moderately rises in an east-to-west direction.\""
+      }
+    ]
   },
   {
     "id": "c14-site-desc-2",
     "cardName": "Site Description 2nd things",
     "placeholder": "[Replace_SiteDescription2]",
-    "options": []
+    "options": [
+      {
+        "id": "ad5158ac-8a7b-4e32-9c7a-2d75110bc8b0",
+        "label": "In terms of catchments and hydrology, there are no...",
+        "option": "In terms of catchments and hydrology, there are no overland flow paths traversing the site, and it is not identified as flood prone."
+      },
+      {
+        "id": "bce369e3-33d7-43be-a7e4-b1f4c22d3a73",
+        "label": "In terms of catchments and hydrology, overland flo...",
+        "option": "In terms of catchments and hydrology, overland flow paths traverse the north-eastern corner of the lot; however, the dwelling itself does not appear to be directly affected."
+      },
+      {
+        "id": "48cc7bb0-3da7-4000-9647-997beff093e8",
+        "label": "In terms of catchments and hydrology, an overland ...",
+        "option": "In terms of catchments and hydrology, an overland flow path travers the rear of the development."
+      }
+    ]
   },
   {
     "id": "c15-sales-evidence",
     "cardName": "Conclusion on Sales Evidence",
     "placeholder": "[Replace_ConclusionOnSalesEvidence]",
-    "options": []
+    "options": [
+      {
+        "id": "8faa8d72-3e02-4814-883b-a88e7a8b1d15",
+        "label": "\"GENERAL FREEHOLD : The subject property comprises...",
+        "option": "\"GENERAL FREEHOLD : The subject property comprises a freestanding dwelling originally constructed circa 1980s, now presented in modest to average condition with dated fitout, and would benefit from modernisation/renovation. The dwelling provides three bedrooms and one bathroom, together with a detached double garage.\nIn a broader context, comparable properties with similar characteristics have transacted in the range of $670,000 to $835,000 between October 2024 and June 2025, with an average sale price of approximately $771,000. These properties provide floor areas between 80 sm and 140 sm (averaging 123 sm) and are situated on sites ranging from 363 sm to 922 sm, with an average site size of 617 sm.\nOn balance, and taking into account the physical attributes of the property including its age, size, condition, views, and aspect, together with also allowing for the prevailing market conditions, we believe the subject property would warrant a market value ranging between $740,000 – $780,000, and we deem it appropriate in this instance to adopt the mid-point of this range at a figure of $760,000.\""
+      },
+      {
+        "id": "66f03c09-9750-477c-8bcd-c2364e2d3bad",
+        "label": "\"SMALL FREEHOLD LAND / CROSS LEASE: Given that the...",
+        "option": "\"SMALL FREEHOLD LAND / CROSS LEASE: Given that the subject property comprises a standalone dwelling situated on a freehold site (with an approximate usable land area of 345 sm), we have considered comparable properties of a similar nature, including properties of freehold and cross lease tenure, with focus on those with freehold tenure.\nIn a broader sense, the surrounding properties having similar features have sold in the range of $855,000 to $1,050,000 between October 2024 and July 2025, with an average sale price of $957,000. These properties have floor areas ranging from 92 sm to 180 sm, with an average of 120 sm – which is comparable to the subject property.\nOn balance, and taking into account the physical attributes of the property including its age, size, condition, views, and aspect, together with also allowing for the prevailing market conditions, we believe the subject property would warrant a market value ranging between $975,000 – $1,025,000, and we deem it appropriate in this instance to adopt the mid-point of this range at a figure of $1,000,000.\""
+      },
+      {
+        "id": "dab0d70e-d25d-4297-94aa-7e29a2e27b8d",
+        "label": "\"FREEHOLD TOWNHOUSE: In assessing the market value...",
+        "option": "\"FREEHOLD TOWNHOUSE: In assessing the market value of the subject property, we have considered dwellings that sold and under contract within the subject development together with recently completed townhouse developments in the surrounding area, with emphasis on properties of comparable location, age, building size, and land area.\nThe comparable townhouses analysed range in size from 136 sm - 164 sm, with an average of approximately 146 sm, which is broadly in line with the subject. Site sizes range from 165 sm - 216 sm, with an average of around 177 sm. The analysed land and building rates vary from approximately $8,540 psm - $9,560 psm, with an average of about $8,890 psm. Generally, the lower end of this range reflects larger townhouse units, while the higher end relates to smaller dwellings.\nOf particular note, within the subject development the remaining three lots are either sold or currently under contract. Lot A and Lot C, which have identical configurations, floor areas, and similar land sizes, both occupy road-front positions. These have transacted or are under contract between May 2025 and the present at prices ranging from $1,255,000 - $1,300,000, reflecting analysed land and building rates of $8,840 psm - $9,570 psm.\nOn balance, and taking into account the physical attributes of the property including its age, size, condition, views, and aspect, together with also allowing for the prevailing market conditions, we believe the subject property would warrant a market value ranging between $1,250,000 – $1,290,000, and we deem it appropriate in this instance to adopt the mid-point of this range at a figure of $1,270,000, which reflects a land and building rate of approximately $8,950 psm, comfortably within the evidence range outlined above.\""
+      },
+      {
+        "id": "cce1ec46-a0a9-456d-aa95-7cef4ea70345",
+        "label": "\"UNIT TITLE : In assessing the market value of the...",
+        "option": "\"UNIT TITLE : In assessing the market value of the subject property, we have considered units that sold within the subject development together with comprable units in the surrounding area, with emphasis on properties of comparable location, age, building size, and land area.\nIn a broader market context, comparable properties with similar characteristics have transacted between $726,000 – $835,000 over the period October 2024 to July 2025, at an average sale price of approximately $777,000. These comparables provide floor areas ranging from 63 sm to 106 sm, with an average of 81 sm.\nOf particular note, two units within the subject development have recently sold. Lot 1, an end-positioned unit, sold in July 2025 for $775,000, while Lot 2, a middle unit with a smaller yard, sold in May 2025 for $726,000. These sales reflect analysed land and building rates of approximately $11,524 psm to $12,302 psm. Both units are considered inferior to the subject due to smaller yards and less favourable outlooks.\nOn balance, and taking into account the physical attributes of the property including its age, size, condition, views, and aspect, together with also allowing for the prevailing market conditions, we believe the subject property would warrant a market value ranging between $800,000 – $840,000, and we deem it appropriate in this instance to adopt the mid-point of this range at a figure of $820,000.\""
+      }
+    ]
   }
 ]
+
+    
