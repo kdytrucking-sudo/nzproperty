@@ -1,12 +1,12 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Save, TestTube2, AlertCircle } from 'lucide-react';
+import { Loader2, Save, TestTube2, ShieldX } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import * as React from 'react';
 import { FileUploader } from '@/components/file-uploader';
@@ -17,11 +17,6 @@ import { getExtractionConfig } from '@/ai/flows/get-extraction-config';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { getAiConfig } from '@/ai/flows/get-ai-config';
-import { saveAiConfig } from '@/ai/flows/save-ai-config';
-import { AIConfigSchema } from '@/lib/ai-config-schema';
 
 const ACCEPTED_FILE_TYPES = {
   'application/pdf': ['.pdf'],
@@ -42,7 +37,6 @@ const formSchema = z.object({
   extractionHints: z.string().min(1, 'Extraction hints are required.'),
   testPropertyTitlePdf: z.array(z.instanceof(File)).min(1, 'Property Title PDF is required for testing.'),
   testBriefInformationPdf: z.array(z.instanceof(File)).min(1, 'Brief Information PDF is required for testing.'),
-  aiConfig: AIConfigSchema,
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -62,6 +56,7 @@ export default function JsonEditorPage() {
   const [isSaving, setIsSaving] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
   const [testResult, setTestResult] = React.useState<string | null>(null);
+  const [initialData, setInitialData] = React.useState<FormValues | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -71,23 +66,25 @@ export default function JsonEditorPage() {
   
   React.useEffect(() => {
     async function loadConfig() {
-        setIsLoading(true);
-        try {
-            const [extractionConfig, aiConfig] = await Promise.all([
-                getExtractionConfig(),
-                getAiConfig()
-            ]);
-            form.reset({
-                ...extractionConfig,
-                aiConfig,
-                testPropertyTitlePdf: [],
-                testBriefInformationPdf: [],
-            });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Failed to load configuration', description: error.message });
-        } finally {
-            setIsLoading(false);
-        }
+      setIsLoading(true);
+      try {
+        const config = await getExtractionConfig();
+        const initialFormValues = {
+          ...config,
+          testPropertyTitlePdf: [],
+          testBriefInformationPdf: [],
+        };
+        form.reset(initialFormValues);
+        setInitialData(initialFormValues);
+      } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to load configuration',
+          description: error.message,
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
     loadConfig();
   }, [form, toast]);
@@ -100,12 +97,8 @@ export default function JsonEditorPage() {
         if (!values.testPropertyTitlePdf?.[0] || !values.testBriefInformationPdf?.[0]) {
             throw new Error('PDF files are missing for the test.');
         }
-        
-        // Temporarily save configs for the test run if they are dirty
-        if (isDirty) {
-             await onSave(values, true);
-        }
 
+        // Run test with current form data, no need to save first
         const [propertyTitlePdfDataUri, briefInformationPdfDataUri] = await Promise.all([
             fileToDataUri(values.testPropertyTitlePdf[0]),
             fileToDataUri(values.testBriefInformationPdf[0]),
@@ -134,30 +127,36 @@ export default function JsonEditorPage() {
     }
   }
 
-  async function onSave(values: FormValues, isTestSave = false) {
+  async function onSave(values: FormValues) {
     setIsSaving(true);
     try {
-        await Promise.all([
-            saveExtractionConfig({ 
-                jsonStructure: values.jsonStructure,
-                systemPrompt: values.systemPrompt,
-                userPrompt: values.userPrompt,
-                extractionHintsTitle: values.extractionHintsTitle,
-                extractionHints: values.extractionHints,
-            }),
-            saveAiConfig(values.aiConfig)
-        ]);
-
-        if (!isTestSave) {
-            form.reset(values); // This resets the 'dirty' state
-            toast({ title: 'Configuration Saved', description: 'The AI will now use the new structure and prompts.' });
-        }
+      await saveExtractionConfig(values);
+      form.reset(values); // This resets the 'dirty' state
+      setInitialData(values); // Update initial data to prevent revert issues
+      toast({
+        title: 'Configuration Saved',
+        description: 'The AI will now use the new structure and prompts.',
+      });
     } catch (error: any) {
-        console.error('Failed to save:', error);
-        toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+      console.error('Failed to save:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Save Failed',
+        description: error.message,
+      });
     } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
+  }
+
+  function handleRevert() {
+      if(initialData) {
+          form.reset(initialData);
+          toast({
+              title: 'Changes Reverted',
+              description: 'Your changes have been discarded.'
+          });
+      }
   }
   
   if (isLoading) {
@@ -180,9 +179,9 @@ export default function JsonEditorPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="font-headline text-3xl font-bold text-foreground">AI Configuration</h1>
+        <h1 className="font-headline text-3xl font-bold text-foreground">AI Extraction Rules</h1>
         <p className="text-muted-foreground">
-          Edit and test the AI model, parameters, JSON structure and prompts. Your saved changes will be used globally.
+          Edit and test the JSON structure and prompts that the AI uses to extract data from documents. Your saved changes will be used globally.
         </p>
       </header>
       <main>
@@ -213,60 +212,12 @@ export default function JsonEditorPage() {
                       </CardContent>
                     </Card>
                 </div>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>AI Model Configuration</CardTitle>
-                        <CardDescription>Select the model and adjust its generation parameters.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                         <FormField
-                            control={form.control}
-                            name="aiConfig.model"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Model</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger><SelectValue placeholder="Select a model" /></SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="googleai/gemini-1.5-pro">Gemini 1.5 Pro (Recommended)</SelectItem>
-                                            <SelectItem value="googleai/gemini-1.5-flash">Gemini 1.5 Flash (Fast)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="aiConfig.temperature"
-                            render={({ field }) => (
-                               <FormItem>
-                                    <FormLabel>Temperature: {field.value}</FormLabel>
-                                    <FormControl>
-                                        <Slider
-                                            defaultValue={[field.value]}
-                                            onValueChange={(value) => field.onChange(value[0])}
-                                            max={1}
-                                            step={0.05}
-                                        />
-                                    </FormControl>
-                               </FormItem>
-                            )}
-                        />
-                        <div className="grid grid-cols-3 gap-4">
-                             <FormField control={form.control} name="aiConfig.topP" render={({ field }) => ( <FormItem> <FormLabel>Top P</FormLabel> <Input type="number" step="0.05" {...field} /> </FormItem> )} />
-                             <FormField control={form.control} name="aiConfig.topK" render={({ field }) => ( <FormItem> <FormLabel>Top K</FormLabel> <Input type="number" {...field} /> </FormItem> )} />
-                             <FormField control={form.control} name="aiConfig.maxOutputTokens" render={({ field }) => ( <FormItem> <FormLabel>Max Tokens</FormLabel> <Input type="number" {...field} /> </FormItem> )} />
-                        </div>
-                    </CardContent>
-                </Card>
               </div>
               <div className="space-y-6">
                 <Card>
                     <CardHeader>
                       <CardTitle>Test Center</CardTitle>
-                       <CardDescription>Upload files to test the extraction rules and prompts defined on the left.</CardDescription>
+                       <CardDescription>Upload files to test the extraction rules and prompts defined on the left. This does not use your saved settings until you click "Save Changes".</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <FormField control={form.control} name="testPropertyTitlePdf" render={() => (<Controller name="testPropertyTitlePdf" control={form.control} render={({field}) => (<FileUploader label="Test Property Title (PDF)" value={field.value} onValueChange={field.onChange} options={{ accept: ACCEPTED_FILE_TYPES }} maxFiles={1} />)} />)} />
@@ -305,6 +256,9 @@ export default function JsonEditorPage() {
                            Save your changes to make them available across the app.
                         </AlertDescription>
                         <div className="mt-4 flex gap-x-2 justify-end">
+                            <Button type="button" variant="outline" size="sm" onClick={handleRevert} className="bg-transparent border-destructive-foreground/50 text-destructive-foreground hover:bg-destructive-foreground/10 hover:text-destructive-foreground">
+                                <ShieldX className="mr-2 h-4 w-4"/> Revert
+                            </Button>
                             <Button type="button" variant="secondary" size="sm" disabled={isSaving} className="bg-destructive-foreground text-destructive hover:bg-destructive-foreground/90" onClick={() => onSave(form.getValues())}>
                                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4"/>}
                                 Save Changes

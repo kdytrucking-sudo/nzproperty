@@ -7,8 +7,8 @@
  * - ExtractPropertyDataOutput - The return type for the extractPropertyData function.
  */
 
-import { ai, getModelConfig } from '@/ai/genkit';
-import { z } from 'genkit';
+import {ai} from '@/ai/genkit';
+import {z} from 'genkit';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -20,17 +20,20 @@ async function getOutputSchema() {
 
     function createZodSchema(obj: any): z.ZodType<any> {
         if (Array.isArray(obj)) {
+            // This case might not be used with the new structure but is kept for safety
             return obj.length > 0 ? z.array(createZodSchema(obj[0])) : z.array(z.any());
         } else if (typeof obj === 'object' && obj !== null) {
             const shape: { [key: string]: z.ZodType<any> } = {};
             for (const key in obj) {
+                // Now we need to look deeper into the object to find the placeholder
                 if (typeof obj[key] === 'object' && obj[key] !== null && 'placeholder' in obj[key]) {
                     const fieldConfig = obj[key];
                     const description = `Extracted data for ${fieldConfig.label || key}`;
                     
+                    // Basic validation type handling
                     let zodType;
                     if (fieldConfig.validation?.type === 'number') {
-                        zodType = z.union([z.number(), z.string()]).describe(description);
+                        zodType = z.union([z.number(), z.string()]).describe(description); // Allow string to be flexible
                     } else {
                         zodType = z.string().describe(description);
                     }
@@ -38,11 +41,13 @@ async function getOutputSchema() {
                     shape[key] = zodType;
 
                 } else {
+                     // Handle nested objects that are not field definitions (if any)
                     shape[key] = createZodSchema(obj[key]);
                 }
             }
             return z.object(shape);
         }
+        // Fallback for any other type
         return z.any();
     }
     return createZodSchema(jsonObject);
@@ -66,21 +71,19 @@ export type ExtractPropertyDataInput = z.infer<typeof ExtractPropertyDataInputSc
 // The output type will be dynamic based on the schema
 export type ExtractPropertyDataOutput = z.infer<Awaited<ReturnType<typeof getOutputSchema>>>;
 
-
-let extractPropertyDataFlow: ((input: ExtractPropertyDataInput) => Promise<ExtractPropertyDataOutput>) | null = null;
-let isInitializing = false;
-
-// This function initializes the flow just once.
-async function initializeFlow() {
-    if (extractPropertyDataFlow || isInitializing) {
-        return;
-    }
-    isInitializing = true;
-
-    try {
-        const outputSchema = await getOutputSchema();
+// Exported function to be used by the client
+export async function extractPropertyData(input: ExtractPropertyDataInput): Promise<ExtractPropertyDataOutput> {
+  const outputSchema = await getOutputSchema();
+  const extractPropertyDataFlow = ai.defineFlow(
+    {
+      name: 'extractPropertyDataFlow',
+      inputSchema: ExtractPropertyDataInputSchema,
+      outputSchema: outputSchema,
+    },
+    async (flowInput) => {
         const jsonStructurePath = path.join(process.cwd(), 'src', 'lib', 'json-structure.json');
         const jsonFormat = await fs.readFile(jsonStructurePath, 'utf-8');
+
         const promptsPath = path.join(process.cwd(), 'src', 'lib', 'prompts.json');
         const promptsJson = await fs.readFile(promptsPath, 'utf-8');
         const prompts = JSON.parse(promptsJson);
@@ -103,8 +106,7 @@ ${jsonFormat}
 **Document 2 (Brief Information):**
 {{media url=briefInformationPdfDataUri}}
 `;
-        
-        // Define the prompt structure statically. The model and config are applied at runtime.
+
         const prompt = ai.definePrompt({
             name: 'extractPropertyDataPrompt',
             system: prompts.system_prompt,
@@ -113,49 +115,15 @@ ${jsonFormat}
             prompt: finalPrompt,
         });
 
-        // Define the flow structure statically.
-        extractPropertyDataFlow = ai.defineFlow(
-          {
-            name: 'extractPropertyDataFlow',
-            inputSchema: ExtractPropertyDataInputSchema,
-            outputSchema: outputSchema,
-          },
-          async (flowInput) => {
-            // Get the latest model configuration at the time of execution.
-            const modelConfig = await getModelConfig();
-            
-            const { output } = await prompt(flowInput, {
-                model: modelConfig.model,
-                config: {
-                    temperature: modelConfig.temperature,
-                    topP: modelConfig.topP,
-                    topK: modelConfig.topK,
-                    maxOutputTokens: modelConfig.maxOutputTokens,
-                },
-            });
+        const { output } = await prompt(flowInput);
 
-            if (!output) {
-              throw new Error('AI failed to extract data. The output was empty.');
-            }
+        if (!output) {
+          throw new Error('AI failed to extract data. The output was empty.');
+        }
 
-            return output;
-          }
-        );
-    } finally {
-        isInitializing = false;
+        return output;
     }
-}
+  );
 
-// Exported function to be used by the client
-export async function extractPropertyData(input: ExtractPropertyDataInput): Promise<ExtractPropertyDataOutput> {
-  // Ensure the flow is initialized before running it.
-  if (!extractPropertyDataFlow) {
-      await initializeFlow();
-  }
-
-  if (!extractPropertyDataFlow) {
-      throw new Error("Flow could not be initialized.");
-  }
-  
   return extractPropertyDataFlow(input);
 }
