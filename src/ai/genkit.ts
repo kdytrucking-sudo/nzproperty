@@ -1,57 +1,39 @@
 'use server';
 
-import {genkit, type ModelArgument} from 'genkit';
+import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {getAiConfig} from './flows/get-ai-config';
 import type {AIConfig} from '@/lib/ai-config-schema';
 
-let aiInstance: {
-    defineFlow: (options: any, fn: any) => any;
-    definePrompt: (options: any) => any;
-    generate: (options: any) => any;
-} | null = null;
+// Initialize Genkit synchronously. This is crucial for stability.
+// The model configuration will be applied dynamically at runtime.
+export const ai = genkit({
+  plugins: [googleAI()],
+});
 
-let aiConfig: AIConfig | null = null;
-
-async function getInitializedAi() {
-    if (!aiInstance) {
-        aiConfig = await getAiConfig();
-        const instance: ModelArgument<any> = genkit({
-            plugins: [googleAI()],
-            model: aiConfig.model,
-        });
-        aiInstance = {
-            defineFlow: instance.defineFlow.bind(instance),
-            definePrompt: instance.definePrompt.bind(instance),
-            generate: instance.generate.bind(instance),
-        };
-    }
-    return aiInstance;
-}
-
-export async function getModelConfig() {
-    if (!aiConfig) {
-        aiConfig = await getAiConfig();
-    }
+/**
+ * Retrieves the dynamic AI model configuration at runtime.
+ * This function will be called just before executing a prompt.
+ */
+export async function getModelConfig(): Promise<Partial<AIConfig> & { model: string }> {
+  try {
+    const config = await getAiConfig();
     return {
-        temperature: aiConfig.temperature,
-        topP: aiConfig.topP,
-        topK: aiConfig.topK,
-        maxOutputTokens: aiConfig.maxOutputTokens,
+      model: config.model,
+      temperature: config.temperature,
+      topP: config.topP,
+      topK: config.topK,
+      maxOutputTokens: config.maxOutputTokens,
     };
-}
-
-export async function defineFlow(options: any, fn: any) {
-    const ai = await getInitializedAi();
-    return ai.defineFlow(options, fn);
-}
-
-export async function definePrompt(options: any) {
-    const ai = await getInitializedAi();
-    return ai.definePrompt(options);
-}
-
-export async function generate(options: any) {
-    const ai = await getInitializedAi();
-    return ai.generate(options);
+  } catch (error) {
+    console.error("Failed to get AI config, using defaults.", error);
+    // Return a default configuration if the file read fails
+    return {
+        model: 'googleai/gemini-1.5-pro',
+        temperature: 0.5,
+        topP: 1,
+        topK: 32,
+        maxOutputTokens: 8192,
+    };
+  }
 }
