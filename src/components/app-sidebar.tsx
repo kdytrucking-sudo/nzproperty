@@ -4,7 +4,6 @@
 import {
   FileJson,
   LayoutDashboard,
-  PanelLeft,
   Settings,
   Pencil,
   FileText,
@@ -38,37 +37,37 @@ export function AppSidebar() {
   const menuItems = [
     {
       href: '/',
-      label: 'Generate Report',
+      label: '生成报告',
       icon: LayoutDashboard,
     },
     {
       href: '/manage-content',
-      label: 'Manage Content',
+      label: '管理内容',
       icon: Pencil,
     },
      {
       href: '/manage-commentary',
-      label: 'Manage Commentary',
+      label: '管理评论',
       icon: MessageSquareQuote,
     },
     {
       href: '/manage-multi-option',
-      label: 'Multi-Select',
+      label: '管理选项',
       icon: ListTodo,
     },
     {
       href: '/manage-templates',
-      label: 'Manage Templates',
+      label: '管理模板',
       icon: FileText,
     },
     {
       href: '/manage-images',
-      label: 'Manage Images',
+      label: '管理图片',
       icon: Image,
     },
     {
       href: '/json-editor',
-      label: 'AI Settings',
+      label: 'AI 设置',
       icon: FileJson,
     },
   ];
@@ -76,7 +75,7 @@ export function AppSidebar() {
   const testMenuItems = [
      {
       href: '/image-test',
-      label: 'Image Replacement Test',
+      label: '图片替换测试',
       icon: TestTube2,
     },
   ]
