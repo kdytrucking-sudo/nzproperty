@@ -3,6 +3,7 @@
  * @fileOverview Retrieves the current extraction configuration (JSON structure and prompts) from files.
  */
 
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import fs from 'fs/promises';
 import path from 'path';
@@ -18,6 +19,16 @@ const ExtractionConfigOutputSchema = z.object({
 export type ExtractionConfigOutput = z.infer<typeof ExtractionConfigOutputSchema>;
 
 export async function getExtractionConfig(): Promise<ExtractionConfigOutput> {
+  return getExtractionConfigFlow();
+}
+
+const getExtractionConfigFlow = ai.defineFlow(
+  {
+    name: 'getExtractionConfigFlow',
+    inputSchema: z.void(),
+    outputSchema: ExtractionConfigOutputSchema,
+  },
+  async () => {
     try {
       const jsonFilePath = path.join(process.cwd(), 'src', 'lib', 'json-structure.json');
       const promptsFilePath = path.join(process.cwd(), 'src', 'lib', 'prompts.json');
@@ -37,4 +48,5 @@ export async function getExtractionConfig(): Promise<ExtractionConfigOutput> {
       console.error('Failed to get extraction config:', error);
       throw new Error(`Failed to read config files: ${error.message}`);
     }
-}
+  }
+);
