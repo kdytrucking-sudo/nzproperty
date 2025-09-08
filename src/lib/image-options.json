@@ -47,5 +47,33 @@
     "placeholder": "{%Image_SiteDescription2}",
     "width": 300,
     "height": 200
+  },
+  {
+    "id": "3070bd5b-cdcf-42a4-9dcf-1515fdb3815d",
+    "cardName": "Site Development1",
+    "placeholder": "{%Image_SiteDevelopment1}",
+    "width": 400,
+    "height": 300
+  },
+  {
+    "id": "5b4deea6-bb2c-48dd-b02c-07878c7a0d82",
+    "cardName": "Site Development2",
+    "placeholder": "{%Image_SiteDevelopment2}",
+    "width": 400,
+    "height": 300
+  },
+  {
+    "id": "04bf5985-cb4e-4c5e-9c16-127d9dfa839b",
+    "cardName": "Site Development3",
+    "placeholder": "{%Image_SiteDevelopment3}",
+    "width": 400,
+    "height": 300
+  },
+  {
+    "id": "485685f9-36d1-418c-9755-ee1662614339",
+    "cardName": "Site Development4",
+    "placeholder": "{%Image_SiteDevelopment4}",
+    "width": 400,
+    "height": 300
   }
 ]

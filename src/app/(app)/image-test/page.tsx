@@ -189,7 +189,9 @@ export default function ImageTestPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {isLoading ? (
-                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <Skeleton className="h-48 w-full" />
+                    <Skeleton className="h-48 w-full" />
                     <Skeleton className="h-48 w-full" />
                     <Skeleton className="h-48 w-full" />
                   </div>
@@ -202,7 +204,7 @@ export default function ImageTestPage() {
                      </AlertDescription>
                    </Alert>
                 ) : (
-                  <div className="grid grid-cols-1 gap-x-6 gap-y-8 lg:grid-cols-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-8">
                     {imageConfigs.map((config) => (
                        <FormField
                           key={config.id}
