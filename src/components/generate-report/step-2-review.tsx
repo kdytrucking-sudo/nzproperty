@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -1074,7 +1073,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     <TabsContent value="commentary">
                         {renderCommentarySection()}
                     </TabsContent>
-                    <TabsContent value="multiOption">
+                     <TabsContent value="multiOption">
                       {renderMultiOptionSection()}
                     </TabsContent>
                     <TabsContent value="images">
