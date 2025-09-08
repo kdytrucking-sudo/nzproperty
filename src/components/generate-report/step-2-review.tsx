@@ -988,7 +988,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
             <div className="space-y-2 rounded-md border bg-muted/50 p-3">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-muted-foreground">Property Address: <span className="text-foreground">{extractedData.Info?.['Property Address'] || 'N/A'}</span></p>
-                <Button variant="ghost" size="sm" onClick={() => handleCopy(extractedData.Info?.['Property Address'] || '')}><Copy className="mr-2 h-4 w-4" />Copy</Button>
+                <Button variant="ghost" size="sm" type="button" onClick={() => handleCopy(extractedData.Info?.['Property Address'] || '')}><Copy className="mr-2 h-4 w-4" />Copy</Button>
               </div>
               <p className="text-sm font-medium text-muted-foreground">
                 URL: <a href="https://www.aucklandcouncil.govt.nz/property-rates-valuations/pages/find-property-rates-valuation.aspx" target="_blank" rel="noopener noreferrer" className="text-primary underline">click to open official site</a>
@@ -1059,7 +1059,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                   ))}
                 </SelectContent>
               </Select>
-              <Button onClick={handleAddRoomOption}>
+              <Button type="button" onClick={handleAddRoomOption}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add
               </Button>
             </div>
@@ -1077,7 +1077,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                 <CardHeader>
                     <div className="flex items-center justify-between">
                          <CardTitle>Room Option {index + 1}</CardTitle>
-                         <Button variant="destructive" size="icon" onClick={() => removeRoomOption(index)}>
+                         <Button type="button" variant="destructive" size="icon" onClick={() => removeRoomOption(index)}>
                             <Trash2 className="h-4 w-4" />
                          </Button>
                     </div>
