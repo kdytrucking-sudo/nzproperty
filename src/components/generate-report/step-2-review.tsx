@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, PlusCircle, Trash2, Copy, CalendarIcon, Image as ImageIcon } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Copy, CalendarIcon, AlertCircle } from 'lucide-react';
 import { useForm, useFieldArray, Control, FieldValues, Path, UseFormSetValue } from 'react-hook-form';
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -35,16 +35,17 @@ import type { MultiOptionsData, MultiOptionCard, MultiOptionItem } from '@/lib/m
 import { getImageOptions } from '@/ai/flows/get-image-options';
 import type { ImageConfig } from '@/lib/image-options-schema';
 import { FileUploader } from '../file-uploader';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
-const ACCEPTED_IMAGE_TYPES = {
-  'image/png': ['.png'],
-  'image/jpeg': ['.jpg', '.jpeg'],
+// Main form schema
+const formSchema = z.any();
+
+type Step2ReviewProps = {
+  extractedData: PropertyData;
+  onReportGenerated: (reportDataUri: string, replacementsCount: number, instructedBy: string | undefined) => void;
+  onBack: () => void;
 };
 
-
-// Helper function to convert file to Data URI
 const fileToDataUri = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -54,13 +55,9 @@ const fileToDataUri = (file: File): Promise<string> => {
   });
 };
 
-// Main form schema
-const formSchema = z.any();
-
-type Step2ReviewProps = {
-  extractedData: PropertyData;
-  onReportGenerated: (reportDataUri: string, replacementsCount: number, instructedBy: string | undefined, uploadedImages: { placeholder: string; fileName: string }[]) => void;
-  onBack: () => void;
+const ACCEPTED_IMAGE_TYPES = {
+  'image/png': ['.png'],
+  'image/jpeg': ['.jpg', '.jpeg'],
 };
 
 const renderFormSection = (form: any, path: string, data: any, structure: any) => {
@@ -157,7 +154,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     defaultValues: {
       templateFileName: '',
       data: extractedData,
-      images: {} as Record<string, File[] | undefined>,
+      images: {} as Record<string, File[]>,
       commentary: {
         PurposeofValuation: '',
         PrincipalUse: '',
@@ -385,12 +382,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         form.setValue('multiOptionBriefs', initialBriefs);
 
         setImageConfigs(imgConfigs);
-        const initialImageValues: Record<string, File[] | undefined> = {};
-        imgConfigs.forEach(config => {
-          initialImageValues[config.placeholder] = undefined;
-        });
-        form.setValue('images', initialImageValues);
-
 
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load initial data', description: error.message });
@@ -435,13 +426,12 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
             return {
               placeholder,
               imageDataUri,
-              width: config?.width || 200, // Default size
-              height: config?.height || 150, // Default size
+              width: config?.width || 200,
+              height: config?.height || 150,
             };
           })
       );
       const validImages = imagesToUpload.filter(Boolean) as { placeholder: string; imageDataUri: string; width: number; height: number; }[];
-
 
       const fullData = { 
         ...values.data, 
@@ -463,11 +453,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         description: `Replaced ${result.replacementsCount} placeholders. Your download will begin shortly.`,
       });
       const debugValue = values.data?.Info?.['Instructed By'];
-      const uploadedImageDebug = Object.entries(values.images)
-        .filter(([, files]) => files && files.length > 0)
-        .map(([placeholder, files]) => ({ placeholder, fileName: files![0].name }));
-        
-      onReportGenerated(result.generatedDocxDataUri, result.replacementsCount, debugValue, uploadedImageDebug);
+      onReportGenerated(result.generatedDocxDataUri, result.replacementsCount, debugValue);
 
     } catch (error: any) {
       console.error('Error generating report:', error);
@@ -623,6 +609,54 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
               </div>
             </CardContent>
           </Card>
+        ))}
+      </div>
+    );
+  };
+
+  const renderImagesSection = () => {
+    if (isLoadingInitialData) {
+      return (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 pt-4">
+          <Skeleton className="h-48 w-full" />
+          <Skeleton className="h-48 w-full" />
+        </div>
+      );
+    }
+    if (imageConfigs.length === 0) {
+      return (
+        <Alert variant="destructive" className="mt-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>No Image Configurations Found</AlertTitle>
+          <AlertDescription>
+            Please go to the "Manage Images" page to create at least one image configuration.
+          </AlertDescription>
+        </Alert>
+      );
+    }
+    return (
+      <div className="grid grid-cols-1 gap-x-6 gap-y-8 pt-4 lg:grid-cols-2">
+        {imageConfigs.map((config) => (
+          <FormField
+            key={config.id}
+            control={form.control}
+            name={`images.${config.placeholder}`}
+            render={({ field }) => (
+              <FormItem>
+                <FileUploader
+                  label={`${config.cardName} (${config.width}x${config.height}px)`}
+                  value={field.value ?? null}
+                  onValueChange={field.onChange}
+                  options={{ accept: ACCEPTED_IMAGE_TYPES }}
+                  maxFiles={1}
+                />
+                <FormLabel className="text-xs text-muted-foreground">
+                  Placeholder: <code className="bg-muted px-1 py-0.5 rounded-sm">{config.placeholder}</code>
+                </FormLabel>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         ))}
       </div>
     );
@@ -966,58 +1000,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     );
   }
 
-  const renderImagesSection = () => {
-    if (isLoadingInitialData) {
-      return (
-        <div className="grid grid-cols-1 gap-6 pt-4 lg:grid-cols-2">
-          <Skeleton className="h-56 w-full" />
-          <Skeleton className="h-56 w-full" />
-        </div>
-      );
-    }
-    if (imageConfigs.length === 0) {
-      return (
-        <div className="pt-4">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>No Image Configurations Found</AlertTitle>
-            <AlertDescription>
-              Please go to the "Manage Images" page to create at least one image configuration.
-            </AlertDescription>
-          </Alert>
-        </div>
-      );
-    }
-
-    return (
-      <div className="grid grid-cols-1 gap-x-6 gap-y-8 pt-4 lg:grid-cols-2">
-        {imageConfigs.map((config) => (
-          <FormField
-            key={config.id}
-            control={form.control}
-            name={`images.${config.placeholder}`}
-            render={({ field }) => (
-              <FormItem>
-                <FileUploader
-                  label={`${config.cardName} (${config.width}x${config.height}px)`}
-                  value={field.value ?? null}
-                  onValueChange={field.onChange}
-                  options={{ accept: ACCEPTED_IMAGE_TYPES }}
-                  maxFiles={1}
-                />
-                <FormLabel className="text-xs text-muted-foreground">
-                  Placeholder: <code className="bg-muted px-1 py-0.5 rounded-sm">{config.placeholder}</code>
-                </FormLabel>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        ))}
-      </div>
-    );
-  };
-
-
   return (
     <Card>
       <CardHeader>
@@ -1073,10 +1055,10 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                             {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                         </TabsTrigger>
                         ))}
-                        <TabsTrigger value="images">Images</TabsTrigger>
                         <TabsTrigger value="marketValuation">Market Valuation</TabsTrigger>
                         <TabsTrigger value="commentary">Commentary</TabsTrigger>
                         <TabsTrigger value="multiOption">Multi Option</TabsTrigger>
+                        <TabsTrigger value="images">Images</TabsTrigger>
                         <TabsTrigger value="constructChattels">Construct/Chattels</TabsTrigger>
                     </TabsList>
 
@@ -1086,9 +1068,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                         </TabsContent>
                     ))}
                     
-                    <TabsContent value="images">
-                      {renderImagesSection()}
-                    </TabsContent>
                     <TabsContent value="marketValuation">
                         {renderMarketValuationSection()}
                     </TabsContent>
@@ -1097,6 +1076,9 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     </TabsContent>
                     <TabsContent value="multiOption">
                       {renderMultiOptionSection()}
+                    </TabsContent>
+                    <TabsContent value="images">
+                      {renderImagesSection()}
                     </TabsContent>
                      <TabsContent value="constructChattels">
                         {renderConstructChattelsSection()}

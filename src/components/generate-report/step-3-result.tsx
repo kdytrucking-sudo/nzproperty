@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -12,10 +11,9 @@ type Step3ResultProps = {
   onStartOver: () => void;
   replacementsCount: number;
   debugInstructedBy?: string;
-  uploadedImages: { placeholder: string; fileName: string }[];
 };
 
-export function Step3Result({ reportDataUri, fileName, onStartOver, replacementsCount, debugInstructedBy, uploadedImages }: Step3ResultProps) {
+export function Step3Result({ reportDataUri, fileName, onStartOver, replacementsCount, debugInstructedBy }: Step3ResultProps) {
   
   const handleDownload = () => {
     const link = document.createElement("a");
@@ -45,30 +43,14 @@ export function Step3Result({ reportDataUri, fileName, onStartOver, replacements
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center space-y-4">
-        
-        {(debugInstructedBy !== undefined || uploadedImages.length > 0) && (
+        {debugInstructedBy !== undefined && (
           <div className="w-full rounded-md border border-dashed border-yellow-500 bg-yellow-50 p-4">
             <h4 className="font-bold text-yellow-800">Debug Information:</h4>
-            {debugInstructedBy !== undefined && (
-              <p className="font-mono text-sm text-yellow-900">
-                Value of "Instructed By": <span className="font-semibold">{debugInstructedBy || '"" (Empty String)'}</span>
-              </p>
-            )}
-            {uploadedImages.length > 0 && (
-                <div className="mt-2">
-                    <p className="font-mono text-sm text-yellow-900">Uploaded Images for Placeholders:</p>
-                    <ul className="list-disc pl-5 font-mono text-xs text-yellow-800">
-                        {uploadedImages.map(img => (
-                            <li key={img.placeholder}>
-                                <span className="font-semibold">{img.placeholder}:</span> {img.fileName}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
+            <p className="font-mono text-sm text-yellow-900">
+              Value of "Instructed By": <span className="font-semibold">{debugInstructedBy || '"" (Empty String)'}</span>
+            </p>
           </div>
         )}
-
         <div className="flex w-full space-x-4">
           <Button className="flex-1" onClick={handleDownload}>
             <Download className="mr-2 h-4 w-4" />

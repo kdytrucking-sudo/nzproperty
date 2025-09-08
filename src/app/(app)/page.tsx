@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -15,7 +14,6 @@ function GenerateReportFlow() {
   const [generatedFileName, setGeneratedFileName] = React.useState<string>('');
   const [replacementsCount, setReplacementsCount] = React.useState(0);
   const [debugValue, setDebugValue] = React.useState<string | undefined>(undefined);
-  const [debugImages, setDebugImages] = React.useState<{ placeholder: string; fileName: string }[]>([]);
 
 
   const handleDataExtracted = (data: PropertyData) => {
@@ -23,7 +21,7 @@ function GenerateReportFlow() {
     setStep('review');
   };
 
-  const handleReportGenerated = (reportDataUri: string, count: number, instructedBy: string | undefined, uploadedImages: { placeholder: string; fileName: string }[]) => {
+  const handleReportGenerated = (reportDataUri: string, count: number, instructedBy: string | undefined) => {
     const address = propertyData?.Info?.['Property Address'] || 'Report';
     const date = new Date().toISOString().split('T')[0];
     const fileName = `${address} - ${date}.docx`;
@@ -32,7 +30,6 @@ function GenerateReportFlow() {
     setGeneratedFileName(fileName);
     setReplacementsCount(count);
     setDebugValue(instructedBy);
-    setDebugImages(uploadedImages);
     setStep('result');
   };
 
@@ -42,7 +39,6 @@ function GenerateReportFlow() {
     setGeneratedFileName('');
     setReplacementsCount(0);
     setDebugValue(undefined);
-    setDebugImages([]);
     setStep('input');
   };
 
@@ -116,7 +112,6 @@ function GenerateReportFlow() {
                 onStartOver={handleStartOver} 
                 replacementsCount={replacementsCount}
                 debugInstructedBy={debugValue}
-                uploadedImages={debugImages}
               />
             </motion.div>
           )}
