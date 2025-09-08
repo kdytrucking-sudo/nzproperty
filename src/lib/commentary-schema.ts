@@ -13,6 +13,9 @@ export const CommentaryOptionsSchema = z.object({
   ZoningOptionOperative: z.array(z.string()),
   ZoningOptionPC78: z.array(z.string()),
   ConditionAndRepair: z.array(z.string()),
+  SiteDescription1: z.array(z.string()),
+  SiteDescription2: z.array(z.string()),
+  ConclusionOnSalesEvidence: z.array(z.string()),
 });
 
 export type CommentaryOptionsData = z.infer<typeof CommentaryOptionsSchema>;

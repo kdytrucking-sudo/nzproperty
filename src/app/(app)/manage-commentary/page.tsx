@@ -86,6 +86,9 @@ export default function ManageCommentaryPage() {
       ZoningOptionOperative: [],
       ZoningOptionPC78: [],
       ConditionAndRepair: [],
+      SiteDescription1: [],
+      SiteDescription2: [],
+      ConclusionOnSalesEvidence: [],
     },
   });
 
@@ -246,6 +249,24 @@ export default function ManageCommentaryPage() {
                 name="ConditionAndRepair"
                 label="Condition & Repair"
                 description="Manage options for the [Replace_ConditionAndRepair] section."
+            />
+            <CommentaryFieldArray 
+                control={form.control}
+                name="SiteDescription1"
+                label="Site Description 1st things"
+                description="Manage options for the [Replace_SiteDescription1] section."
+            />
+            <CommentaryFieldArray 
+                control={form.control}
+                name="SiteDescription2"
+                label="Site Description 2nd things"
+                description="Manage options for the [Replace_SiteDescription2] section."
+            />
+            <CommentaryFieldArray 
+                control={form.control}
+                name="ConclusionOnSalesEvidence"
+                label="Conclusion on Sales Evidence"
+                description="Manage options for the [Replace_ConclusionOnSalesEvidence] section."
             />
              {isDirty && (
                  <div className="fixed bottom-6 right-6 z-50 w-full max-w-md">

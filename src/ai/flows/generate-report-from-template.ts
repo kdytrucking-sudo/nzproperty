@@ -227,6 +227,9 @@ const prepareTemplateData = async (data: any) => {
       ZoningOptionOperative: 'Replace_ZoningOptionOperative',
       ZoningOptionPC78: 'Replace_ZoningOptionPC78',
       ConditionAndRepair: 'Replace_ConditionAndRepair',
+      SiteDescription1: 'Replace_SiteDescription1',
+      SiteDescription2: 'Replace_SiteDescription2',
+      ConclusionOnSalesEvidence: 'Replace_ConclusionOnSalesEvidence',
     };
     Object.keys((data as any).commentary).forEach((key: string) => {
       const templateKey = placeholderMapping[key];
@@ -302,7 +305,8 @@ const prepareTemplateData = async (data: any) => {
         'Replace_ZoningOptionOperative', 'Replace_ZoningOptionPC78', 'Replace_ConditionAndRepair',
         'Replace_ConstructionBrief', 'Replace_Chattels', 'Replace_MarketValue', 'Replace_MarketValuation', 'Replace_ImprovementValueByValuer',
         'Replace_LandValueByValuer', 'Replace_ChattelsByValuer', 'Replace_MarketValueByValuer',
-        'Replace_LandValueFromWeb', 'Replace_ValueofImprovementsFromWeb', 'Replace_RatingValuationFromWeb'
+        'Replace_LandValueFromWeb', 'Replace_ValueofImprovementsFromWeb', 'Replace_RatingValuationFromWeb',
+        'Replace_SiteDescription1', 'Replace_SiteDescription2', 'Replace_ConclusionOnSalesEvidence'
       ].includes(key);
 
       const isFromJsonStructure = Object.values(jsonStructure).some((section: any) => 

@@ -148,6 +148,9 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         ZoningOptionOperative: '',
         ZoningOptionPC78: '',
         ConditionAndRepair: '',
+        SiteDescription1: '',
+        SiteDescription2: '',
+        ConclusionOnSalesEvidence: '',
       },
       constructionBrief: {
         generalConstruction: [],
@@ -370,6 +373,9 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         form.setValue('commentary.ZoningOptionOperative', commentaryOpts.ZoningOptionOperative?.[0] || '');
         form.setValue('commentary.ZoningOptionPC78', commentaryOpts.ZoningOptionPC78?.[0] || '');
         form.setValue('commentary.ConditionAndRepair', commentaryOpts.ConditionAndRepair?.[0] || '');
+        form.setValue('commentary.SiteDescription1', commentaryOpts.SiteDescription1?.[0] || '');
+        form.setValue('commentary.SiteDescription2', commentaryOpts.SiteDescription2?.[0] || '');
+        form.setValue('commentary.ConclusionOnSalesEvidence', commentaryOpts.ConclusionOnSalesEvidence?.[0] || '');
         
         setMultiOptions(multiOpts);
         // Initialize form state for multi-options
@@ -468,6 +474,9 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         { key: 'ZoningOptionOperative', label: 'Zoning Option Operative', placeholder: '[Replace_ZoningOptionOperative]' },
         { key: 'ZoningOptionPC78', label: 'Zoning Option PC78', placeholder: '[Replace_ZoningOptionPC78]' },
         { key: 'ConditionAndRepair', label: 'Condition & Repair', placeholder: '[Replace_ConditionAndRepair]' },
+        { key: 'SiteDescription1', label: 'Site Description 1st things', placeholder: '[Replace_SiteDescription1]' },
+        { key: 'SiteDescription2', label: 'Site Description 2nd things', placeholder: '[Replace_SiteDescription2]' },
+        { key: 'ConclusionOnSalesEvidence', label: 'Conclusion on Sales Evidence', placeholder: '[Replace_ConclusionOnSalesEvidence]' },
     ];
 
     return (
