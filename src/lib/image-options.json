@@ -3,36 +3,36 @@
     "id": "fe13a78b-b6b1-4110-94ac-0cc2c67ca0c0",
     "cardName": "Nature of Property 1",
     "placeholder": "{%Image_NatureofProperty1}",
-    "width": 200,
-    "height": 150
+    "width": 230,
+    "height": 160
   },
   {
     "id": "d775b59b-479f-4102-816e-98b11ee211db",
     "cardName": "Nature of Property 2",
     "placeholder": "{%Image_NatureofProperty2}",
-    "width": 200,
-    "height": 150
+    "width": 230,
+    "height": 160
   },
   {
     "id": "c7e5a4a0-0981-479e-8c62-aca5a12a8895",
     "cardName": "Nature of Property 3",
     "placeholder": "{%Image_NatureofProperty3}",
-    "width": 200,
-    "height": 150
+    "width": 230,
+    "height": 160
   },
   {
     "id": "e5235d29-7916-40fe-a9d6-ffc2244f652e",
     "cardName": "Nature of Property 4",
     "placeholder": "{%Image_NatureofProperty4}",
-    "width": 200,
-    "height": 150
+    "width": 230,
+    "height": 160
   },
   {
     "id": "a7106c10-b2a2-4cfd-b4c1-2210c2524704",
     "cardName": "Brief Description Image",
     "placeholder": "{%Image_BriefDescription}",
-    "width": 100,
-    "height": 69
+    "width": 150,
+    "height": 80
   },
   {
     "id": "3735aaab-f723-4946-9690-f64b245f2bab",
