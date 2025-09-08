@@ -2,119 +2,127 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, PlusCircle, Trash2, Save, ShieldX } from 'lucide-react';
-import { useForm, useFieldArray } from 'react-hook-form';
-import { z } from 'zod';
+import { Loader2, PlusCircle, Trash2, ShieldX, Save } from 'lucide-react';
+import { useForm, useFieldArray, type Control } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import * as React from 'react';
+import { saveCommentaryOptions } from '@/ai/flows/save-commentary-options';
+import { getCommentaryOptions } from '@/ai/flows/get-commentary-options';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CommentaryCardsSchema, type CommentaryCardsData } from '@/lib/commentary-card-schema';
-import { getCommentaryCards } from '@/ai/flows/get-commentary-cards';
-import { saveCommentaryCards } from '@/ai/flows/save-commentary-cards';
+import type { CommentaryOptionsData } from '@/lib/commentary-schema';
+import { CommentaryOptionsSchema } from '@/lib/commentary-schema';
 
-const formSchema = z.object({
-  cards: CommentaryCardsSchema,
-});
-type FormValues = z.infer<typeof formSchema>;
+type CommentaryFieldArrayProps = {
+    control: Control<CommentaryOptionsData>;
+    name: keyof CommentaryOptionsData;
+    label: string;
+    description: string;
+};
+
+function CommentaryFieldArray({ control, name, label, description }: CommentaryFieldArrayProps) {
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name,
+    });
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>{label}</CardTitle>
+                <CardDescription>{description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {fields.map((field, index) => (
+                    <FormField
+                        key={field.id}
+                        control={control}
+                        name={`${name}.${index}`}
+                        render={({ field }) => (
+                            <FormItem>
+                                <div className="flex items-center gap-2">
+                                    <FormControl>
+                                        <Textarea placeholder={`Option ${index + 1}`} {...field} className="font-mono"/>
+                                    </FormControl>
+                                    <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                ))}
+                <Button type="button" variant="outline" size="sm" onClick={() => append('')}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Option
+                </Button>
+            </CardContent>
+        </Card>
+    );
+}
 
 export default function ManageCommentaryPage() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [initialData, setInitialData] = React.useState<FormValues | null>(null);
+  const [initialData, setInitialData] = React.useState<CommentaryOptionsData | null>(null);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<CommentaryOptionsData>({
+    resolver: zodResolver(CommentaryOptionsSchema),
     defaultValues: {
-      cards: [],
+      PurposeofValuation: [],
+      PrincipalUse: [],
+      PreviousSale: [],
+      ContractSale: [],
+      SuppliedDocumentation: [],
+      RecentOrProvided: [],
+      LIM: [],
+      PC78: [],
+      OperativeZone: [],
+      ZoningOptionOperative: [],
+      ZoningOptionPC78: [],
+      ConditionAndRepair: [],
+      SiteDescription1: [],
+      SiteDescription2: [],
+      ConclusionOnSalesEvidence: [],
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: 'cards',
-  });
-  
   const { formState: { isDirty } } = form;
 
   React.useEffect(() => {
-    async function loadOptions() {
+    async function loadCommentaries() {
       setIsLoading(true);
       try {
-        const data = await getCommentaryCards();
-        const initialFormValues = { cards: data };
-        form.reset(initialFormValues);
-        setInitialData(initialFormValues);
+        const data = await getCommentaryOptions();
+        form.reset(data);
+        setInitialData(data);
       } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Failed to load commentary cards', description: error.message });
+        toast({ variant: 'destructive', title: 'Failed to load commentaries', description: error.message });
       } finally {
         setIsLoading(false);
       }
     }
-    loadOptions();
-  }, [form, toast]);
-  
-  const handleAddNewCard = () => {
-    append({
-      id: crypto.randomUUID(),
-      cardName: 'New Commentary Field',
-      placeholder: '[Replace_NewField]',
-      options: [{ id: crypto.randomUUID(), label: '', option: '' }],
-    });
-  };
-  
-  const handleAddNewOption = (cardIndex: number) => {
-    const newOption = { id: crypto.randomUUID(), label: '', option: '' };
-    const currentOptions = form.getValues(`cards.${cardIndex}.options`);
-    form.setValue(`cards.${cardIndex}.options`, [...currentOptions, newOption]);
-  };
-  
-  const handleRemoveOption = (cardIndex: number, optionIndex: number) => {
-    const currentOptions = form.getValues(`cards.${cardIndex}.options`);
-    const newOptions = currentOptions.filter((_, i) => i !== optionIndex);
-    form.setValue(`cards.${cardIndex}.options`, newOptions);
-  };
-  
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>, cardIndex: number, optionIndex: number) => {
-    const { name, value } = e.target;
-    const currentValues = form.getValues();
-    const currentOption = currentValues.cards[cardIndex].options[optionIndex];
+    loadCommentaries();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    if (name.endsWith('.option') && !currentOption.label) {
-        const newLabel = value.length > 50 ? value.substring(0, 50) + '...' : value;
-        form.setValue(`cards.${cardIndex}.options.${optionIndex}.label`, newLabel);
-    }
-  };
-  
-  const handlePlaceholderBlur = (e: React.FocusEvent<HTMLInputElement>, cardIndex: number) => {
-    let value = e.target.value;
-    if (value && !value.startsWith('[')) {
-        value = `[${value}`;
-    }
-    if (value && !value.endsWith(']')) {
-        value = `${value}]`;
-    }
-    form.setValue(`cards.${cardIndex}.placeholder`, value);
-  };
-
-  async function onSave(values: FormValues) {
+  async function onSave(values: CommentaryOptionsData) {
     setIsSaving(true);
     try {
-      await saveCommentaryCards(values.cards);
-      form.reset(values);
+      await saveCommentaryOptions(values);
+      form.reset(values); // This will mark the form as not dirty
       setInitialData(values);
       toast({
-        title: 'Commentary Cards Saved',
-        description: 'Your commentary configurations have been updated.',
+        title: 'Commentary Saved',
+        description: 'Your commentary options have been updated.',
       });
     } catch (error: any) {
-      console.error('Failed to save options:', error);
+      console.error('Failed to save commentaries:', error);
       toast({
         variant: 'destructive',
         title: 'Save Failed',
@@ -124,7 +132,7 @@ export default function ManageCommentaryPage() {
       setIsSaving(false);
     }
   }
-  
+
   function handleRevert() {
       if(initialData) {
           form.reset(initialData);
@@ -134,20 +142,23 @@ export default function ManageCommentaryPage() {
           });
       }
   }
-
+  
   if (isLoading) {
     return (
         <div className="space-y-8">
-            <header className="flex items-center justify-between">
-              <div>
+            <header>
                 <Skeleton className="h-10 w-1/3" />
                 <Skeleton className="mt-2 h-6 w-2/3" />
-              </div>
-              <Skeleton className="h-10 w-32" />
             </header>
             <main className="space-y-6">
                 <Skeleton className="h-64 w-full" />
                 <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-64 w-full" />
+                 <Skeleton className="h-64 w-full" />
             </main>
         </div>
     )
@@ -155,112 +166,108 @@ export default function ManageCommentaryPage() {
 
   return (
     <div className="space-y-8">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSave)}>
-          <header className="flex items-center justify-between">
-            <div>
-              <h1 className="font-headline text-3xl font-bold text-foreground">
-                Manage Commentary Options
-              </h1>
-              <p className="text-muted-foreground">
-                Create and configure reusable commentary fields and their selectable text options.
-              </p>
-            </div>
-            <Button type="button" onClick={handleAddNewCard}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add New Field
-            </Button>
-          </header>
+      <header>
+        <h1 className="font-headline text-3xl font-bold text-foreground">
+          Manage Commentary Options
+        </h1>
+        <p className="text-muted-foreground">
+          Edit and save the reusable text blocks for the report commentary sections.
+        </p>
+      </header>
 
-          <main className="space-y-6">
-            {fields.map((card, cardIndex) => (
-              <Card key={card.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <FormField
-                      control={form.control}
-                      name={`cards.${cardIndex}.cardName`}
-                      render={({ field }) => (
-                          <FormItem className="w-1/3">
-                              <FormControl>
-                                <Input {...field} className="text-xl font-semibold tracking-tight" />
-                              </FormControl>
-                              <FormMessage />
-                          </FormItem>
-                      )}
-                    />
-                    <Button type="button" variant="destructive" size="icon" onClick={() => remove(cardIndex)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                   <FormField
-                      control={form.control}
-                      name={`cards.${cardIndex}.placeholder`}
-                      render={({ field }) => (
-                          <FormItem className="w-1/3">
-                              <FormLabel>Placeholder</FormLabel>
-                              <FormControl>
-                                  <Input {...field} onBlur={(e) => handlePlaceholderBlur(e, cardIndex)} className="font-mono text-xs" />
-                              </FormControl>
-                              <FormMessage />
-                          </FormItem>
-                      )}
-                    />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-12 gap-4">
-                    <div className="col-span-4 font-medium text-sm text-muted-foreground">Label</div>
-                    <div className="col-span-7 font-medium text-sm text-muted-foreground">Option Text</div>
-                    <div className="col-span-1"></div>
-                  </div>
-                  {form.watch(`cards.${cardIndex}.options`).map((option, optionIndex) => (
-                    <div key={option.id} className="grid grid-cols-12 gap-4 items-start">
-                      <FormField
-                          control={form.control}
-                          name={`cards.${cardIndex}.options.${optionIndex}.label`}
-                          render={({ field }) => (
-                              <FormItem className="col-span-4">
-                                  <FormControl>
-                                      <Input placeholder="A short label for this option" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                              </FormItem>
-                          )}
-                      />
-                       <FormField
-                          control={form.control}
-                          name={`cards.${cardIndex}.options.${optionIndex}.option`}
-                          render={({ field }) => (
-                              <FormItem className="col-span-7">
-                                  <FormControl>
-                                      <Textarea
-                                          placeholder="Full text to be inserted into the report"
-                                          {...field}
-                                          onBlur={(e) => handleBlur(e, cardIndex, optionIndex)}
-                                      />
-                                  </FormControl>
-                                  <FormMessage />
-                              </FormItem>
-                          )}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="col-span-1 mt-1"
-                        onClick={() => handleRemoveOption(cardIndex, optionIndex)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  ))}
-                </CardContent>
-                <CardFooter>
-                   <Button type="button" variant="outline" size="sm" onClick={() => handleAddNewOption(cardIndex)}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add Option
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+      <main>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSave)} className="space-y-6">
+            <CommentaryFieldArray 
+                control={form.control}
+                name="PurposeofValuation"
+                label="Purpose of Valuation"
+                description="Manage options for the [Replace_PurposeofValuation] section."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="PrincipalUse"
+                label="Principal Use"
+                description="Manage options for the [Replace_PrincipalUse] section."
+            />
+            <CommentaryFieldArray 
+                control={form.control}
+                name="PreviousSale"
+                label="Previous Sale"
+                description="Manage options for the [Replace_PreviousSale] section."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="ContractSale"
+                label="Contract for Sale"
+                description="Manage options for the [Replace_ContractSale] section."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="SuppliedDocumentation"
+                label="Supplied Documentation"
+                description="Manage options for the [Replace_SuppliedDoc] section."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="RecentOrProvided"
+                label="Recent/Provided"
+                description="Manage options for the [Replace_RecentOrProvided] section."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="LIM"
+                label="Land Information Memorandum"
+                description="Manage options for the [Replace_LIM] section."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="PC78"
+                label="Plan Change 78: Intensification"
+                description="Manage options for the [Replace_PC78] section."
+            />
+            <CommentaryFieldArray 
+                control={form.control}
+                name="OperativeZone"
+                label="Operative Zone"
+                description="Manage options for the [Replace_Zone] section."
+            />
+            <CommentaryFieldArray 
+                control={form.control}
+                name="ZoningOptionOperative"
+                label="Zoning Option Operative"
+                description="Manage options for the [Replace_ZoningOptionOperative] section."
+            />
+            <CommentaryFieldArray 
+                control={form.control}
+                name="ZoningOptionPC78"
+                label="Zoning Option PC78"
+                description="Manage options for the [Replace_ZoningOptionPC78] section."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="ConditionAndRepair"
+                label="Condition & Repair"
+                description="Manage options for the [Replace_ConditionAndRepair] section."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="SiteDescription1"
+                label="Site Description 1st things"
+                description="Manage options for the [Replace_SiteDescription1] section."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="SiteDescription2"
+                label="Site Description 2nd things"
+                description="Manage options for the [Replace_SiteDescription2] section."
+            />
+             <CommentaryFieldArray 
+                control={form.control}
+                name="ConclusionOnSalesEvidence"
+                label="Conclusion on Sales Evidence"
+                description="Manage options for the [Replace_ConclusionOnSalesEvidence] section."
+            />
              {isDirty && (
                  <div className="fixed bottom-6 right-6 z-50 w-full max-w-md">
                      <Alert variant="destructive" className="bg-destructive/95 text-destructive-foreground shadow-lg backdrop-blur-sm">
@@ -280,11 +287,9 @@ export default function ManageCommentaryPage() {
                     </Alert>
                 </div>
             )}
-          </main>
-        </form>
-      </Form>
+          </form>
+        </Form>
+      </main>
     </div>
   );
 }
-
-    

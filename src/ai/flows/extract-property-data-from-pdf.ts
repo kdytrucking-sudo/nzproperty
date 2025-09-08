@@ -3,7 +3,7 @@
  * @fileOverview Extracts property data from uploaded PDFs using Gemini API.
  *
  * - extractPropertyData - A function that handles the extraction of property data from PDFs.
- * - ExtractPropertyDataInput - The input type for the extractPropertydata function.
+ * - ExtractPropertyDataInput - The input type for the extractPropertyData function.
  * - ExtractPropertyDataOutput - The return type for the extractPropertyData function.
  */
 
