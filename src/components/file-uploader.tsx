@@ -6,6 +6,7 @@ import * as React from 'react';
 import { useDropzone, type DropzoneOptions } from 'react-dropzone';
 import { twMerge } from 'tailwind-merge';
 import { Button } from './ui/button';
+import { cn } from '@/lib/utils';
 
 type FileUploaderProps = {
   value: File[] | null;
@@ -13,6 +14,7 @@ type FileUploaderProps = {
   options?: DropzoneOptions;
   maxFiles?: number;
   label: string;
+  className?: string;
 };
 
 export function FileUploader({
@@ -21,6 +23,7 @@ export function FileUploader({
   options,
   maxFiles = 1,
   label,
+  className,
 }: FileUploaderProps) {
   const onDrop = React.useCallback(
     (acceptedFiles: File[]) => {
@@ -46,10 +49,11 @@ export function FileUploader({
       <label className="text-sm font-medium">{label}</label>
       <div
         {...getRootProps()}
-        className={twMerge(
+        className={cn(
           'group relative grid h-48 w-full cursor-pointer place-items-center rounded-lg border-2 border-dashed border-muted-foreground/25 px-5 py-2.5 text-center transition hover:bg-muted/25',
           'ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-          isDragActive && 'border-primary/50'
+          isDragActive && 'border-primary/50',
+          className
         )}
       >
         <input {...getInputProps()} />

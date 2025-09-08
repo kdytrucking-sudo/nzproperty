@@ -155,14 +155,14 @@ export default function ImageTestPage() {
       <main>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <Card>
+            <Card className="bg-muted/50">
               <CardHeader>
                 <CardTitle>1. Upload Template</CardTitle>
                 <CardDescription>
                 Upload the downloaded report file after text replaced，Please Run Generate report first, then Upload the downloaded report file that contains the image placeholders.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="py-2">
                 <FormField
                   control={form.control}
                   name="template"
@@ -173,6 +173,7 @@ export default function ImageTestPage() {
                       onValueChange={field.onChange}
                       options={{ accept: ACCEPTED_DOCX_TYPES }}
                       maxFiles={1}
+                      className="h-24"
                     />
                   )}
                 />
