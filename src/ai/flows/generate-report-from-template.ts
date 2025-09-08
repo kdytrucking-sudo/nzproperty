@@ -12,8 +12,6 @@ import fs from 'fs/promises';
 import path from 'path';
 import globalContent from '@/lib/global-content.json';
 import { contentFields } from '@/lib/content-config';
-import { multiOptionsSchema, type MultiOptionsData } from '@/lib/multi-options-schema';
-
 
 /* -----------------------------
  * Helpers
@@ -187,7 +185,7 @@ const prepareTemplateData = async (data: any) => {
     }
   };
   
-  // 1) Handle data from 'Info', 'General Info', 'Impro Info' based on jsonStructure
+  // 1) Handle data from 'Info', 'General Info' etc. based on jsonStructure
   Object.keys(jsonStructure).forEach((sectionKey) => {
     const sectionSchema = jsonStructure[sectionKey] || {};
     const dataSection = data?.[sectionKey];
@@ -212,68 +210,41 @@ const prepareTemplateData = async (data: any) => {
     countAndSetReplacement(templateKey, contentValue);
   });
 
-  // 3) commentary
-  if ((data as any)?.commentary) {
-    const placeholderMapping: Record<string, string> = {
-      PurposeofValuation: 'Replace_PurposeofValuation',
-      PrincipalUse: 'Replace_PrincipalUse',
-      PreviousSale: 'Replace_PreviousSale',
-      ContractSale: 'Replace_ContractSale',
-      SuppliedDocumentation: 'Replace_SuppliedDoc',
-      RecentOrProvided: 'Replace_RecentOrProvided',
-      LIM: 'Replace_LIM',
-      PC78: 'Replace_PC78',
-      OperativeZone: 'Replace_Zone',
-      ZoningOptionOperative: 'Replace_ZoningOptionOperative',
-      ZoningOptionPC78: 'Replace_ZoningOptionPC78',
-      ConditionAndRepair: 'Replace_ConditionAndRepair',
-      SiteDescription1: 'Replace_SiteDescription1',
-      SiteDescription2: 'Replace_SiteDescription2',
-      ConclusionOnSalesEvidence: 'Replace_ConclusionOnSalesEvidence',
-    };
-    Object.keys((data as any).commentary).forEach((key: string) => {
-      const templateKey = placeholderMapping[key];
-      if (templateKey) {
-        countAndSetReplacement(templateKey, (data as any).commentary[key]);
-      }
-    });
-  }
-
-  // 4) constructionBrief
-  if ((data as any)?.constructionBrief?.finalBrief) {
-    countAndSetReplacement('Replace_ConstructionBrief', (data as any).constructionBrief.finalBrief);
+  // 3) constructionBrief
+  if (data?.constructionBrief?.finalBrief) {
+    countAndSetReplacement('Replace_ConstructionBrief', data.constructionBrief.finalBrief);
   }
   
-  // 4.5) chattels
-  if ((data as any)?.chattels?.finalBrief) {
-    countAndSetReplacement('Replace_Chattels', (data as any).chattels.finalBrief);
+  // 4) chattels
+  if (data?.chattels?.finalBrief) {
+    countAndSetReplacement('Replace_Chattels', data.chattels.finalBrief);
   }
 
   // 5) marketValuation
-  if ((data as any)?.marketValuation) {
-    if ((data as any).marketValuation.marketValue) {
-        countAndSetReplacement('Replace_MarketValue', (data as any).marketValuation.marketValue);
+  if (data?.marketValuation) {
+    if (data.marketValuation.marketValue) {
+        countAndSetReplacement('Replace_MarketValue', data.marketValuation.marketValue);
     }
-    if ((data as any).marketValuation.marketValuation) {
-        countAndSetReplacement('Replace_MarketValuation', (data as any).marketValuation.marketValuation);
+    if (data.marketValuation.marketValuation) {
+        countAndSetReplacement('Replace_MarketValuation', data.marketValuation.marketValuation);
     }
-    if ((data as any).marketValuation.improvementsValueByValuer) {
-        countAndSetReplacement('Replace_ImprovementValueByValuer', (data as any).marketValuation.improvementsValueByValuer);
+    if (data.marketValuation.improvementsValueByValuer) {
+        countAndSetReplacement('Replace_ImprovementValueByValuer', data.marketValuation.improvementsValueByValuer);
     }
-    if ((data as any).marketValuation.landValueByValuer) {
-        countAndSetReplacement('Replace_LandValueByValuer', (data as any).marketValuation.landValueByValuer);
+    if (data.marketValuation.landValueByValuer) {
+        countAndSetReplacement('Replace_LandValueByValuer', data.marketValuation.landValueByValuer);
     }
-    if ((data as any).marketValuation.chattelsValueByValuer) {
-        countAndSetReplacement('Replace_ChattelsByValuer', (data as any).marketValuation.chattelsValueByValuer);
+    if (data.marketValuation.chattelsValueByValuer) {
+        countAndSetReplacement('Replace_ChattelsByValuer', data.marketValuation.chattelsValueByValuer);
     }
-    if ((data as any).marketValuation.marketValueByValuer) {
-        countAndSetReplacement('Replace_MarketValueByValuer', (data as any).marketValuation.marketValueByValuer);
+    if (data.marketValuation.marketValueByValuer) {
+        countAndSetReplacement('Replace_MarketValueByValuer', data.marketValuation.marketValueByValuer);
     }
   }
 
   // 6) comparableSales
-  if (Array.isArray((data as any)?.comparableSales)) {
-    templateData['comparableSales'] = (data as any).comparableSales.map((sale: Record<string, any>) => {
+  if (Array.isArray(data?.comparableSales)) {
+    templateData['comparableSales'] = data.comparableSales.map((sale: Record<string, any>) => {
       const n: Record<string, any> = {};
       Object.keys(sale).forEach((k: string) => {
         const v = sale[k] ?? '';
@@ -281,41 +252,27 @@ const prepareTemplateData = async (data: any) => {
       });
       return n;
     });
-    countAndSetReplacement('comparableSales', (data as any).comparableSales);
+    countAndSetReplacement('comparableSales', data.comparableSales);
   } else {
     templateData['comparableSales'] = [];
   }
 
   // 7) statutoryValuation
-  if ((data as any)?.statutoryValuation) {
-    countAndSetReplacement('Replace_LandValueFromWeb', (data as any).statutoryValuation.landValueByWeb);
-    countAndSetReplacement('Replace_ValueofImprovementsFromWeb', (data as any).statutoryValuation.improvementsValueByWeb);
-    countAndSetReplacement('Replace_RatingValuationFromWeb', (data as any).statutoryValuation.ratingValueByWeb);
+  if (data?.statutoryValuation) {
+    countAndSetReplacement('Replace_LandValueFromWeb', data.statutoryValuation.landValueByWeb);
+    countAndSetReplacement('Replace_ValueofImprovementsFromWeb', data.statutoryValuation.improvementsValueByWeb);
+    countAndSetReplacement('Replace_RatingValuationFromWeb', data.statutoryValuation.ratingValueByWeb);
   }
 
-  // 8) Multi-options
-  // The placeholders are dynamic, so we loop through the data object keys
+  // 8) Generic Placeholder Replacement (for dynamic fields like new commentary and multi-select)
+  // This will iterate over all top-level keys in the data object.
   Object.keys(data).forEach(key => {
-    // We identify multi-option placeholders by checking if they start with 'Replace_'
-    // and are not part of the other structured data we've already handled.
+    // We are looking for keys that start with "Replace_" which is our convention for placeholders.
     if (key.startsWith('Replace_')) {
-      const alreadyHandled = [
-        'Replace_PurposeofValuation', 'Replace_PrincipalUse', 'Replace_PreviousSale', 'Replace_ContractSale',
-        'Replace_SuppliedDoc', 'Replace_RecentOrProvided', 'Replace_LIM', 'Replace_PC78', 'Replace_Zone',
-        'Replace_ZoningOptionOperative', 'Replace_ZoningOptionPC78', 'Replace_ConditionAndRepair',
-        'Replace_ConstructionBrief', 'Replace_Chattels', 'Replace_MarketValue', 'Replace_MarketValuation', 'Replace_ImprovementValueByValuer',
-        'Replace_LandValueByValuer', 'Replace_ChattelsByValuer', 'Replace_MarketValueByValuer',
-        'Replace_LandValueFromWeb', 'Replace_ValueofImprovementsFromWeb', 'Replace_RatingValuationFromWeb',
-        'Replace_SiteDescription1', 'Replace_SiteDescription2', 'Replace_ConclusionOnSalesEvidence'
-      ].includes(key);
-
-      const isFromJsonStructure = Object.values(jsonStructure).some((section: any) => 
-        Object.values(section).some((field: any) => field.placeholder?.replace(/\[|\]/g, '') === key)
-      );
-
-      if (!alreadyHandled && !isFromJsonStructure) {
-         countAndSetReplacement(key, data[key]);
-      }
+      // The value is the text to be inserted.
+      const value = data[key];
+      // The key itself is the placeholder name (without the brackets).
+      countAndSetReplacement(key, value);
     }
   });
 
@@ -401,3 +358,5 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     }
   }
 );
+
+    
