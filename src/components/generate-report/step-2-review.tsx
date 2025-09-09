@@ -87,7 +87,7 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
                       <div className="flex items-center gap-2">
                          <Input {...field} />
                          <PopoverTrigger asChild>
-                            <Button variant="outline" size="icon">
+                            <Button variant="outline" size="icon" type="button">
                               <CalendarIcon className="h-4 w-4" />
                             </Button>
                          </PopoverTrigger>
@@ -364,7 +364,16 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       form.setValue('chattels.finalBrief', '');
       return;
     }
-    const list = selected.join(', ');
+    
+    let list;
+    if (selected.length === 1) {
+      list = selected[0];
+    } else {
+      const allButLast = selected.slice(0, -1).join(', ');
+      const last = selected[selected.length - 1];
+      list = `${allButLast} and ${last}`;
+    }
+
     const sentence = `We have included in our valuation an allowance for chattels including ${list}.`;
     form.setValue('chattels.finalBrief', sentence);
   };
@@ -779,9 +788,9 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                                         checked={field.value?.includes(item.id)}
                                         onCheckedChange={(checked) => {
                                           return checked
-                                            ? field.onChange([...field.value, item.id])
+                                            ? field.onChange([...(field.value ?? []), item.id])
                                             : field.onChange(
-                                                field.value?.filter(
+                                                (field.value ?? [])?.filter(
                                                   (value) => value !== item.id
                                                 )
                                               )
@@ -1079,7 +1088,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
               <Card key={field.id}>
                 <CardHeader>
                     <div className="flex items-center justify-between">
-                         <CardTitle>Room Option {index + 1}</CardTitle>
+                         <CardTitle>Room Option {roomOptionFields.length - index}</CardTitle>
                          <Button type="button" variant="destructive" size="icon" onClick={() => removeRoomOption(index)}>
                             <Trash2 className="h-4 w-4" />
                          </Button>
@@ -1094,7 +1103,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                         <FormItem>
                           <div className="flex items-center justify-between">
                              <FormLabel>Room Name</FormLabel>
-                             <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{`[Replace_RoomOptionName${index + 1}]`}</code>
+                             <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{`[Replace_RoomOptionName${roomOptionFields.length - index}]`}</code>
                           </div>
                           <FormControl>
                             <Input {...field} />
@@ -1106,7 +1115,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     <FormItem>
                         <div className="flex items-center justify-between">
                             <FormLabel>Room Option Text</FormLabel>
-                            <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{`[Replace_RoomOptionText${index + 1}]`}</code>
+                            <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{`[Replace_RoomOptionText${roomOptionFields.length - index}]`}</code>
                         </div>
                         <FormControl>
                            <Input readOnly value={roomOptionText} />
