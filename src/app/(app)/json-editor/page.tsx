@@ -6,23 +6,23 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Form, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import * as React from 'react';
 import { FileUploader } from '@/components/file-uploader';
 import { Textarea } from '@/components/ui/textarea';
 import { saveExtractionConfig } from '@/ai/flows/save-json-structure';
+import { getExtractionConfig } from '@/ai/flows/get-extraction-config';
 import { extractPropertyData } from '@/ai/flows/extract-property-data-from-pdf';
-import initialJsonStructure from '@/lib/json-structure.json';
-import initialPrompts from '@/lib/prompts.json';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { getAiConfig } from '@/ai/flows/get-ai-config';
+import { saveAiConfig } from '@/ai/flows/save-ai-config';
+import { type AiConfig, AiConfigSchema, DEFAULT_AI_CONFIG } from '@/lib/ai-config-schema';
 
 const ACCEPTED_FILE_TYPES = {
   'application/pdf': ['.pdf'],
 };
-
-// Convert initial JSON object to a nicely formatted string
-const defaultJsonString = JSON.stringify(initialJsonStructure, null, 2);
 
 const formSchema = z.object({
   jsonStructure: z.string().refine((val) => {
@@ -37,8 +37,9 @@ const formSchema = z.object({
   userPrompt: z.string().min(1, 'User prompt is required.'),
   extractionHintsTitle: z.string().min(1, 'Extraction hints title is required.'),
   extractionHints: z.string().min(1, 'Extraction hints are required.'),
-  testPropertyTitlePdf: z.array(z.instanceof(File)).min(1, 'Property Title PDF is required for testing.'),
-  testBriefInformationPdf: z.array(z.instanceof(File)).min(1, 'Brief Information PDF is required for testing.'),
+  testPropertyTitlePdf: z.array(z.instanceof(File)).optional(),
+  testBriefInformationPdf: z.array(z.instanceof(File)).optional(),
+  aiConfig: AiConfigSchema,
 });
 
 const fileToDataUri = (file: File): Promise<string> => {
@@ -54,19 +55,37 @@ export default function JsonEditorPage() {
   const { toast } = useToast();
   const [isTesting, setIsTesting] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isSavingAiSettings, setIsSavingAiSettings] = React.useState(false);
   const [testResult, setTestResult] = React.useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      jsonStructure: defaultJsonString,
-      systemPrompt: initialPrompts.system_prompt,
-      userPrompt: initialPrompts.user_prompt,
-      extractionHintsTitle: initialPrompts.extraction_hints_title,
-      extractionHints: initialPrompts.extraction_hints,
-      testPropertyTitlePdf: [],
-      testBriefInformationPdf: [],
-    },
+    defaultValues: async () => {
+        try {
+            const [extractionConfig, aiConfig] = await Promise.all([
+                getExtractionConfig(),
+                getAiConfig()
+            ]);
+            return {
+                ...extractionConfig,
+                testPropertyTitlePdf: [],
+                testBriefInformationPdf: [],
+                aiConfig: aiConfig || DEFAULT_AI_CONFIG,
+            };
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Failed to load initial config', description: error.message });
+            return {
+                jsonStructure: "{}",
+                systemPrompt: "",
+                userPrompt: "",
+                extractionHintsTitle: "",
+                extractionHints: "",
+                testPropertyTitlePdf: [],
+                testBriefInformationPdf: [],
+                aiConfig: DEFAULT_AI_CONFIG,
+            };
+        }
+    }
   });
 
   async function onTestRun(values: z.infer<typeof formSchema>) {
@@ -105,7 +124,7 @@ export default function JsonEditorPage() {
     }
   }
 
-  async function onSave(values: z.infer<typeof formSchema>) {
+  async function onSaveExtraction(values: z.infer<typeof formSchema>) {
     setIsSaving(true);
     try {
         await saveExtractionConfig({ 
@@ -115,13 +134,26 @@ export default function JsonEditorPage() {
             extractionHintsTitle: values.extractionHintsTitle,
             extractionHints: values.extractionHints,
         });
-        toast({ title: 'Configuration Saved', description: 'The AI will now use the new structure and prompts.' });
+        toast({ title: 'Extraction Config Saved', description: 'The AI will now use the new structure and prompts.' });
     } catch (error: any) {
-        console.error('Failed to save:', error);
+        console.error('Failed to save extraction config:', error);
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
     } finally {
         setIsSaving(false);
     }
+  }
+  
+  async function onSaveAiSettings(values: z.infer<typeof formSchema>) {
+      setIsSavingAiSettings(true);
+      try {
+          await saveAiConfig(values.aiConfig);
+          toast({ title: 'AI Settings Saved', description: 'The global AI model configuration has been updated.' });
+      } catch (error: any) {
+          console.error('Failed to save AI settings:', error);
+          toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+      } finally {
+          setIsSavingAiSettings(false);
+      }
   }
 
   return (
@@ -129,15 +161,80 @@ export default function JsonEditorPage() {
       <header>
         <h1 className="font-headline text-3xl font-bold text-foreground">AI Configuration</h1>
         <p className="text-muted-foreground">
-          Edit and test the JSON structure and prompts for AI data extraction. Your saved changes will be used globally.
+          Edit and test the JSON structure, prompts, and model parameters for AI data extraction. Your saved changes will be used globally.
         </p>
       </header>
       <main>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onTestRun)}>
+          <form>
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
               <div className="space-y-6">
                 <Card>
+                  <CardHeader>
+                    <CardTitle>AI Model Settings</CardTitle>
+                    <CardDescription>Define the global AI model and its parameters.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                     <FormField
+                        control={form.control}
+                        name="aiConfig.model"
+                        render={({ field }) => (
+                           <FormItem>
+                                <FormLabel>Model Name</FormLabel>
+                                <Input {...field} placeholder="e.g., googleai/gemini-2.5-pro" />
+                                <FormMessage/>
+                           </FormItem>
+                        )}
+                      />
+                      <div className="grid grid-cols-3 gap-4">
+                           <FormField
+                            control={form.control}
+                            name="aiConfig.temperature"
+                            render={({ field }) => (
+                               <FormItem>
+                                    <FormLabel>Temperature</FormLabel>
+                                    <Input type="number" {...field} placeholder="e.g., 0.2" />
+                                    <FormMessage/>
+                               </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="aiConfig.topP"
+                            render={({ field }) => (
+                               <FormItem>
+                                    <FormLabel>Top P</FormLabel>
+                                    <Input type="number" {...field} placeholder="e.g., 1" />
+                                    <FormMessage/>
+                               </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="aiConfig.topK"
+                            render={({ field }) => (
+                               <FormItem>
+                                    <FormLabel>Top K</FormLabel>
+                                    <Input type="number" {...field} placeholder="e.g., 1" />
+                                    <FormMessage/>
+                               </FormItem>
+                            )}
+                          />
+                      </div>
+                      <FormField
+                        control={form.control}
+                        name="aiConfig.maxOutputTokens"
+                        render={({ field }) => (
+                           <FormItem>
+                                <FormLabel>Max Output Tokens</FormLabel>
+                                <Input type="number" {...field} placeholder="e.g., 8192" />
+                                <FormMessage/>
+                           </FormItem>
+                        )}
+                      />
+                  </CardContent>
+                </Card>
+                 <Card>
                   <CardHeader>
                     <CardTitle>AI Prompts</CardTitle>
                     <CardDescription>Define the instructions for the AI extractor.</CardDescription>
@@ -200,9 +297,12 @@ export default function JsonEditorPage() {
                     />
                   </CardContent>
                 </Card>
-                 <div className="flex justify-end rounded-md border bg-card p-4 text-card-foreground shadow-sm">
-                    <Button type="button" variant="secondary" onClick={() => onSave(form.getValues())} disabled={isSaving}>
-                      {isSaving ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving Config...</>) : 'Save Global AI Configuration'}
+                 <div className="flex justify-between rounded-md border bg-card p-4 text-card-foreground shadow-sm">
+                    <Button type="button" onClick={form.handleSubmit(onSaveAiSettings)} disabled={isSavingAiSettings}>
+                      {isSavingAiSettings ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving AI Settings...</>) : 'Save AI Settings'}
+                    </Button>
+                    <Button type="button" variant="secondary" onClick={form.handleSubmit(onSaveExtraction)} disabled={isSaving}>
+                      {isSaving ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving Extraction...</>) : 'Save Extraction Config'}
                     </Button>
                   </div>
               </div>
@@ -213,10 +313,10 @@ export default function JsonEditorPage() {
                        <CardDescription>Upload files to test the extraction rules and prompts defined on the left.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <FormField control={form.control} name="testPropertyTitlePdf" render={() => (<Controller name="testPropertyTitlePdf" control={form.control} render={({field}) => (<FileUploader label="Test Property Title (PDF)" value={field.value} onValueChange={field.onChange} options={{ accept: ACCEPTED_FILE_TYPES }} maxFiles={1} />)} />)} />
-                      <FormField control={form.control} name="testBriefInformationPdf" render={() => (<Controller name="testBriefInformationPdf" control={form.control} render={({field}) => (<FileUploader label="Test Brief Information (PDF)" value={field.value} onValueChange={field.onChange} options={{ accept: ACCEPTED_FILE_TYPES }} maxFiles={1} />)} />)} />
+                      <FormField control={form.control} name="testPropertyTitlePdf" render={() => (<Controller name="testPropertyTitlePdf" control={form.control} render={({field}) => (<FileUploader label="Test Property Title (PDF)" value={field.value ?? []} onValueChange={field.onChange} options={{ accept: ACCEPTED_FILE_TYPES }} maxFiles={1} />)} />)} />
+                      <FormField control={form.control} name="testBriefInformationPdf" render={() => (<Controller name="testBriefInformationPdf" control={form.control} render={({field}) => (<FileUploader label="Test Brief Information (PDF)" value={field.value ?? []} onValueChange={field.onChange} options={{ accept: ACCEPTED_FILE_TYPES }} maxFiles={1} />)} />)} />
                        <div className="flex justify-start pt-4">
-                         <Button type="submit" disabled={isTesting}>
+                         <Button type="button" onClick={form.handleSubmit(onTestRun)} disabled={isTesting}>
                           {isTesting ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Testing...</>) : 'Run Test'}
                         </Button>
                       </div>
