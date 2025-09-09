@@ -1,7 +1,6 @@
 'use client';
 
 import { AppSidebar } from '@/components/app-sidebar';
-import { Toaster } from '@/components/ui/toaster';
 import {
   SidebarInset,
   SidebarProvider,
@@ -20,7 +19,6 @@ export default function AppLayout({
           <main className="p-4 sm:p-6 lg:p-8">{children}</main>
         </div>
       </SidebarInset>
-      <Toaster />
     </SidebarProvider>
   );
 }

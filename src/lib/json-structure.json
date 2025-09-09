@@ -137,15 +137,7 @@
     }
   },
   "General Info": {
-    "Zoning": {
-      "label": "Zoning Detail",
-      "placeholder": "[Replace_Zoning]",
-      "displayType": "textarea",
-      "validation": {
-        "type": "string",
-        "required": false
-      }
-    },
+
     "Title Interestes": {
       "label": "Title Interestes",
       "placeholder": "[Replace_TitleInterests]",
@@ -172,7 +164,8 @@
         "type": "string",
         "required": false
       }
-    },"Property Description": {
+    },
+    "Property Description": {
       "label": "Property Description",
       "placeholder": "[Replace_PropertySummary]",
       "displayType": "textarea",
@@ -227,5 +220,4 @@
       }
     }
   }
- 
 }
