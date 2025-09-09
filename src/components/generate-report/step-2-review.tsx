@@ -177,7 +177,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     name: 'data.comparableSales',
   });
 
-  const { fields: roomOptionFields, append: appendRoomOption, remove: removeRoomOption } = useFieldArray({
+  const { fields: roomOptionFields, prepend: prependRoomOption, remove: removeRoomOption } = useFieldArray({
     control: form.control,
     name: 'roomOptions'
   });
@@ -191,7 +191,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       });
       return;
     }
-    appendRoomOption({
+    prependRoomOption({
       id: crypto.randomUUID(),
       roomType: selectedRoomType,
       roomName: selectedRoomType,
@@ -454,9 +454,12 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
 
        // 3. Add Room Option selections
        if (values.roomOptions) {
+        // Since we are prepending, the form's array is already in "reverse" order of creation.
+        // We need to map it to placeholders 1, 2, 3... in the order they appear on screen.
         values.roomOptions.forEach((room: any, index: number) => {
-          const namePlaceholder = `Replace_RoomOptionName${index + 1}`;
-          const textPlaceholder = `Replace_RoomOptionText${index + 1}`;
+          const placeholderIndex = index + 1;
+          const namePlaceholder = `Replace_RoomOptionName${placeholderIndex}`;
+          const textPlaceholder = `Replace_RoomOptionText${placeholderIndex}`;
           placeholderData[namePlaceholder] = room.roomName;
           placeholderData[textPlaceholder] = room.selectedOptions.join(', ');
         });
