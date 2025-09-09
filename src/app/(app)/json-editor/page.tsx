@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,7 +7,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import * as React from 'react';
 import { FileUploader } from '@/components/file-uploader';
@@ -181,7 +182,7 @@ export default function JsonEditorPage() {
                         render={({ field }) => (
                            <FormItem>
                                 <FormLabel>Model Name</FormLabel>
-                                <Input {...field} placeholder="e.g., googleai/gemini-2.5-pro" />
+                                <Input {...field} placeholder="e.g., googleai/gemini-2.5-pro" value={field.value ?? ''} />
                                 <FormMessage/>
                            </FormItem>
                         )}
@@ -193,7 +194,7 @@ export default function JsonEditorPage() {
                             render={({ field }) => (
                                <FormItem>
                                     <FormLabel>Temperature</FormLabel>
-                                    <Input type="number" {...field} placeholder="e.g., 0.2" />
+                                    <Input type="number" {...field} placeholder="e.g., 0.2" value={field.value ?? ''}/>
                                     <FormMessage/>
                                </FormItem>
                             )}
@@ -204,7 +205,7 @@ export default function JsonEditorPage() {
                             render={({ field }) => (
                                <FormItem>
                                     <FormLabel>Top P</FormLabel>
-                                    <Input type="number" {...field} placeholder="e.g., 1" />
+                                    <Input type="number" {...field} placeholder="e.g., 1" value={field.value ?? ''}/>
                                     <FormMessage/>
                                </FormItem>
                             )}
@@ -215,7 +216,7 @@ export default function JsonEditorPage() {
                             render={({ field }) => (
                                <FormItem>
                                     <FormLabel>Top K</FormLabel>
-                                    <Input type="number" {...field} placeholder="e.g., 1" />
+                                    <Input type="number" {...field} placeholder="e.g., 1" value={field.value ?? ''}/>
                                     <FormMessage/>
                                </FormItem>
                             )}
@@ -227,7 +228,7 @@ export default function JsonEditorPage() {
                         render={({ field }) => (
                            <FormItem>
                                 <FormLabel>Max Output Tokens</FormLabel>
-                                <Input type="number" {...field} placeholder="e.g., 8192" />
+                                <Input type="number" {...field} placeholder="e.g., 8192" value={field.value ?? ''}/>
                                 <FormMessage/>
                            </FormItem>
                         )}
@@ -347,3 +348,5 @@ export default function JsonEditorPage() {
     </div>
   );
 }
+
+    
