@@ -182,7 +182,10 @@ export default function JsonEditorPage() {
                         render={({ field }) => (
                            <FormItem>
                                 <FormLabel>Model Name</FormLabel>
-                                <Input {...field} placeholder="e.g., googleai/gemini-2.5-pro" value={field.value ?? ''} />
+                                <Input 
+                                  placeholder="e.g., googleai/gemini-2.5-pro" 
+                                  {...field}
+                                />
                                 <FormMessage/>
                            </FormItem>
                         )}
@@ -194,7 +197,12 @@ export default function JsonEditorPage() {
                             render={({ field }) => (
                                <FormItem>
                                     <FormLabel>Temperature</FormLabel>
-                                    <Input type="number" {...field} placeholder="e.g., 0.2" value={field.value ?? ''}/>
+                                    <Input 
+                                      type="number" 
+                                      placeholder="e.g., 0.2" 
+                                      {...field}
+                                      value={field.value ?? ''}
+                                    />
                                     <FormMessage/>
                                </FormItem>
                             )}
@@ -205,7 +213,12 @@ export default function JsonEditorPage() {
                             render={({ field }) => (
                                <FormItem>
                                     <FormLabel>Top P</FormLabel>
-                                    <Input type="number" {...field} placeholder="e.g., 1" value={field.value ?? ''}/>
+                                    <Input 
+                                      type="number" 
+                                      placeholder="e.g., 1" 
+                                      {...field}
+                                      value={field.value ?? ''}
+                                    />
                                     <FormMessage/>
                                </FormItem>
                             )}
@@ -216,7 +229,12 @@ export default function JsonEditorPage() {
                             render={({ field }) => (
                                <FormItem>
                                     <FormLabel>Top K</FormLabel>
-                                    <Input type="number" {...field} placeholder="e.g., 1" value={field.value ?? ''}/>
+                                    <Input 
+                                      type="number" 
+                                      placeholder="e.g., 1" 
+                                      {...field}
+                                      value={field.value ?? ''}
+                                    />
                                     <FormMessage/>
                                </FormItem>
                             )}
@@ -228,7 +246,12 @@ export default function JsonEditorPage() {
                         render={({ field }) => (
                            <FormItem>
                                 <FormLabel>Max Output Tokens</FormLabel>
-                                <Input type="number" {...field} placeholder="e.g., 8192" value={field.value ?? ''}/>
+                                <Input 
+                                  type="number" 
+                                  placeholder="e.g., 8192" 
+                                  {...field}
+                                  value={field.value ?? ''}
+                                />
                                 <FormMessage/>
                            </FormItem>
                         )}
@@ -348,5 +371,3 @@ export default function JsonEditorPage() {
     </div>
   );
 }
-
-    
