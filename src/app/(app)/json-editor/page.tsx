@@ -183,7 +183,7 @@ export default function JsonEditorPage() {
                            <FormItem>
                                 <FormLabel>Model Name</FormLabel>
                                 <Input 
-                                  placeholder="e.g., googleai/gemini-2.5-pro" 
+                                  placeholder="e.g., googleai/gemini-1.5-flash"
                                   {...field}
                                 />
                                 <FormMessage/>
@@ -199,9 +199,12 @@ export default function JsonEditorPage() {
                                     <FormLabel>Temperature</FormLabel>
                                     <Input 
                                       type="number" 
-                                      placeholder="e.g., 0.2" 
-                                      {...field}
+                                      placeholder="e.g., 0.2"
                                       value={field.value ?? ''}
+                                      onChange={field.onChange}
+                                      onBlur={field.onBlur}
+                                      name={field.name}
+                                      ref={field.ref}
                                     />
                                     <FormMessage/>
                                </FormItem>
@@ -215,9 +218,12 @@ export default function JsonEditorPage() {
                                     <FormLabel>Top P</FormLabel>
                                     <Input 
                                       type="number" 
-                                      placeholder="e.g., 1" 
-                                      {...field}
+                                      placeholder="e.g., 1"
                                       value={field.value ?? ''}
+                                      onChange={field.onChange}
+                                      onBlur={field.onBlur}
+                                      name={field.name}
+                                      ref={field.ref}
                                     />
                                     <FormMessage/>
                                </FormItem>
@@ -231,9 +237,12 @@ export default function JsonEditorPage() {
                                     <FormLabel>Top K</FormLabel>
                                     <Input 
                                       type="number" 
-                                      placeholder="e.g., 1" 
-                                      {...field}
+                                      placeholder="e.g., 1"
                                       value={field.value ?? ''}
+                                      onChange={field.onChange}
+                                      onBlur={field.onBlur}
+                                      name={field.name}
+                                      ref={field.ref}
                                     />
                                     <FormMessage/>
                                </FormItem>
@@ -248,9 +257,12 @@ export default function JsonEditorPage() {
                                 <FormLabel>Max Output Tokens</FormLabel>
                                 <Input 
                                   type="number" 
-                                  placeholder="e.g., 8192" 
-                                  {...field}
+                                  placeholder="e.g., 8192"
                                   value={field.value ?? ''}
+                                  onChange={field.onChange}
+                                  onBlur={field.onBlur}
+                                  name={field.name}
+                                  ref={field.ref}
                                 />
                                 <FormMessage/>
                            </FormItem>
