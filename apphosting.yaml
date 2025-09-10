@@ -7,3 +7,19 @@ livenessProbe:
   # An HTTP request to the root of your application.
   httpGet:
     path: /
+
+# The minimum number of CPU cores to allocate to a container instance.
+# https://firebase.google.com/docs/app-hosting/configure-resources
+cpu: 1
+
+# The amount of memory in MiB to allocate to a container instance.
+# https://firebase.google.com/docs/app-hosting/configure-resources
+memoryMiB: 1024
+
+# The number of concurrent requests a container instance can receive.
+# https://firebase.google.com/docs/app-hosting/configure-concurrency
+concurrency: 100
+
+# The maximum request execution time for a container instance.
+# https://firebase.google.com/docs/app-hosting/configure-timeouts
+timeoutSeconds: 300

@@ -383,5 +383,66 @@
         "option": "\"UNIT TITLE : In assessing the market value of the subject property, we have considered units that sold within the subject development together with comprable units in the surrounding area, with emphasis on properties of comparable location, age, building size, and land area.\nIn a broader market context, comparable properties with similar characteristics have transacted between $726,000 – $835,000 over the period October 2024 to July 2025, at an average sale price of approximately $777,000. These comparables provide floor areas ranging from 63 sm to 106 sm, with an average of 81 sm.\nOf particular note, two units within the subject development have recently sold. Lot 1, an end-positioned unit, sold in July 2025 for $775,000, while Lot 2, a middle unit with a smaller yard, sold in May 2025 for $726,000. These sales reflect analysed land and building rates of approximately $11,524 psm to $12,302 psm. Both units are considered inferior to the subject due to smaller yards and less favourable outlooks.\nOn balance, and taking into account the physical attributes of the property including its age, size, condition, views, and aspect, together with also allowing for the prevailing market conditions, we believe the subject property would warrant a market value ranging between $800,000 – $840,000, and we deem it appropriate in this instance to adopt the mid-point of this range at a figure of $820,000.\""
       }
     ]
+  },
+  {
+    "id": "2d161ebb-6a0d-4613-ba19-26b27bc4cabc",
+    "cardName": "Searched Document",
+    "placeholder": "[Replace_SearchedDoc]",
+    "options": [
+      {
+        "id": "e34a72b7-645f-421b-a736-6e56123caff7",
+        "label": "long sentence",
+        "option": "searched a copy of Title Identifier, reviewed the supplied documentation"
+      },
+      {
+        "id": "92f91bbe-6a65-4833-8821-0b2a7c9d13d5",
+        "label": "short1",
+        "option": "searched a copy of Title Identifier"
+      },
+      {
+        "id": "7818e66f-f45d-4858-a16a-8a219908cd2f",
+        "label": "short2",
+        "option": "reviewed the supplied documentation"
+      }
+    ]
+  },
+  {
+    "id": "d05e7455-7c49-4f6c-a104-98e6a99ef052",
+    "cardName": "Layout/Amenities",
+    "placeholder": "[Replace_LayoutAmenities]",
+    "options": [
+      {
+        "id": "cdeb25b6-b962-49ff-938d-cad6b03d16b5",
+        "label": "NIL",
+        "option": "NIL"
+      },
+      {
+        "id": "5beff444-ca69-4fb3-8268-5e3476349e0a",
+        "label": "with 's'",
+        "option": "We set down the floor plans below, sourced from the advertising website. "
+      },
+      {
+        "id": "9ef144e0-ad09-4f0f-be84-44cc9850557a",
+        "label": "without 's'",
+        "option": "We set down the floor plan below, sourced from the advertising website. "
+      }
+    ]
+  },
+  {
+    "id": "7d4c3595-f966-4e4e-9c4d-7f657ee78d3e",
+    "cardName": "Market Segment Conditions:  ",
+    "placeholder": "[Replace_MarketSegmentConditions]",
+    "options": [
+      {
+        "id": "0fde24db-6584-4fb8-b279-275adea3c5da",
+        "label": "For properties of this nature in this market, we c...",
+        "option": "For properties of this nature in this market, we consider there to be a medium to high risk, given the market has favoured tidy, renovated or newly improved properties through the downturn. "
+      },
+      {
+        "id": "eb39f613-2f71-4500-86f1-645b8ca865be",
+        "label": "The construction sector remains under pressure, wi...",
+        "option": "The construction sector remains under pressure, with building costs remaining high due to inflation and labour shortages. Newly constructed dwellings continue to see reasonable sale volume levels, but did take a hit in terms of price levels, with declines experienced in the past two or three years. These are somewhat more stable now, but risk remains at a moderate level."
+      }
+    ]
   }
 ]

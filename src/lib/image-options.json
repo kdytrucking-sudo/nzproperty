@@ -117,5 +117,12 @@
     "placeholder": "{%Image_LayoutAmenities6}",
     "width": 288,
     "height": 216
+  },
+  {
+    "id": "c57c99dc-6fff-4cc1-8a6f-dd539541ce2e",
+    "cardName": "Situation and Locality Map Screenshot",
+    "placeholder": "{%Image_LocalitySituationMap}",
+    "width": 288,
+    "height": 216
   }
 ]

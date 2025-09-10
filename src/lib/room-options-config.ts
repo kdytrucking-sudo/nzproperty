@@ -69,6 +69,7 @@ export const roomOptionsConfig: Record<RoomType, string[]> = {
     'Pantry and cupboards',
     'Box window',
     'Skylight',
+    'Range hood',
   ],
   Entry: [
     'Tiled floor',
