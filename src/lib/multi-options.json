@@ -12,22 +12,22 @@
       {
         "id": "2c96c26d-6587-4284-9b7a-3ee7af96c805",
         "label": "Good outdoor living area",
-        "option": "Good outdoor living area"
+        "option": "Good outdoor living area."
       },
       {
         "id": "b0e3fe8c-dcca-4380-a27a-304e60515508",
         "label": "One designated parking space",
-        "option": "One designated parking space"
+        "option": "One designated parking space."
       },
       {
         "id": "f5b4ab05-9696-4e3d-a2e6-f2d1eb508067",
         "label": "Additional off-street parking spaces",
-        "option": "Additional off-street parking spaces"
+        "option": "Additional off-street parking spaces."
       },
       {
         "id": "2f538bca-6141-4a66-9c59-53f4f52ccd00",
         "label": "Elevated urban views",
-        "option": "Elevated urban views"
+        "option": "Elevated urban views."
       }
     ]
   },
@@ -44,12 +44,12 @@
       {
         "id": "02cec3a9-8b68-4a3c-b579-a44fced0e2aa",
         "label": "Cross Lease Tenure",
-        "option": "Cross Lease Tenure"
+        "option": "Cross Lease Tenure."
       },
       {
         "id": "b9a35200-d8ad-4e29-8cfe-86a80457f9b1",
         "label": "High volume of similar, competing townhouse and terrace house product in the surrounding area",
-        "option": "High volume of similar, competing townhouse and terrace house product in the surrounding area"
+        "option": "High volume of similar, competing townhouse and terrace house product in the surrounding area."
       },
       {
         "id": "048f5a92-c9ca-4c44-902b-9637002b4f5b",
@@ -59,7 +59,7 @@
       {
         "id": "d347a6ab-06a9-4cfe-97ec-0319d80af356",
         "label": "Subdued economic and residential property market conditions",
-        "option": "Subdued economic and residential property market conditions"
+        "option": "Subdued economic and residential property market conditions."
       }
     ]
   }

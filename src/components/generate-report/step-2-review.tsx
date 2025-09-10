@@ -168,6 +168,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         roomType: string;
         roomName: string;
         selectedOptions: string[];
+        roomOptionText: string;
       }[],
     },
   });
@@ -196,6 +197,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       roomType: selectedRoomType,
       roomName: selectedRoomType,
       selectedOptions: [],
+      roomOptionText: '',
     });
   };
   
@@ -213,6 +215,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
       newSelections = currentSelections.filter((sel) => sel !== option);
     }
     form.setValue(`roomOptions.${fieldIndex}.selectedOptions`, newSelections);
+    form.setValue(`roomOptions.${fieldIndex}.roomOptionText`, newSelections.join(', '));
   };
 
   const parseCurrency = (value: string | undefined): number => {
@@ -466,11 +469,11 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
         // Since we are prepending, the form's array is already in "reverse" order of creation.
         // We need to map it to placeholders 1, 2, 3... in the order they appear on screen.
         values.roomOptions.forEach((room: any, index: number) => {
-          const placeholderIndex = index + 1;
+          const placeholderIndex = roomOptionFields.length - index;
           const namePlaceholder = `Replace_RoomOptionName${placeholderIndex}`;
           const textPlaceholder = `Replace_RoomOptionText${placeholderIndex}`;
           placeholderData[namePlaceholder] = room.roomName;
-          placeholderData[textPlaceholder] = room.selectedOptions.join(', ');
+          placeholderData[textPlaceholder] = room.roomOptionText;
         });
       }
 
@@ -1082,8 +1085,7 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
           {roomOptionFields.map((field, index) => {
              const roomOptions = roomOptionsConfig[field.roomType as keyof typeof roomOptionsConfig] || [];
              const selectedOptions = form.watch(`roomOptions.${index}.selectedOptions`);
-             const roomOptionText = selectedOptions.join(', ');
-
+             
             return (
               <Card key={field.id}>
                 <CardHeader>
@@ -1112,15 +1114,22 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                         </FormItem>
                       )}
                     />
-                    <FormItem>
-                        <div className="flex items-center justify-between">
-                            <FormLabel>Room Option Text</FormLabel>
-                            <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{`[Replace_RoomOptionText${roomOptionFields.length - index}]`}</code>
-                        </div>
-                        <FormControl>
-                           <Input readOnly value={roomOptionText} />
-                        </FormControl>
-                    </FormItem>
+                    <FormField
+                      control={form.control}
+                      name={`roomOptions.${index}.roomOptionText`}
+                      render={({ field }) => (
+                        <FormItem>
+                            <div className="flex items-center justify-between">
+                                <FormLabel>Room Option Text</FormLabel>
+                                <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{`[Replace_RoomOptionText${roomOptionFields.length - index}]`}</code>
+                            </div>
+                            <FormControl>
+                               <Input {...field} />
+                            </FormControl>
+                             <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
 
                   <div className="space-y-2">
