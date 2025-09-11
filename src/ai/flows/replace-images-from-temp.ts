@@ -78,6 +78,10 @@ const replaceImagesFromTempFlow = ai.defineFlow(
            if (Buffer.isBuffer(tagValue)) {
             return tagValue;
           }
+          if (typeof tagValue === 'string' && tagValue.startsWith('data:')) {
+            const b64 = tagValue.split(',')[1] ?? '';
+            return Buffer.from(b64, 'base64');
+          }
           // This should not happen if templateData is prepared correctly
           throw new Error('Image data not found or not a buffer.');
         },
