@@ -8,9 +8,32 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
-import fs from 'fs/promises';
+//import fs from 'fs/promises';
+//import path from 'path';
+//import crypto from 'crypto';
+/* add below from chatgpt suggestion */
+
+import os from 'os';
 import path from 'path';
-import crypto from 'crypto';
+import { promises as fs } from 'fs';
+
+function resolveTempPath(filename: string) {
+  // ✅ 用项目根目录下的 tmp（和你原来保存的一致）
+  const tmpRoot = process.env.TMP_DIR ?? path.join(process.cwd(), 'tmp');
+  const safeName = path.basename(filename);
+  return path.resolve(tmpRoot, safeName);
+}
+
+async function assertExists(absPath: string) {
+  try {
+    await fs.access(absPath);
+  } catch {
+    throw new Error(`Temp image not found: ${absPath}`);
+  }
+}
+
+/* end of Add */
+
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 const ImageModule = require('docxtemplater-image-module-free');
@@ -61,7 +84,8 @@ const replaceImagesFromTempFlow = ai.defineFlow(
     outputSchema: ReplaceImagesFromTempOutputSchema,
   },
   async ({ templateDataUri, images }) => {
-    const tmpDir = path.join(process.cwd(), 'tmp');
+    //const tmpDir = path.join(process.cwd(), 'tmp');
+    
     const tempFilePaths: string[] = [];
 
     try {
@@ -73,9 +97,17 @@ const replaceImagesFromTempFlow = ai.defineFlow(
 
       // Prepare data and gather file paths for cleanup
       await Promise.all(images.map(async (img) => {
+        //deleted by follow chatgpt;
+        //const key = img.placeholder.trim().replace(/^\{\%/, '').replace(/\}$/, '');
+        //const tempFilePath = path.join(tmpDir, img.tempFileName);
+        //tempFilePaths.push(tempFilePath);
+
         const key = img.placeholder.trim().replace(/^\{\%/, '').replace(/\}$/, '');
-        const tempFilePath = path.join(tmpDir, img.tempFileName);
-        tempFilePaths.push(tempFilePath);
+
+        // 新增 ↓↓↓
+        const tempFilePath = resolveTempPath(img.tempFileName);
+        await assertExists(tempFilePath);
+        tempFilePaths.push(tempFilePath); // 让 finally 能正确清理
 
         const imageBuffer = await fs.readFile(tempFilePath);
         const mimeType = getMimeType(img.tempFileName);
@@ -106,7 +138,7 @@ const replaceImagesFromTempFlow = ai.defineFlow(
 
       const doc = new Docxtemplater(zip, {
         modules: [imageModule],
-        delimiters: { start: '{%', end: '}' },
+        //delimiters: { start: '{%', end: '}' },
         paragraphLoop: true,
         linebreaks: true,
       });

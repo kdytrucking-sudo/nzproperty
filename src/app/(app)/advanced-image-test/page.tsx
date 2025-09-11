@@ -25,6 +25,7 @@ const ACCEPTED_IMAGE_TYPES = {
   'image/jpeg': ['.jpg', '.jpeg'],
 };
 
+
 const formSchema = z.object({
   template: z.array(z.instanceof(File)).min(1, 'A .docx template is required.'),
 });
@@ -54,6 +55,7 @@ export default function AdvancedImageTestPage() {
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [isLoadingConfigs, setIsLoadingConfigs] = React.useState(true);
   const [resultUri, setResultUri] = React.useState<string | null>(null);
+  const [resultFileName, setResultFileName] = React.useState<string>('');
   const [imageConfigs, setImageConfigs] = React.useState<ImageConfig[]>([]);
   const [imageFiles, setImageFiles] = React.useState<Record<string, ImageInfo | null>>({});
 
@@ -114,7 +116,7 @@ export default function AdvancedImageTestPage() {
     if (!resultUri) return;
     const link = document.createElement('a');
     link.href = resultUri;
-    link.download = `advanced_test_result_${Date.now()}.docx`;
+    link.download = resultFileName || `advanced_test_result_${Date.now()}.docx`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -128,6 +130,7 @@ export default function AdvancedImageTestPage() {
   async function onSubmit(values: FormSchema) {
     setIsProcessing(true);
     setResultUri(null);
+    setResultFileName('');
     try {
       const templateDataUri = await fileToDataUri(values.template[0]);
       
@@ -162,6 +165,7 @@ export default function AdvancedImageTestPage() {
       });
 
       setResultUri(result.generatedDocxDataUri);
+      setResultFileName(values.template[0].name);
       toast({
         title: 'Replacement Successful!',
         description: `Replaced ${result.imagesReplacedCount} image(s). The document is ready for download.`,
