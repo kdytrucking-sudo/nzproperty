@@ -10,7 +10,6 @@ import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import fs from 'fs/promises';
 import path from 'path';
-import crypto from 'crypto';
 import imageSize from 'image-size';
 
 
@@ -43,6 +42,18 @@ export async function replaceImagesFromTemp(
   return replaceImagesFromTempFlow(input);
 }
 
+// Function to get MIME type from file extension
+const getMimeType = (fileName: string): string => {
+    const ext = path.extname(fileName).toLowerCase();
+    switch (ext) {
+        case '.png': return 'image/png';
+        case '.jpg':
+        case '.jpeg': return 'image/jpeg';
+        case '.gif': return 'image/gif';
+        default: return 'application/octet-stream';
+    }
+}
+
 /* ------------------------------ Flow ------------------------------ */
 const replaceImagesFromTempFlow = ai.defineFlow(
   {
@@ -59,7 +70,7 @@ const replaceImagesFromTempFlow = ai.defineFlow(
       const zip = new PizZip(templateBuffer);
       
       const imageSizes = new Map<string, { width: number; height: number }>();
-      const templateData: { [key: string]: Buffer } = {}; 
+      const templateData: { [key: string]: string } = {}; 
 
       // Prepare data and gather file paths for cleanup
       await Promise.all(images.map(async (img) => {
@@ -68,8 +79,10 @@ const replaceImagesFromTempFlow = ai.defineFlow(
         tempFilePaths.push(tempFilePath);
 
         const imageBuffer = await fs.readFile(tempFilePath);
+        const mimeType = getMimeType(img.tempFileName);
+        const imageDataUri = `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
 
-        templateData[key] = imageBuffer;
+        templateData[key] = imageDataUri;
         imageSizes.set(key, { width: img.width, height: img.height });
       }));
 
@@ -77,12 +90,14 @@ const replaceImagesFromTempFlow = ai.defineFlow(
         fileType: 'docx',
         centered: false,
         getImage: (tagValue: unknown) => {
+          if (typeof tagValue === 'string' && tagValue.startsWith('data:')) {
+            const b64 = tagValue.split(',')[1] ?? '';
+            return Buffer.from(b64, 'base64');
+          }
           if (Buffer.isBuffer(tagValue)) {
             return tagValue;
           }
-          // This fallback is crucial for cases where the tag might be a string
-          // but we expect a buffer in this flow.
-          throw new Error('Image data is not a buffer.');
+          throw new Error('Image data is not a buffer or a valid data URI.');
         },
         getSize: (_img: Buffer, _tagValue: unknown, tagName: string) => {
           const size = imageSizes.get(tagName);
