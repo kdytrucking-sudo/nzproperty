@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -14,6 +13,7 @@ import {
   ListTodo,
   TestTube2,
   Image,
+  FlaskConical,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -29,6 +29,7 @@ import {
   SidebarMenuItem,
   SidebarTrigger,
   SidebarSeparator,
+  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { Button } from './ui/button';
 
@@ -79,6 +80,11 @@ export function AppSidebar() {
       label: 'Image Upload',
       icon: TestTube2,
     },
+     {
+      href: '/advanced-image-test',
+      label: 'Advanced Image Upload',
+      icon: FlaskConical,
+    },
   ]
 
   return (
@@ -110,6 +116,7 @@ export function AppSidebar() {
             </SidebarMenuItem>
           ))}
           <SidebarSeparator />
+           <SidebarGroupLabel>Test Center</SidebarGroupLabel>
            {testMenuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
