@@ -10,6 +10,7 @@ import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import fs from 'fs/promises';
 import path from 'path';
+import crypto from 'crypto';
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 const ImageModule = require('docxtemplater-image-module-free');
@@ -80,7 +81,7 @@ const replaceImagesFromTempFlow = ai.defineFlow(
         const mimeType = getMimeType(img.tempFileName);
         const imageDataUri = `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
 
-        templateData[key] = imageDataUri; // THIS WAS THE MISSING LINE
+        templateData[key] = imageDataUri;
         imageSizes.set(key, { width: img.width, height: img.height });
       }));
 
@@ -95,6 +96,8 @@ const replaceImagesFromTempFlow = ai.defineFlow(
           if (Buffer.isBuffer(tagValue)) {
             return tagValue;
           }
+          // This should not happen with the current logic, but it's good practice
+          // to handle unexpected cases.
           throw new Error('Image data is not a buffer or a valid data URI.');
         },
         getSize: (_img: Buffer, _tagValue: unknown, tagName: string) => {
