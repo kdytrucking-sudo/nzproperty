@@ -10,8 +10,6 @@ import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import fs from 'fs/promises';
 import path from 'path';
-import imageSize from 'image-size';
-
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 const ImageModule = require('docxtemplater-image-module-free');
@@ -82,7 +80,7 @@ const replaceImagesFromTempFlow = ai.defineFlow(
         const mimeType = getMimeType(img.tempFileName);
         const imageDataUri = `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
 
-        templateData[key] = imageDataUri;
+        templateData[key] = imageDataUri; // THIS WAS THE MISSING LINE
         imageSizes.set(key, { width: img.width, height: img.height });
       }));
 
