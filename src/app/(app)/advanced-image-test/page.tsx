@@ -119,6 +119,11 @@ export default function AdvancedImageTestPage() {
     link.click();
     document.body.removeChild(link);
   };
+  
+  const isAnyImageUploading = React.useMemo(() => {
+    return Object.values(imageFiles).some(info => info?.state === 'uploading');
+  }, [imageFiles]);
+
 
   async function onSubmit(values: FormSchema) {
     setIsProcessing(true);
@@ -288,7 +293,7 @@ export default function AdvancedImageTestPage() {
 
 
             <div className="flex justify-end gap-4">
-              <Button type="submit" disabled={isProcessing}>
+              <Button type="submit" disabled={isProcessing || isAnyImageUploading}>
                 {isProcessing ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Replacing...</>
                 ) : (
