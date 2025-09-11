@@ -96,8 +96,6 @@ const replaceImagesFromTempFlow = ai.defineFlow(
           if (Buffer.isBuffer(tagValue)) {
             return tagValue;
           }
-          // This should not happen with the current logic, but it's good practice
-          // to handle unexpected cases.
           throw new Error('Image data is not a buffer or a valid data URI.');
         },
         getSize: (_img: Buffer, _tagValue: unknown, tagName: string) => {
