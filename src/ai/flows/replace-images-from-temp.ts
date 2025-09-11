@@ -87,6 +87,7 @@ const replaceImagesFromTempFlow = ai.defineFlow(
 
       const doc = new Docxtemplater(zip, {
         modules: [imageModule],
+        delimiters: { start: '{%', end: '}' }, // Use {% and } as delimiters for images
         paragraphLoop: true,
         linebreaks: true,
       });
