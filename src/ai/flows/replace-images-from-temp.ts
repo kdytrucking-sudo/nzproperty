@@ -11,6 +11,7 @@ import Docxtemplater from 'docxtemplater';
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
+import imageSize from 'image-size';
 
 
 /* eslint-disable @typescript-eslint/no-var-requires */
@@ -58,7 +59,7 @@ const replaceImagesFromTempFlow = ai.defineFlow(
       const zip = new PizZip(templateBuffer);
       
       const imageSizes = new Map<string, { width: number; height: number }>();
-      const templateData: { [key: string]: Buffer } = {};
+      const templateData: { [key: string]: string } = {}; // IMPORTANT: Value should be a data URI string
 
       // Prepare data and gather file paths for cleanup
       await Promise.all(images.map(async (img) => {
@@ -67,7 +68,11 @@ const replaceImagesFromTempFlow = ai.defineFlow(
         tempFilePaths.push(tempFilePath);
 
         const imageBuffer = await fs.readFile(tempFilePath);
-        templateData[key] = imageBuffer;
+        const dimensions = imageSize(imageBuffer);
+        const mimeType = dimensions.type ? `image/${dimensions.type}` : 'image/png';
+        const dataUri = `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
+
+        templateData[key] = dataUri;
         imageSizes.set(key, { width: img.width, height: img.height });
       }));
 
@@ -75,15 +80,14 @@ const replaceImagesFromTempFlow = ai.defineFlow(
         fileType: 'docx',
         centered: false,
         getImage: (tagValue: unknown) => {
-           if (Buffer.isBuffer(tagValue)) {
-            return tagValue;
-          }
-          if (typeof tagValue === 'string' && tagValue.startsWith('data:')) {
+           if (typeof tagValue === 'string' && tagValue.startsWith('data:')) {
             const b64 = tagValue.split(',')[1] ?? '';
             return Buffer.from(b64, 'base64');
           }
-          // This should not happen if templateData is prepared correctly
-          throw new Error('Image data not found or not a buffer.');
+          if (Buffer.isBuffer(tagValue)) {
+            return tagValue;
+          }
+          throw new Error('Image data not found or in an unexpected format.');
         },
         getSize: (_img: Buffer, _tagValue: unknown, tagName: string) => {
           const size = imageSizes.get(tagName);
@@ -93,7 +97,7 @@ const replaceImagesFromTempFlow = ai.defineFlow(
 
       const doc = new Docxtemplater(zip, {
         modules: [imageModule],
-        delimiters: { start: '{%', end: '}' }, // Use {% and } as delimiters for images
+        delimiters: { start: '{%', end: '}' },
         paragraphLoop: true,
         linebreaks: true,
       });
