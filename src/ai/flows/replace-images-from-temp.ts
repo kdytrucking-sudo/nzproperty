@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * Reads a .docx template, replaces placeholders with images from the temporary directory,
@@ -17,10 +18,9 @@ const ImageModule = require('docxtemplater-image-module-free');
 
 
 function resolveTempPath(filename: string) {
-  // ✅ 用项目根目录下的 tmp（和你原来保存的一致）
-  const tmpRoot = process.env.TMP_DIR ?? path.join(process.cwd(), 'tmp');
+  // Use the standard /tmp directory, which is reliable in App Hosting environments.
   const safeName = path.basename(filename);
-  return path.resolve(tmpRoot, safeName);
+  return path.join('/tmp', safeName);
 }
 
 async function assertExists(absPath: string) {
@@ -57,17 +57,6 @@ export async function replaceImagesFromTemp(
   return replaceImagesFromTempFlow(input);
 }
 
-// Function to get MIME type from file extension
-const getMimeType = (fileName: string): string => {
-    const ext = path.extname(fileName).toLowerCase();
-    switch (ext) {
-        case '.png': return 'image/png';
-        case '.jpg':
-        case '.jpeg': return 'image/jpeg';
-        case '.gif': return 'image/gif';
-        default: return 'application/octet-stream';
-    }
-}
 
 /* ------------------------------ Flow ------------------------------ */
 const replaceImagesFromTempFlow = ai.defineFlow(
@@ -84,7 +73,7 @@ const replaceImagesFromTempFlow = ai.defineFlow(
       const imageSizes = new Map<string, { width: number; height: number }>();
       const templateData: { [key: string]: Buffer } = {}; 
 
-      // Prepare data
+      // Prepare data by reading all temp images into buffers
       await Promise.all(images.map(async (img) => {
         const key = img.placeholder.trim().replace(/^\{\%/, '').replace(/\}$/, '');
         
@@ -100,17 +89,19 @@ const replaceImagesFromTempFlow = ai.defineFlow(
       const imageModule = new ImageModule({
         fileType: 'docx',
         centered: false,
-        // The `getImage` function now receives the Buffer directly from templateData
-        getImage: (tagValue: unknown) => {
-          if (Buffer.isBuffer(tagValue)) {
-            return tagValue;
+        getImage: (tagValue: unknown, tagName: string) => {
+          // The `tagName` provided by the module is the clean key (without delimiters).
+          // We use it to look up the buffer from our prepared data.
+          const imageBuffer = templateData[tagName];
+          if (imageBuffer) {
+              return imageBuffer;
           }
-          // This fallback shouldn't be hit if templateData is prepared correctly
-          throw new Error('Image data is not a buffer.');
+          // This fallback helps in debugging but shouldn't be hit if logic is correct.
+          throw new Error(`Image data could not be found for tag: ${tagName}`);
         },
         getSize: (_img: Buffer, _tagValue: unknown, tagName: string) => {
           const size = imageSizes.get(tagName);
-          return size ? [size.width, size.height] : [300, 200];
+          return size ? [size.width, size.height] : [300, 200]; // Fallback size
         },
       });
 
@@ -121,7 +112,16 @@ const replaceImagesFromTempFlow = ai.defineFlow(
         linebreaks: true,
       });
       
-      doc.setData(templateData);
+      // Docxtemplater-Image-Module works by detecting the placeholders in the template
+      // and calling `getImage` and `getSize`. We just need to setData with an object
+      // whose keys match the placeholders (without delimiters) so the module can trigger.
+      // The values themselves don't matter as much as the keys existing.
+      const renderData: { [key: string]: any } = {};
+      Object.keys(templateData).forEach(key => {
+        renderData[key] = true; // Set a truthy value to trigger the module hooks
+      });
+
+      doc.setData(renderData);
       doc.render();
 
       const out = doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' });
