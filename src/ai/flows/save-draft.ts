@@ -88,17 +88,24 @@ const saveDraftFlow = ai.defineFlow(
       if (existingDraftIndex !== -1) {
         // Update existing draft
         const existingDraft = drafts[existingDraftIndex];
+        
+        // Deep merge formData, ensuring uploadedImages are also merged correctly.
+        const mergedFormData = {
+          ...existingDraft.formData,
+          ...formData,
+          data: {
+            ...existingDraft.formData?.data,
+            ...formData.data,
+          },
+          uploadedImages: {
+              ...(existingDraft.formData?.uploadedImages || {}),
+              ...(formData.uploadedImages || {}),
+          }
+        };
+
         drafts[existingDraftIndex] = DraftSchema.parse({
             ...existingDraft,
-            formData: {
-              // Deep merge formData to preserve existing data
-              ...existingDraft.formData,
-              ...formData,
-              data: {
-                ...existingDraft.formData?.data,
-                ...formData.data,
-              }
-            },
+            formData: mergedFormData,
             propertyAddress: address, // Update address in case it was slightly different
             updatedAt: now,
         });

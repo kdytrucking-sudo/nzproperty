@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Draft } from '@/lib/drafts-schema';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
@@ -40,6 +40,7 @@ export default function InspectionPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
   const [selectedImagePlaceholder, setSelectedImagePlaceholder] = React.useState<string>('');
+  const [uploadedImageFiles, setUploadedImageFiles] = React.useState<Record<string, string>>({});
 
 
   const form = useForm({
@@ -67,6 +68,9 @@ export default function InspectionPage() {
         }
         setDraft(draftData);
         form.reset(draftData.formData);
+        if (draftData.formData.uploadedImages) {
+          setUploadedImageFiles(draftData.formData.uploadedImages);
+        }
       } catch (error: any) {
         console.error('Failed to load draft:', error);
         toast({
@@ -83,7 +87,16 @@ export default function InspectionPage() {
 
   const handleSaveDraft = async () => {
     setIsSaving(true);
-    const formData = form.getValues();
+    let formData = form.getValues();
+    // Merge the latest uploaded image file names into the form data before saving
+    formData = {
+        ...formData,
+        uploadedImages: {
+            ...(formData.uploadedImages || {}),
+            ...uploadedImageFiles
+        }
+    };
+
     try {
       await saveDraft({ formData });
       toast({
@@ -278,7 +291,13 @@ export default function InspectionPage() {
                   <AccordionContent>
                       <CardContent className="p-4 pt-0">
                          <React.Suspense fallback={<Skeleton className="h-48 w-full" />}>
-                            <PhotoUploadSection control={form.control} selectedPlaceholder={selectedImagePlaceholder} setSelectedPlaceholder={setSelectedImagePlaceholder}/>
+                            <PhotoUploadSection 
+                              control={form.control} 
+                              selectedPlaceholder={selectedImagePlaceholder} 
+                              setSelectedPlaceholder={setSelectedImagePlaceholder}
+                              uploadedImageFiles={uploadedImageFiles}
+                              setUploadedImageFiles={setUploadedImageFiles}
+                            />
                         </React.Suspense>
                       </CardContent>
                   </AccordionContent>

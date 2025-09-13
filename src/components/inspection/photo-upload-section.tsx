@@ -2,7 +2,6 @@
 'use client';
 
 import * as React from 'react';
-import { Controller } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { getImageOptions } from '@/ai/flows/get-image-options';
 import { uploadTempImage } from '@/ai/flows/upload-temp-image';
@@ -11,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { FileUploader } from '@/components/file-uploader';
-import { FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { FormItem, FormLabel } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const ACCEPTED_IMAGE_TYPES = {
@@ -30,7 +29,7 @@ const fileToDataUri = (file: File): Promise<string> => {
 
 type ImageUploadState = 'idle' | 'uploading' | 'success' | 'error';
 type ImageInfo = {
-  file: File;
+  file?: File;
   state: ImageUploadState;
   tempFileName?: string;
   errorMessage?: string;
@@ -40,13 +39,35 @@ type PhotoUploadSectionProps = {
   control: any;
   selectedPlaceholder: string;
   setSelectedPlaceholder: (placeholder: string) => void;
+  uploadedImageFiles: Record<string, string>;
+  setUploadedImageFiles: (files: Record<string, string>) => void;
 };
 
-export default function PhotoUploadSection({ control, selectedPlaceholder, setSelectedPlaceholder }: PhotoUploadSectionProps) {
+export default function PhotoUploadSection({ 
+    control, 
+    selectedPlaceholder, 
+    setSelectedPlaceholder,
+    uploadedImageFiles,
+    setUploadedImageFiles,
+}: PhotoUploadSectionProps) {
   const { toast } = useToast();
   const [isLoadingConfigs, setIsLoadingConfigs] = React.useState(true);
   const [imageConfigs, setImageConfigs] = React.useState<ImageConfig[]>([]);
-  const [imageFiles, setImageFiles] = React.useState<Record<string, ImageInfo | null>>({});
+  const [imageStates, setImageStates] = React.useState<Record<string, ImageInfo | null>>({});
+
+  // Effect to synchronize parent state with local state on initial load
+  React.useEffect(() => {
+    if (Object.keys(uploadedImageFiles).length > 0) {
+        const initialStates: Record<string, ImageInfo> = {};
+        for(const placeholder in uploadedImageFiles) {
+            initialStates[placeholder] = {
+                state: 'success',
+                tempFileName: uploadedImageFiles[placeholder]
+            };
+        }
+        setImageStates(initialStates);
+    }
+  }, [uploadedImageFiles]);
 
   React.useEffect(() => {
     async function loadConfigs() {
@@ -54,7 +75,7 @@ export default function PhotoUploadSection({ control, selectedPlaceholder, setSe
       try {
         const configs = await getImageOptions();
         setImageConfigs(configs);
-        if (configs.length > 0) {
+        if (configs.length > 0 && !selectedPlaceholder) {
           setSelectedPlaceholder(configs[0].placeholder);
         }
       } catch (error: any) {
@@ -68,32 +89,36 @@ export default function PhotoUploadSection({ control, selectedPlaceholder, setSe
       }
     }
     loadConfigs();
-  }, [toast, setSelectedPlaceholder]);
+  }, [toast, setSelectedPlaceholder, selectedPlaceholder]);
   
   const handleImageChange = async (files: File[] | null, placeholder: string) => {
     const file = files?.[0];
     if (!file) {
-      setImageFiles(prev => ({ ...prev, [placeholder]: null }));
+      setImageStates(prev => ({ ...prev, [placeholder]: null }));
       return;
     }
 
-    setImageFiles(prev => ({ ...prev, [placeholder]: { file, state: 'uploading' } }));
+    setImageStates(prev => ({ ...prev, [placeholder]: { file, state: 'uploading' } }));
     
     try {
       const fileDataUri = await fileToDataUri(file);
       const result = await uploadTempImage({ fileDataUri, originalFileName: file.name });
       
-      setImageFiles(prev => ({ 
+      setImageStates(prev => ({ 
           ...prev, 
           [placeholder]: { file, state: 'success', tempFileName: result.tempFileName }
       }));
-       toast({
+
+      // Update parent state for saving
+      setUploadedImageFiles({ ...uploadedImageFiles, [placeholder]: result.tempFileName });
+
+      toast({
           title: 'Image Uploaded',
           description: `"${file.name}" is ready.`
       });
     } catch (error: any) {
       console.error('Temp upload failed:', error);
-      setImageFiles(prev => ({ 
+      setImageStates(prev => ({ 
           ...prev, 
           [placeholder]: { file, state: 'error', errorMessage: error.message }
       }));
@@ -106,7 +131,7 @@ export default function PhotoUploadSection({ control, selectedPlaceholder, setSe
   };
 
   const renderImageUploader = (config: ImageConfig) => {
-    const imageInfo = imageFiles[config.placeholder];
+    const imageInfo = imageStates[config.placeholder];
 
     if (imageInfo?.state === 'uploading') {
         return <div className="h-full flex flex-col items-center justify-center bg-muted/50 rounded-lg p-4">
@@ -119,7 +144,7 @@ export default function PhotoUploadSection({ control, selectedPlaceholder, setSe
         return <div className="h-full flex flex-col items-center justify-center bg-green-50 text-green-700 rounded-lg p-4 border border-green-200">
             <CheckCircle2 className="h-8 w-8" />
             <p className="mt-2 text-sm text-center font-medium">Upload successful</p>
-            <p className="mt-1 text-xs text-center truncate w-full">{imageInfo.file.name}</p>
+            {imageInfo.file && <p className="mt-1 text-xs text-center truncate w-full">{imageInfo.file.name}</p>}
         </div>
     }
     
@@ -131,9 +156,11 @@ export default function PhotoUploadSection({ control, selectedPlaceholder, setSe
         </div>
     }
 
+    const fileList = imageInfo?.file ? [imageInfo.file] : null;
+
     return <FileUploader
         label=""
-        value={imageInfo?.file ? [imageInfo.file] : null}
+        value={fileList}
         onValueChange={(files) => handleImageChange(files, config.placeholder)}
         options={{ accept: ACCEPTED_IMAGE_TYPES }}
         maxFiles={1}

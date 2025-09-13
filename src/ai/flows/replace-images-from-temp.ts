@@ -8,18 +8,19 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
-//import fs from 'fs/promises';
-//import path from 'path';
-//import crypto from 'crypto';
-/* add below from chatgpt suggestion */
-
-import os from 'os';
 import path from 'path';
 import { promises as fs } from 'fs';
 
+
+/* eslint-disable @typescript-eslint/no-var-requires */
+const ImageModule = require('docxtemplater-image-module-free');
+
 function resolveTempPath(filename: string) {
-  // ✅ 用项目根目录下的 tmp（和你原来保存的一致）
   const tmpRoot = process.env.TMP_DIR ?? path.join(process.cwd(), 'tmp');
+  // Basic security check to prevent path traversal
+  if (filename.includes('..') || filename.includes('/')) {
+      throw new Error(`Invalid temporary file name: ${filename}`);
+  }
   const safeName = path.basename(filename);
   return path.resolve(tmpRoot, safeName);
 }
@@ -28,15 +29,9 @@ async function assertExists(absPath: string) {
   try {
     await fs.access(absPath);
   } catch {
-    throw new Error(`Temp image not found: ${absPath}`);
+    throw new Error(`Temp image not found: ${path.basename(absPath)}`);
   }
 }
-
-/* end of Add */
-
-
-/* eslint-disable @typescript-eslint/no-var-requires */
-const ImageModule = require('docxtemplater-image-module-free');
 
 /* ----------------------------- Schemas ----------------------------- */
 const TempImageInfoSchema = z.object({
@@ -84,8 +79,6 @@ const replaceImagesFromTempFlow = ai.defineFlow(
     outputSchema: ReplaceImagesFromTempOutputSchema,
   },
   async ({ templateDataUri, images }) => {
-    //const tmpDir = path.join(process.cwd(), 'tmp');
-    
     const tempFilePaths: string[] = [];
 
     try {
@@ -93,42 +86,32 @@ const replaceImagesFromTempFlow = ai.defineFlow(
       const zip = new PizZip(templateBuffer);
       
       const imageSizes = new Map<string, { width: number; height: number }>();
-      const templateData: { [key: string]: string } = {}; 
+      const templateData: { [key: string]: Buffer } = {}; 
 
       // Prepare data and gather file paths for cleanup
       await Promise.all(images.map(async (img) => {
-        //deleted by follow chatgpt;
-        //const key = img.placeholder.trim().replace(/^\{\%/, '').replace(/\}$/, '');
-        //const tempFilePath = path.join(tmpDir, img.tempFileName);
-        //tempFilePaths.push(tempFilePath);
-
         const key = img.placeholder.trim().replace(/^\{\%/, '').replace(/\}$/, '');
-
-        // 新增 ↓↓↓
+        
         const tempFilePath = resolveTempPath(img.tempFileName);
         await assertExists(tempFilePath);
-        tempFilePaths.push(tempFilePath); // 让 finally 能正确清理
+        tempFilePaths.push(tempFilePath); // For cleanup
 
         const imageBuffer = await fs.readFile(tempFilePath);
-        const mimeType = getMimeType(img.tempFileName);
-        const imageDataUri = `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
-
-        templateData[key] = imageDataUri;
+        
+        templateData[key] = imageBuffer;
         imageSizes.set(key, { width: img.width, height: img.height });
       }));
 
       const imageModule = new ImageModule({
         fileType: 'docx',
         centered: false,
+        // The `getImage` function now receives the Buffer directly from templateData
         getImage: (tagValue: unknown) => {
-          if (typeof tagValue === 'string' && tagValue.startsWith('data:')) {
-            const b64 = tagValue.split(',')[1] ?? '';
-            return Buffer.from(b64, 'base64');
-          }
           if (Buffer.isBuffer(tagValue)) {
             return tagValue;
           }
-          throw new Error('Image data is not a buffer or a valid data URI.');
+          // This fallback shouldn't be hit if templateData is prepared correctly
+          throw new Error('Image data is not a buffer.');
         },
         getSize: (_img: Buffer, _tagValue: unknown, tagName: string) => {
           const size = imageSizes.get(tagName);
@@ -138,7 +121,7 @@ const replaceImagesFromTempFlow = ai.defineFlow(
 
       const doc = new Docxtemplater(zip, {
         modules: [imageModule],
-        //delimiters: { start: '{%', end: '}' },
+        delimiters: { start: '{%', end: '}' },
         paragraphLoop: true,
         linebreaks: true,
       });

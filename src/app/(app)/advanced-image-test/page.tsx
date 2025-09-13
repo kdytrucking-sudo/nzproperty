@@ -16,6 +16,10 @@ import { getImageOptions } from '@/ai/flows/get-image-options';
 import { Skeleton } from '@/components/ui/skeleton';
 import { uploadTempImage } from '@/ai/flows/upload-temp-image';
 import { replaceImagesFromTemp } from '@/ai/flows/replace-images-from-temp';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { listDrafts } from '@/ai/flows/list-drafts';
+import { getDraft } from '@/ai/flows/get-draft';
+import type { DraftSummary } from '@/lib/drafts-schema';
 
 const ACCEPTED_DOCX_TYPES = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
@@ -41,10 +45,9 @@ const fileToDataUri = (file: File): Promise<string> => {
   });
 };
 
-// State for individual image uploader
 type ImageUploadState = 'idle' | 'uploading' | 'success' | 'error';
 type ImageInfo = {
-  file: File;
+  file?: File;
   state: ImageUploadState;
   tempFileName?: string;
   errorMessage?: string;
@@ -58,25 +61,72 @@ export default function AdvancedImageTestPage() {
   const [resultFileName, setResultFileName] = React.useState<string>('');
   const [imageConfigs, setImageConfigs] = React.useState<ImageConfig[]>([]);
   const [imageFiles, setImageFiles] = React.useState<Record<string, ImageInfo | null>>({});
+  
+  const [drafts, setDrafts] = React.useState<DraftSummary[]>([]);
+  const [isLoadingDrafts, setIsLoadingDrafts] = React.useState(true);
 
   React.useEffect(() => {
-    async function loadConfigs() {
+    async function loadInitialData() {
       setIsLoadingConfigs(true);
+      setIsLoadingDrafts(true);
       try {
-        const configs = await getImageOptions();
+        const [configs, draftList] = await Promise.all([
+          getImageOptions(),
+          listDrafts(),
+        ]);
         setImageConfigs(configs);
+        setDrafts(draftList);
       } catch (error: any) {
         toast({
           variant: 'destructive',
-          title: 'Failed to load configurations',
+          title: 'Failed to load initial data',
           description: error.message,
         });
       } finally {
         setIsLoadingConfigs(false);
+        setIsLoadingDrafts(false);
       }
     }
-    loadConfigs();
+    loadInitialData();
   }, [toast]);
+  
+  const handleDraftSelection = async (draftId: string) => {
+    if (!draftId) {
+        // Clear image states if no draft is selected
+        setImageFiles({});
+        return;
+    }
+
+    try {
+        const draft = await getDraft({ draftId });
+        if (draft && draft.formData.uploadedImages) {
+            const newImageFiles: Record<string, ImageInfo | null> = {};
+            for (const placeholder in draft.formData.uploadedImages) {
+                const tempFileName = draft.formData.uploadedImages[placeholder];
+                if (tempFileName) {
+                    newImageFiles[placeholder] = {
+                        state: 'success',
+                        tempFileName: tempFileName,
+                    };
+                }
+            }
+            setImageFiles(newImageFiles);
+            toast({
+                title: 'Draft Images Loaded',
+                description: `Found ${Object.keys(newImageFiles).length} pre-uploaded images from the selected draft.`
+            });
+        } else {
+             setImageFiles({});
+        }
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Failed to load draft images',
+            description: error.message,
+        });
+    }
+  };
+
 
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
@@ -197,7 +247,7 @@ export default function AdvancedImageTestPage() {
         return <div className="h-full flex flex-col items-center justify-center bg-green-50 text-green-700 rounded-lg p-4 border border-green-200">
             <CheckCircle2 className="h-8 w-8" />
             <p className="mt-2 text-sm text-center font-medium">Ready for replacement</p>
-            <p className="mt-1 text-xs text-center truncate w-full">{imageInfo.file.name}</p>
+            {imageInfo.file && <p className="mt-1 text-xs text-center truncate w-full">{imageInfo.file.name}</p>}
         </div>
     }
     
@@ -231,6 +281,33 @@ export default function AdvancedImageTestPage() {
       <main>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>0. (Optional) Load Draft Images</CardTitle>
+                <CardDescription>Select a draft to automatically load images that were uploaded from a mobile device.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="max-w-md">
+                    {isLoadingDrafts ? (
+                        <Skeleton className="h-10 w-full" />
+                    ) : (
+                        <Select onValueChange={handleDraftSelection}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a draft..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {drafts.length > 0 ? drafts.map(d => (
+                                <SelectItem key={d.draftId} value={d.draftId}>
+                                    {d.propertyAddress}
+                                </SelectItem>
+                                )) : <SelectItem value="none" disabled>No drafts found</SelectItem>}
+                            </SelectContent>
+                        </Select>
+                    )}
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="bg-muted/50">
               <CardHeader>
                 <CardTitle>1. Upload Template</CardTitle>
@@ -261,7 +338,7 @@ export default function AdvancedImageTestPage() {
               <CardHeader>
                 <CardTitle>2. Upload Images</CardTitle>
                 <CardDescription>
-                  Each image will be uploaded to a temporary location as you select it.
+                  Each image will be uploaded to a temporary location as you select it. Mobile uploads will show as "Ready".
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
