@@ -9,9 +9,6 @@ import fs from 'fs/promises';
 import path from 'path';
 import { DraftSchema, DraftsFileSchema } from '@/lib/drafts-schema';
 import * as crypto from 'crypto';
-import dotenv from 'dotenv';
-
-dotenv.config(); // Explicitly load environment variables
 
 const SaveDraftInputSchema = z.object({
   formData: z.any(),
