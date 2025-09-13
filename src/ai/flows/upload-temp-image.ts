@@ -49,14 +49,14 @@ const uploadTempImageFlow = ai.defineFlow(
       
       await fs.writeFile(filePath, buffer);
 
-      // Clean up the file after a timeout (e.g., 1 hour)
+      // Clean up the file after a timeout (e.g., 30 days)
       setTimeout(async () => {
           try {
               await fs.unlink(filePath);
           } catch (cleanupError) {
               // Ignore errors if file is already deleted
           }
-      }, 3600 * 1000);
+      }, 30 * 24 * 3600 * 1000);
 
       return { tempFileName: uniqueName };
 
