@@ -4,7 +4,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
@@ -34,7 +34,8 @@ const uploadTempImageFlow = ai.defineFlow(
   },
   async ({ fileDataUri, originalFileName }) => {
     try {
-      const tmpDir = path.join(process.cwd(), 'tmp');
+      // Use the standard /tmp directory which is writable in App Hosting environments.
+      const tmpDir = '/tmp';
       await fs.mkdir(tmpDir, { recursive: true });
 
       const extension = path.extname(originalFileName) || '.tmp';
