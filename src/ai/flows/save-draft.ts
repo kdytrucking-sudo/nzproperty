@@ -20,7 +20,7 @@ export async function saveDraft(input: { formData: any }): Promise<void> {
 
 // Helper to get place_id from Google Maps Geocoding API
 async function getPlaceId(address: string): Promise<string> {
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    const apiKey = "AIzaSyArL7TRnZVNwODwSQkvrbiPUC9bAnX1Fgc";
     if (!apiKey) {
       throw new Error('GOOGLE_MAPS_API_KEY is not configured on the server.');
     }
