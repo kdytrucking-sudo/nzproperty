@@ -24,7 +24,7 @@ export async function saveDraft(input: { formData: any }): Promise<{ draftId: st
 
 // Helper to get place_id from Google Maps Geocoding API
 async function getPlaceId(address: string): Promise<string> {
-    const apiKey = "AIzaSyArL7TRnZVNwODwSQkvrbiPUC9bAnX1Fgc";
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
       throw new Error('GOOGLE_MAPS_API_KEY is not configured on the server.');
     }
@@ -65,7 +65,7 @@ const saveDraftFlow = ai.defineFlow(
     const filePath = path.join(process.cwd(), 'src/lib', 'drafts.json');
     let draftId: string;
     try {
-      const address = formData.data.Info['Property Address'];
+      const address = formData.data?.Info?.['Property Address'];
       if (!address) {
         throw new Error('Property Address is missing, cannot save draft.');
       }

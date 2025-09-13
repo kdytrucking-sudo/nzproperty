@@ -192,16 +192,74 @@
   },
   {
     "draftId": "58926dd5-98b6-48ca-a274-e97aacb3cac7",
-    "placeId": "ChIJa7FNAqZHDW0RZEx0cQpaJjk",
     "propertyAddress": "4/38 DON CROOT STREET, MORNINGSIDE, AUCKLAND",
+    "placeId": "ChIJa7FNAqZHDW0RZEx0cQpaJjk",
     "createdAt": "2025-09-13T15:20:23.810Z",
-    "updatedAt": "2025-09-13T15:20:23.810Z",
+    "updatedAt": "2025-09-13T15:42:42.883Z",
     "formData": {
       "data": {
         "Info": {
           "Property Address": "4/38 DON CROOT STREET, MORNINGSIDE, AUCKLAND"
+        },
+        "comparableSales": []
+      },
+      "roomOptions": [
+        {
+          "id": "699005a9-77ed-4e4c-af96-fc42e66bf139",
+          "roomType": "Toilet",
+          "roomName": "Toilet",
+          "selectedOptions": [],
+          "roomOptionText": ""
+        },
+        {
+          "id": "e8e45d67-bac9-4992-bba3-eba9a078e8f2",
+          "roomType": "Toilet",
+          "roomName": "Toilet",
+          "selectedOptions": [],
+          "roomOptionText": ""
+        },
+        {
+          "id": "f2195a84-a6c2-4864-b059-c196cc65a689",
+          "roomType": "Toilet",
+          "roomName": "Toilet",
+          "selectedOptions": [
+            "Tiled floor",
+            "Timber floor",
+            "Tiled wall"
+          ],
+          "roomOptionText": "Tiled floor, Timber floor, Tiled wall"
+        },
+        {
+          "id": "494e20c1-ee4a-40c1-943e-8e2594035d7e",
+          "roomType": "Kitchen",
+          "roomName": "Kitchen",
+          "selectedOptions": [
+            "Vinyl floor",
+            "Carpet floor",
+            "Box window"
+          ],
+          "roomOptionText": "Vinyl floor, Carpet floor, Box window"
+        },
+        {
+          "id": "aa8a451f-517e-42d2-a825-ad148662fd17",
+          "roomType": "Dining Room",
+          "roomName": "Dining Room",
+          "selectedOptions": [
+            "Timber floor",
+            "Carpet floor",
+            "Simulated timber floor"
+          ],
+          "roomOptionText": "Timber floor, Carpet floor, Simulated timber floor"
         }
-      }
+      ],
+      "templateFileName": "[template] Resi 10_Sep_2025.docx",
+      "marketValuation": {},
+      "statutoryValuation": {},
+      "commentarySelections": {},
+      "multiOptionSelections": {},
+      "multiOptionBriefs": {},
+      "constructionBrief": {},
+      "chattels": {}
     }
   }
 ]

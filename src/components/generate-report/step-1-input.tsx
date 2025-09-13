@@ -12,13 +12,18 @@ import { useToast } from '@/hooks/use-toast';
 import type { PropertyData } from '@/lib/types';
 import { FileUploader } from '../file-uploader';
 import { MapPreview } from '../map-preview';
-import { extractPropertyData, type ExtractPropertyDataInput } from '@/ai/flows/extract-property-data-from-pdf';
+import { extractPropertyData } from '@/ai/flows/extract-property-data-from-pdf';
 import * as React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { listDrafts } from '@/ai/flows/list-drafts';
 import { getDraft } from '@/ai/flows/get-draft';
 import type { Draft, DraftSummary } from '@/lib/drafts-schema';
 import { Skeleton } from '../ui/skeleton';
+import { mergeAiDataWithDraft } from '@/ai/flows/merge-ai-data-with-draft';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Info } from 'lucide-react';
+import { getExtractionConfig } from '@/ai/flows/get-extraction-config';
+import { set } from 'date-fns';
 
 const ACCEPTED_FILE_TYPES = {
   'application/pdf': ['.pdf'],
@@ -87,6 +92,8 @@ export function Step1Input({ onDataExtracted, onDraftLoaded }: Step1InputProps) 
         form.setValue('address', selected.propertyAddress);
         setAddressForMap(selected.propertyAddress);
         setSelectedDraftId(draftId);
+    } else {
+        setSelectedDraftId('');
     }
   };
   
@@ -99,7 +106,31 @@ export function Step1Input({ onDataExtracted, onDraftLoaded }: Step1InputProps) 
     try {
         const draft = await getDraft({ draftId: selectedDraftId });
         if (draft) {
-            onDraftLoaded(draft.formData);
+            // "Data补全" step to ensure UI consistency
+            const config = await getExtractionConfig();
+            const jsonStructure = JSON.parse(config.jsonStructure);
+            const defaultData: any = {};
+            Object.keys(jsonStructure).forEach(sectionKey => {
+                defaultData[sectionKey] = {};
+                Object.keys(jsonStructure[sectionKey]).forEach(fieldKey => {
+                    defaultData[sectionKey][fieldKey] = '';
+                });
+            });
+
+            // Deep merge draft data over the default structure
+            const completeData = {
+                ...defaultData,
+                ...draft.formData.data,
+                Info: {...defaultData.Info, ...draft.formData.data?.Info},
+                'General Info': {...defaultData['General Info'], ...draft.formData.data?.['General Info']}
+            };
+            
+            const completedDraft = {
+                ...draft.formData,
+                data: completeData
+            };
+            
+            onDraftLoaded(completedDraft);
             toast({ title: 'Draft Loaded', description: `Successfully loaded draft for ${draft.propertyAddress}.`});
         } else {
             throw new Error('Draft not found on the server.');
@@ -113,42 +144,64 @@ export function Step1Input({ onDataExtracted, onDraftLoaded }: Step1InputProps) 
   }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    const hasPdfs = values.propertyTitlePdf?.[0] && values.briefInformationPdf?.[0];
+    const hasDraft = selectedDraftId;
+
+    if (!hasPdfs) {
+        toast({
+            variant: 'destructive',
+            title: 'Missing Files',
+            description: 'Please upload both Property Title and Brief Information PDFs to proceed.',
+        });
+        return;
+    }
+
     setIsProcessing(true);
+
     try {
-      if (!values.propertyTitlePdf?.[0] || !values.briefInformationPdf?.[0]) {
-        throw new Error('PDF files for AI extraction are missing.');
-      }
+        const [propertyTitlePdfDataUri, briefInformationPdfDataUri] = await Promise.all([
+            fileToDataUri(values.propertyTitlePdf[0]),
+            fileToDataUri(values.briefInformationPdf[0]),
+        ]);
 
-      const [propertyTitlePdfDataUri, briefInformationPdfDataUri] = await Promise.all([
-        fileToDataUri(values.propertyTitlePdf[0]),
-        fileToDataUri(values.briefInformationPdf[0]),
-      ]);
+        if (hasDraft) {
+            // Scenario C: Merge AI data with selected draft
+            toast({ title: 'Merging Data...', description: 'AI is extracting data and merging it with your selected draft.' });
+            const mergedFormData = await mergeAiDataWithDraft({
+                draftId: selectedDraftId,
+                propertyTitlePdfDataUri,
+                briefInformationPdfDataUri,
+            });
+            // The merged data is already in the full formData structure
+            onDraftLoaded(mergedFormData);
 
-      const input: ExtractPropertyDataInput = {
-        propertyTitlePdfDataUri,
-        briefInformationPdfDataUri,
-      };
+        } else {
+            // Scenario A: Extract from PDFs only
+             toast({ title: 'Extracting Data...', description: 'AI is processing the documents.' });
+            const result: PropertyData = await extractPropertyData({
+                propertyTitlePdfDataUri,
+                briefInformationPdfDataUri,
+            });
+            
+            if (result && result.Info) {
+                result.Info['Property Address'] = values.address;
+            }
 
-      const result: PropertyData = await extractPropertyData(input);
-      
-      if (result && result.Info) {
-        result.Info['Property Address'] = values.address;
-      }
-
-      toast({
-        title: 'Data Extraction Successful',
-        description: 'AI has processed the documents. Please review the data.',
-      });
-      onDataExtracted(result);
+            toast({
+                title: 'Data Extraction Successful',
+                description: 'AI has processed the documents. Please review the data.',
+            });
+            onDataExtracted(result);
+        }
     } catch (error: any) {
-      console.error('Error processing documents:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Uh oh! Something went wrong.',
-        description: error.message || 'There was a problem processing your documents.',
-      });
+        console.error('Error processing documents:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Uh oh! Something went wrong.',
+            description: error.message || 'There was a problem processing your documents.',
+        });
     } finally {
-      setIsProcessing(false);
+        setIsProcessing(false);
     }
   }
 
@@ -169,7 +222,7 @@ export function Step1Input({ onDataExtracted, onDraftLoaded }: Step1InputProps) 
                 <Card className="bg-muted/50">
                     <CardHeader className="pb-4">
                         <CardTitle className="text-lg">Load Existing Draft</CardTitle>
-                        <CardDescription>Select a previously saved draft to continue your work.</CardDescription>
+                        <CardDescription>Select a draft to load its data directly for review.</CardDescription>
                     </CardHeader>
                     <CardContent>
                        <div className="flex items-center gap-2">
@@ -216,7 +269,11 @@ export function Step1Input({ onDataExtracted, onDraftLoaded }: Step1InputProps) 
               </div>
 
               <div className="space-y-6">
-                <p className="text-sm font-medium text-center text-muted-foreground border-b pb-2">Or, start a new report</p>
+                <CardHeader className="p-0">
+                  <CardTitle className="text-lg">Start New or Merge</CardTitle>
+                  <CardDescription>Upload PDFs to start a new report, or to merge with a selected draft.</CardDescription>
+                </CardHeader>
+                
                 <FormField
                   control={form.control}
                   name="propertyTitlePdf"
@@ -256,6 +313,15 @@ export function Step1Input({ onDataExtracted, onDraftLoaded }: Step1InputProps) 
                     />
                   )}
                 />
+                 {selectedDraftId && (
+                    <Alert>
+                        <Info className="h-4 w-4" />
+                        <AlertTitle>Merge Mode Activated</AlertTitle>
+                        <AlertDescription>
+                           You have selected a draft. Clicking below will extract data from the PDFs and merge it with your draft, prioritizing existing draft data.
+                        </AlertDescription>
+                    </Alert>
+                 )}
                  <div className="flex justify-end">
                     <Button type="submit" disabled={isProcessing}>
                         {isProcessing ? (
