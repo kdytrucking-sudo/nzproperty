@@ -2,16 +2,18 @@
 
 import * as React from 'react';
 import { useFieldArray } from 'react-hook-form';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, ChevronDown } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { FormField, FormItem, FormControl, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { roomOptionsConfig, roomTypes } from '@/lib/room-options-config';
+import { cn } from '@/lib/utils';
 
 type SectionProps = {
   control: any;
@@ -23,6 +25,7 @@ type SectionProps = {
 export default function RoomOptionsSection({ control, setValue, watch }: SectionProps) {
   const { toast } = useToast();
   const [selectedRoomType, setSelectedRoomType] = React.useState<string>(roomTypes[0]);
+  const [expandedRoomId, setExpandedRoomId] = React.useState<string | null>(null);
 
   const { fields, prepend, remove } = useFieldArray({
     control,
@@ -40,13 +43,15 @@ export default function RoomOptionsSection({ control, setValue, watch }: Section
       });
       return;
     }
+    const newRoomId = crypto.randomUUID();
     prepend({
-      id: crypto.randomUUID(),
+      id: newRoomId,
       roomType: selectedRoomType,
       roomName: selectedRoomType,
       selectedOptions: [],
       roomOptionText: '',
     });
+    setExpandedRoomId(newRoomId); // Expand the newly added room
   };
 
   const handleCheckboxChange = (checked: boolean, option: string, fieldIndex: number) => {
@@ -58,6 +63,11 @@ export default function RoomOptionsSection({ control, setValue, watch }: Section
     setValue(`roomOptions.${fieldIndex}.selectedOptions`, newSelections, { shouldDirty: true });
     setValue(`roomOptions.${fieldIndex}.roomOptionText`, newSelections.join(', '), { shouldDirty: true });
   };
+  
+  const toggleExpand = (roomId: string) => {
+    setExpandedRoomId(prevId => (prevId === roomId ? null : roomId));
+  };
+
 
   return (
     <div className="space-y-6">
@@ -90,56 +100,64 @@ export default function RoomOptionsSection({ control, setValue, watch }: Section
         {fields.map((field, index) => {
           const roomOptions = roomOptionsConfig[field.roomType as keyof typeof roomOptionsConfig] || [];
           const selectedOptions = watchedFields?.[index]?.selectedOptions || [];
+          const isOpen = expandedRoomId === field.id;
 
           return (
-            <Card key={field.id}>
-              <CardHeader className="flex flex-row items-center justify-between py-3">
-                <CardTitle className="text-base">Room {fields.length - index}</CardTitle>
-                <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={control}
-                  name={`roomOptions.${index}.roomName`}
-                  render={({ field: formField }) => (
-                    <FormItem>
-                      <FormLabel>Room Name</FormLabel>
-                      <FormControl><Input {...formField} /></FormControl>
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="space-y-2">
-                  <FormLabel>Features</FormLabel>
-                  <div className="space-y-2 rounded-md border p-4 max-h-60 overflow-y-auto">
-                    {roomOptions.map((option) => (
-                        <FormItem key={option} className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                                <Checkbox
-                                    checked={selectedOptions.includes(option)}
-                                    onCheckedChange={(checked) => handleCheckboxChange(!!checked, option, index)}
-                                />
-                            </FormControl>
-                            <FormLabel className="font-normal text-sm">{option}</FormLabel>
+             <Collapsible key={field.id} open={isOpen} onOpenChange={() => toggleExpand(field.id)} asChild>
+                <Card>
+                  <CollapsibleTrigger asChild>
+                      <CardHeader className="flex flex-row items-center justify-between py-3 cursor-pointer">
+                        <CardTitle className="text-base">Room {fields.length - index}</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <Button type="button" variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); remove(index); }}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                            <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+                        </div>
+                      </CardHeader>
+                  </CollapsibleTrigger>
+                  
+                  <CardContent className="space-y-4 pt-0">
+                     <FormField
+                      control={control}
+                      name={`roomOptions.${index}.roomName`}
+                      render={({ field: formField }) => (
+                        <FormItem>
+                          <FormLabel>Room Name</FormLabel>
+                          <FormControl><Input {...formField} /></FormControl>
                         </FormItem>
-                    ))}
-                  </div>
-                </div>
+                      )}
+                    />
+                     <FormField
+                      control={control}
+                      name={`roomOptions.${index}.roomOptionText`}
+                      render={({ field: formField }) => (
+                        <FormItem>
+                          <FormLabel>Generated Text</FormLabel>
+                          <FormControl><Input {...formField} /></FormControl>
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={control}
-                  name={`roomOptions.${index}.roomOptionText`}
-                  render={({ field: formField }) => (
-                    <FormItem>
-                      <FormLabel>Generated Text</FormLabel>
-                      <FormControl><Input {...formField} /></FormControl>
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
+                    <CollapsibleContent className="space-y-2">
+                      <FormLabel>Features</FormLabel>
+                      <div className="space-y-2 rounded-md border p-4 max-h-60 overflow-y-auto">
+                        {roomOptions.map((option) => (
+                            <FormItem key={option} className="flex flex-row items-start space-x-3 space-y-0">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={selectedOptions.includes(option)}
+                                        onCheckedChange={(checked) => handleCheckboxChange(!!checked, option, index)}
+                                    />
+                                </FormControl>
+                                <FormLabel className="font-normal text-sm">{option}</FormLabel>
+                            </FormItem>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </CardContent>
+                </Card>
+            </Collapsible>
           );
         })}
       </div>
