@@ -1,10 +1,11 @@
+
 'use client';
 
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, FileDown, AlertCircle, UploadCloud, CheckCircle2, FlaskConical } from 'lucide-react';
+import { Loader2, FileDown, AlertCircle, UploadCloud, CheckCircle2, FlaskConical, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -161,6 +162,10 @@ export default function AdvancedImageTestPage() {
     }
   };
 
+  const handleRemoveImage = (placeholder: string) => {
+    setImageFiles(prev => ({...prev, [placeholder]: null}));
+  }
+
 
   const handleDownload = () => {
     if (!resultUri) return;
@@ -244,15 +249,37 @@ export default function AdvancedImageTestPage() {
     }
 
     if (imageInfo?.state === 'success') {
-        return <div className="h-full flex flex-col items-center justify-center bg-green-50 text-green-700 rounded-lg p-4 border border-green-200">
+        return (
+          <div className="relative h-full flex flex-col items-center justify-center bg-green-50 text-green-700 rounded-lg p-4 border border-green-200">
+            <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => handleRemoveImage(config.placeholder)}
+                className="absolute top-1 right-1 h-6 w-6 text-green-800 hover:bg-green-100 hover:text-destructive"
+                aria-label="Replace image"
+            >
+                <X className="h-4 w-4" />
+            </Button>
             <CheckCircle2 className="h-8 w-8" />
             <p className="mt-2 text-sm text-center font-medium">Ready for replacement</p>
             {imageInfo.file && <p className="mt-1 text-xs text-center truncate w-full">{imageInfo.file.name}</p>}
-        </div>
+          </div>
+        )
     }
     
     if (imageInfo?.state === 'error') {
-        return <div className="h-full flex flex-col items-center justify-center bg-red-50 text-destructive rounded-lg p-4 border border-red-200">
+        return <div className="relative h-full flex flex-col items-center justify-center bg-red-50 text-destructive rounded-lg p-4 border border-red-200">
+             <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => handleRemoveImage(config.placeholder)}
+                className="absolute top-1 right-1 h-6 w-6 hover:bg-red-100"
+                aria-label="Try again"
+            >
+                <X className="h-4 w-4" />
+            </Button>
             <AlertCircle className="h-8 w-8" />
             <p className="mt-2 text-sm text-center font-medium">Upload Failed</p>
             <p className="mt-1 text-xs text-center truncate w-full">{imageInfo.errorMessage}</p>
