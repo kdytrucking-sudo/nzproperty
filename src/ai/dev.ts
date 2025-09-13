@@ -1,4 +1,3 @@
-import 'dotenv/config'; // Add this line at the very top
 import {dev} from 'genkit-cli';
 
 // Note: You must `npm install` any plugins you want to use.
