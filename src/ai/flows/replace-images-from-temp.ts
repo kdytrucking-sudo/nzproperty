@@ -79,8 +79,6 @@ const replaceImagesFromTempFlow = ai.defineFlow(
     outputSchema: ReplaceImagesFromTempOutputSchema,
   },
   async ({ templateDataUri, images }) => {
-    const tempFilePaths: string[] = [];
-
     try {
       const templateBuffer = Buffer.from(templateDataUri.split(',')[1], 'base64');
       const zip = new PizZip(templateBuffer);
@@ -88,13 +86,12 @@ const replaceImagesFromTempFlow = ai.defineFlow(
       const imageSizes = new Map<string, { width: number; height: number }>();
       const templateData: { [key: string]: Buffer } = {}; 
 
-      // Prepare data and gather file paths for cleanup
+      // Prepare data
       await Promise.all(images.map(async (img) => {
         const key = img.placeholder.trim().replace(/^\{\%/, '').replace(/\}$/, '');
         
         const tempFilePath = resolveTempPath(img.tempFileName);
         await assertExists(tempFilePath);
-        tempFilePaths.push(tempFilePath); // For cleanup
 
         const imageBuffer = await fs.readFile(tempFilePath);
         
@@ -142,16 +139,6 @@ const replaceImagesFromTempFlow = ai.defineFlow(
         throw new Error(first?.properties?.explanation || first?.id || 'Template render error during image replacement.');
       }
       throw new Error(err?.message || 'Failed to process the document for image replacement.');
-    } finally {
-        // Clean up the temporary image files
-        for (const filePath of tempFilePaths) {
-            try {
-                await fs.unlink(filePath);
-            } catch (cleanupError) {
-                // Log but don't throw, as the main operation might have succeeded
-                console.error(`Failed to clean up temporary file ${filePath}:`, cleanupError);
-            }
-        }
     }
   }
 );
