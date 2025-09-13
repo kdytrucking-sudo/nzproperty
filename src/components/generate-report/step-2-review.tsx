@@ -34,6 +34,8 @@ import type { MultiOptionsData, MultiOptionCard, MultiOptionItem } from '@/lib/m
 import { roomOptionsConfig, roomTypes } from '@/lib/room-options-config';
 import { saveDraft } from '@/ai/flows/save-draft';
 import type { Draft } from '@/lib/drafts-schema';
+import { saveHistory } from '@/ai/flows/save-history';
+import { getDraft } from '@/ai/flows/get-draft';
 
 // Main form schema
 const formSchema = z.any();
@@ -475,6 +477,25 @@ export function Step2Review({ extractedData, draftData, onReportGenerated, onBac
     }
 
     try {
+      // Find draftId - it's not directly in the form, but can be found by address
+      const address = values.data?.Info?.['Property Address'];
+      let draftId = draftData?.draftId; // Use existing draftId if available
+      
+      if (!draftId && address) {
+        const draft = await getDraft({ propertyAddress: address });
+        if (draft) {
+          draftId = draft.draftId;
+        }
+      }
+
+      // Save to history before generating
+      await saveHistory({
+        draftId,
+        propertyAddress: address,
+        data: values,
+        ifreplacetext: true,
+      });
+
       const placeholderData: Record<string, string> = {};
       
       // 1. Add Commentary selections

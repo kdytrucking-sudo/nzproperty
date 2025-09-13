@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -21,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { listDrafts } from '@/ai/flows/list-drafts';
 import { getDraft } from '@/ai/flows/get-draft';
 import type { DraftSummary } from '@/lib/drafts-schema';
+import { saveHistory } from '@/ai/flows/save-history';
 
 const ACCEPTED_DOCX_TYPES = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
@@ -65,6 +65,8 @@ export default function AdvancedImageTestPage() {
   
   const [drafts, setDrafts] = React.useState<DraftSummary[]>([]);
   const [isLoadingDrafts, setIsLoadingDrafts] = React.useState(true);
+  const [selectedDraftId, setSelectedDraftId] = React.useState<string>('');
+  const [selectedPropertyAddress, setSelectedPropertyAddress] = React.useState<string>('');
 
   React.useEffect(() => {
     async function loadInitialData() {
@@ -95,29 +97,36 @@ export default function AdvancedImageTestPage() {
     if (!draftId) {
         // Clear image states if no draft is selected
         setImageFiles({});
+        setSelectedDraftId('');
+        setSelectedPropertyAddress('');
         return;
     }
-
+    
+    setSelectedDraftId(draftId);
+    
     try {
         const draft = await getDraft({ draftId });
-        if (draft && draft.formData.uploadedImages) {
-            const newImageFiles: Record<string, ImageInfo | null> = {};
-            for (const placeholder in draft.formData.uploadedImages) {
-                const tempFileName = draft.formData.uploadedImages[placeholder];
-                if (tempFileName) {
-                    newImageFiles[placeholder] = {
-                        state: 'success',
-                        tempFileName: tempFileName,
-                    };
-                }
-            }
-            setImageFiles(newImageFiles);
-            toast({
-                title: 'Draft Images Loaded',
-                description: `Found ${Object.keys(newImageFiles).length} pre-uploaded images from the selected draft.`
-            });
-        } else {
+        if (draft) {
+          setSelectedPropertyAddress(draft.propertyAddress);
+          if (draft.formData.uploadedImages) {
+              const newImageFiles: Record<string, ImageInfo | null> = {};
+              for (const placeholder in draft.formData.uploadedImages) {
+                  const tempFileName = draft.formData.uploadedImages[placeholder];
+                  if (tempFileName) {
+                      newImageFiles[placeholder] = {
+                          state: 'success',
+                          tempFileName: tempFileName,
+                      };
+                  }
+              }
+              setImageFiles(newImageFiles);
+              toast({
+                  title: 'Draft Images Loaded',
+                  description: `Found ${Object.keys(newImageFiles).length} pre-uploaded images from the selected draft.`
+              });
+          } else {
              setImageFiles({});
+          }
         }
     } catch (error: any) {
         toast({
@@ -213,6 +222,20 @@ export default function AdvancedImageTestPage() {
         setIsProcessing(false);
         return;
       }
+      
+      // Save to history before generating
+      if (selectedDraftId) {
+        await saveHistory({
+          draftId: selectedDraftId,
+          propertyAddress: selectedPropertyAddress,
+          data: {
+            template: values.template[0].name,
+            images: imagesToReplace.map(img => ({ placeholder: img.placeholder, fileName: img.tempFileName })),
+          },
+          ifreplaceimage: true,
+        });
+      }
+
 
       const result = await replaceImagesFromTemp({
         templateDataUri,

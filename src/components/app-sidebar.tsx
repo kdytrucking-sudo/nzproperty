@@ -16,6 +16,7 @@ import {
   FlaskConical,
   Smartphone,
   Package,
+  History,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -73,6 +74,11 @@ export function AppSidebar() {
       href: '/manage-images',
       label: 'Manage Images',
       icon: Image,
+    },
+    {
+      href: '/manage-history',
+      label: 'Manage History',
+      icon: History,
     },
     {
       href: '/json-editor',
