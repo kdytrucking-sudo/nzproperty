@@ -3,20 +3,16 @@
 import {
   FileJson,
   LayoutDashboard,
-  PanelLeft,
   Settings,
-  Pencil,
   FileText,
   FileUp,
   MessageSquareQuote,
-  Construction,
   ListTodo,
-  TestTube2,
   Image,
   FlaskConical,
   Smartphone,
-  Package,
   History,
+  Pencil,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -31,10 +27,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
-  SidebarSeparator,
-  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
-import { Button } from './ui/button';
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -46,59 +39,21 @@ export function AppSidebar() {
       icon: LayoutDashboard,
     },
      {
+      href: '/advanced-image-test',
+      label: 'Image Replace',
+      icon: FlaskConical,
+    },
+    {
       href: '/inspection',
-      label: 'Field Inspection',
+      label: 'Inspection',
       icon: Smartphone,
     },
     {
-      href: '/manage-content',
-      label: 'Manage Content',
-      icon: Pencil,
-    },
-     {
-      href: '/manage-commentary',
-      label: 'Manage Commentary',
-      icon: MessageSquareQuote,
-    },
-    {
-      href: '/manage-multi-option',
-      label: 'Multi-Select',
-      icon: ListTodo,
-    },
-    {
-      href: '/manage-templates',
-      label: 'Manage Templates',
-      icon: FileText,
-    },
-    {
-      href: '/manage-images',
-      label: 'Manage Images',
-      icon: Image,
-    },
-    {
-      href: '/manage-history',
-      label: 'Manage History',
-      icon: History,
-    },
-    {
-      href: '/json-editor',
-      label: 'AI Settings',
-      icon: FileJson,
+      href: '/settings',
+      label: 'Settings',
+      icon: Settings,
     },
   ];
-
-  const testMenuItems = [
-     {
-      href: '/image-test',
-      label: 'Image Upload',
-      icon: TestTube2,
-    },
-     {
-      href: '/advanced-image-test',
-      label: 'Advanced Image Upload',
-      icon: FlaskConical,
-    },
-  ]
 
   return (
     <Sidebar>
@@ -118,23 +73,7 @@ export function AppSidebar() {
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href || (item.href === '/inspection' && pathname.startsWith('/inspection/')) || (item.href === '/manage-history' && pathname.startsWith('/manage-history'))}
-                tooltip={{ children: item.label, side: 'right' }}
-              >
-                <Link href={item.href}>
-                  <item.icon />
-                  <span>{item.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-          <SidebarSeparator />
-           <SidebarGroupLabel>Test Center</SidebarGroupLabel>
-           {testMenuItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === item.href}
+                isActive={pathname === item.href || (item.href === '/inspection' && pathname.startsWith('/inspection/')) || (item.href === '/settings' && pathname.startsWith('/settings'))}
                 tooltip={{ children: item.label, side: 'right' }}
               >
                 <Link href={item.href}>

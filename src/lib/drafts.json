@@ -97,21 +97,116 @@
     }
   },
   {
-    "draftId": "af149431-afaa-45a4-bb94-e2e4ecec7ace",
+    "draftId": "ecdc8d7c-df61-470e-9fe9-34a18354872b",
     "propertyAddress": "8 spode pl",
-    "placeId": "ChIJAbFV2sNBDW0RcYOmIruBrDA",
-    "createdAt": "2025-09-13T17:07:24.804Z",
-    "updatedAt": "2025-09-13T17:07:24.804Z",
+    "placeId": "ChIJOQQnQxoH9x4Rf9iBzcc5sWA",
+    "createdAt": "2025-09-13T17:59:54.454Z",
+    "updatedAt": "2025-09-13T17:59:54.454Z",
     "formData": {
       "data": {
         "Info": {
           "Property Address": "8 spode pl"
+        },
+        "General Info": {
+          "Property Description": "x  的智生发个短信",
+          "Location Description": "共分三大发大"
         }
       },
-      "roomOptions": [],
+      "roomOptions": [
+        {
+          "id": "b02bddb2-7345-4638-a904-e6639889db97",
+          "roomType": "Bedroom",
+          "roomName": "Bedroom",
+          "selectedOptions": [
+            "Timber floor",
+            "Single wardrobe",
+            "Double wardrobe",
+            "Walk-in wardrobe",
+            "Ranch Slider"
+          ],
+          "roomOptionText": "Timber floor, Single wardrobe, Double wardrobe, Walk-in wardrobe, Ranch Slider"
+        },
+        {
+          "id": "5b5e5f21-8f34-4528-86a4-7497cdbf40a5",
+          "roomType": "Bathroom",
+          "roomName": "Bathroom",
+          "selectedOptions": [
+            "Vanity unit",
+            "Shower",
+            "Toilet"
+          ],
+          "roomOptionText": "Vanity unit, Shower, Toilet"
+        },
+        {
+          "id": "3d285d16-503b-451a-be03-e24f32605266",
+          "roomType": "Laundry",
+          "roomName": "Laundry",
+          "selectedOptions": [
+            "Vinyl floor",
+            "Partial tiled wall",
+            "Tiled wall"
+          ],
+          "roomOptionText": "Vinyl floor, Partial tiled wall, Tiled wall"
+        },
+        {
+          "id": "c259e84c-0b54-4387-98e6-7feefcf05ec3",
+          "roomType": "Toilet",
+          "roomName": "Toilet",
+          "selectedOptions": [
+            "Tiled floor",
+            "Timber floor",
+            "Tiled wall"
+          ],
+          "roomOptionText": "Tiled floor, Timber floor, Tiled wall"
+        },
+        {
+          "id": "9028f80d-2407-4bea-a257-21561cea091a",
+          "roomType": "Dining Room",
+          "roomName": "Dining Room",
+          "selectedOptions": [
+            "Simulated timber floor",
+            "Ranch slider",
+            "Timber floor"
+          ],
+          "roomOptionText": "Simulated timber floor, Ranch slider, Timber floor"
+        },
+        {
+          "id": "e5e82594-cbaf-415d-b148-a9104a87ecae",
+          "roomType": "Living Room",
+          "roomName": "Living Room",
+          "selectedOptions": [
+            "Tiled floor",
+            "Carpet floor"
+          ],
+          "roomOptionText": "Tiled floor, Carpet floor"
+        }
+      ],
       "uploadedImages": {
         "{%Image_NatureofProperty1}": "26ed4b44a69ff86c17e5a37c69f2c18f.png",
         "{%Image_NatureofProperty2}": "2cf744a37a1a9f738f6eff9b10c40ea7.png"
+      },
+      "constructionBrief": {
+        "generalConstruction": [
+          "horizontal timber cladding",
+          "timber flooring",
+          "concrete ring wall",
+          "concrete slab foundation",
+          "pile foundation",
+          "concrete flooring",
+          "brick cladding",
+          "plaster cladding"
+        ],
+        "interior": [
+          "plasterboard"
+        ],
+        "finalBrief": "General construction elements comprise what appears to be horizontal timber cladding, timber flooring, concrete ring wall, concrete slab foundation, pile foundation, concrete flooring, brick cladding and plaster cladding.\nThe interior appears to be mostly timber framed with plasterboard or of similar linings."
+      },
+      "chattels": {
+        "selected": [
+          "carpets",
+          "blinds"
+        ],
+        "finalBrief": "We have included in our valuation an allowance for chattels including carpets and blinds."
       }
     }
   }
