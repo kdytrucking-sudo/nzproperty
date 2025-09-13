@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Shield, ShieldCheck, Eye } from 'lucide-react';
+import { Loader2, Trash2, Shield, Eye } from 'lucide-react';
 import {
   Table,
   TableBody,

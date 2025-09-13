@@ -7,9 +7,9 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import fs from 'fs/promises';
 import path from 'path';
-import { HistoryFileSchema, type HistoryRecord } from '@/lib/history-schema';
+import { HistoryFileSchema, HistoryRecordSchema } from '@/lib/history-schema';
 
-export async function listHistory(): Promise<HistoryRecord[]> {
+export async function listHistory(): Promise<z.infer<typeof HistoryFileSchema>> {
   return listHistoryFlow();
 }
 
@@ -17,7 +17,7 @@ const listHistoryFlow = ai.defineFlow(
   {
     name: 'listHistoryFlow',
     inputSchema: z.void(),
-    outputSchema: z.array(HistoryRecordSchema),
+    outputSchema: HistoryFileSchema,
   },
   async () => {
     const filePath = path.join(process.cwd(), 'src', 'lib', 'history.json');
