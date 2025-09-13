@@ -40,15 +40,15 @@ export default function ConstructionSection({ control, setValue, getValues }: Se
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="p-3">
           <CardTitle className="text-base">General Construction</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 pt-0">
           <FormField
             control={control}
             name="constructionBrief.generalConstruction"
             render={() => (
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 px-1">
                 {generalConstructionOptions.map((item) => (
                   <FormField
                     key={item.id}
@@ -77,15 +77,15 @@ export default function ConstructionSection({ control, setValue, getValues }: Se
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="p-3">
           <CardTitle className="text-base">Interior</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 pt-0">
           <FormField
             control={control}
             name="constructionBrief.interior"
             render={() => (
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 px-1">
                 {interiorOptions.map((item) => (
                   <FormField
                     key={item.id}

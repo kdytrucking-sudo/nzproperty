@@ -33,15 +33,15 @@ export default function ChattelsSection({ control, setValue, getValues }: Sectio
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="p-3">
           <CardTitle className="text-base">Chattels</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 pt-0">
           <FormField
             control={control}
             name="chattels.selected"
             render={() => (
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 px-1">
                 {chattelsOptions.map((item) => (
                   <FormField
                     key={item.id}

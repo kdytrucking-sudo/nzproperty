@@ -117,7 +117,7 @@ export default function InspectionPage() {
 
   if (isLoading) {
     return (
-      <div className="px-2 py-8 space-y-6">
+      <div className="py-8 px-2 space-y-6">
         <Skeleton className="h-10 w-3/4" />
         <Skeleton className="h-6 w-1/2" />
         <Skeleton className="h-48 w-full" />
@@ -129,7 +129,7 @@ export default function InspectionPage() {
   
   if (!draft) {
       return (
-          <div className="px-4 py-8">
+          <div className="py-8 px-4">
               <Alert variant="destructive">
                   <AlertTitle>Error</AlertTitle>
                   <AlertDescription>Could not load the inspection draft. Please go back and try again.</AlertDescription>
@@ -139,8 +139,8 @@ export default function InspectionPage() {
   }
 
   return (
-    <div className="px-2 py-6 pb-24">
-      <header className="mb-6">
+    <div className="py-6 pb-24">
+      <header className="mb-6 px-4">
         <h1 className="font-headline text-2xl font-bold text-foreground">
           Field Inspection
         </h1>
@@ -154,7 +154,7 @@ export default function InspectionPage() {
             <Accordion type="single" collapsible defaultValue='item-1' className="w-full space-y-3">
               
               <AccordionItem value="item-1" className="border-b-0">
-                <Card>
+                <Card className="rounded-none sm:rounded-lg">
                   <CardHeader className="p-3">
                      <AccordionTrigger className="p-0 hover:no-underline">
                       <div className="flex items-center gap-3">
@@ -174,7 +174,7 @@ export default function InspectionPage() {
               </AccordionItem>
               
               <AccordionItem value="item-2" className="border-b-0">
-                <Card>
+                <Card className="rounded-none sm:rounded-lg">
                   <CardHeader className="p-3">
                     <AccordionTrigger className="p-0 hover:no-underline">
                       <div className="flex items-center gap-3">
@@ -194,7 +194,7 @@ export default function InspectionPage() {
               </AccordionItem>
 
               <AccordionItem value="item-3" className="border-b-0">
-                <Card>
+                <Card className="rounded-none sm:rounded-lg">
                   <CardHeader className="p-3">
                      <AccordionTrigger className="p-0 hover:no-underline">
                       <div className="flex items-center gap-3">
@@ -259,7 +259,7 @@ export default function InspectionPage() {
               </AccordionItem>
 
               <AccordionItem value="item-4" className="border-b-0">
-                <Card>
+                <Card className="rounded-none sm:rounded-lg">
                   <CardHeader className="p-3">
                     <AccordionTrigger className="p-0 hover:no-underline">
                       <div className="flex items-center gap-3">
@@ -279,7 +279,7 @@ export default function InspectionPage() {
               </AccordionItem>
               
               <AccordionItem value="item-5" className="border-b-0">
-                <Card>
+                <Card className="rounded-none sm:rounded-lg">
                   <CardHeader className="p-3">
                     <AccordionTrigger className="p-0 hover:no-underline">
                       <div className="flex items-center gap-3">
