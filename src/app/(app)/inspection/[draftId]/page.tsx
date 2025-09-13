@@ -22,7 +22,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 // Dynamically import sections to keep initial load small
@@ -146,6 +145,46 @@ export default function InspectionPage() {
                   <CardHeader className="p-4">
                      <AccordionTrigger className="p-0 hover:no-underline">
                       <div className="flex items-center gap-3">
+                          <Home className="h-5 w-5 text-primary"/>
+                          <CardTitle className="text-lg">Room Options</CardTitle>
+                      </div>
+                    </AccordionTrigger>
+                  </CardHeader>
+                  <AccordionContent>
+                    <CardContent className="p-4 pt-0">
+                       <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                            <RoomOptionsSection control={form.control} setValue={form.setValue} getValues={form.getValues} watch={form.watch} />
+                        </React.Suspense>
+                    </CardContent>
+                  </AccordionContent>
+                </Card>
+              </AccordionItem>
+              
+              <AccordionItem value="item-2" className="border-b-0">
+                <Card>
+                  <CardHeader className="p-4">
+                    <AccordionTrigger className="p-0 hover:no-underline">
+                      <div className="flex items-center gap-3">
+                          <Construction className="h-5 w-5 text-primary"/>
+                          <CardTitle className="text-lg">Construction</CardTitle>
+                      </div>
+                    </AccordionTrigger>
+                  </CardHeader>
+                  <AccordionContent>
+                      <CardContent className="p-4 pt-0">
+                        <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                            <ConstructionSection control={form.control} setValue={form.setValue} getValues={form.getValues} />
+                        </React.Suspense>
+                      </CardContent>
+                  </AccordionContent>
+                </Card>
+              </AccordionItem>
+
+              <AccordionItem value="item-3" className="border-b-0">
+                <Card>
+                  <CardHeader className="p-4">
+                     <AccordionTrigger className="p-0 hover:no-underline">
+                      <div className="flex items-center gap-3">
                           <BookText className="h-5 w-5 text-primary"/>
                           <CardTitle className="text-lg">Descriptions</CardTitle>
                       </div>
@@ -201,46 +240,6 @@ export default function InspectionPage() {
                             </FormItem>
                           )}
                         />
-                    </CardContent>
-                  </AccordionContent>
-                </Card>
-              </AccordionItem>
-              
-              <AccordionItem value="item-2" className="border-b-0">
-                <Card>
-                  <CardHeader className="p-4">
-                    <AccordionTrigger className="p-0 hover:no-underline">
-                      <div className="flex items-center gap-3">
-                          <Construction className="h-5 w-5 text-primary"/>
-                          <CardTitle className="text-lg">Construction</CardTitle>
-                      </div>
-                    </AccordionTrigger>
-                  </CardHeader>
-                  <AccordionContent>
-                      <CardContent className="p-4 pt-0">
-                        <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
-                            <ConstructionSection control={form.control} setValue={form.setValue} getValues={form.getValues} />
-                        </React.Suspense>
-                      </CardContent>
-                  </AccordionContent>
-                </Card>
-              </AccordionItem>
-              
-              <AccordionItem value="item-3" className="border-b-0">
-                <Card>
-                  <CardHeader className="p-4">
-                     <AccordionTrigger className="p-0 hover:no-underline">
-                      <div className="flex items-center gap-3">
-                          <Home className="h-5 w-5 text-primary"/>
-                          <CardTitle className="text-lg">Room Options</CardTitle>
-                      </div>
-                    </AccordionTrigger>
-                  </CardHeader>
-                  <AccordionContent>
-                    <CardContent className="p-4 pt-0">
-                       <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
-                            <RoomOptionsSection control={form.control} setValue={form.setValue} getValues={form.getValues} watch={form.watch} />
-                        </React.Suspense>
                     </CardContent>
                   </AccordionContent>
                 </Card>
