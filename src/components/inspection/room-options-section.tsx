@@ -51,7 +51,7 @@ export default function RoomOptionsSection({ control, setValue, watch }: Section
       selectedOptions: [],
       roomOptionText: '',
     });
-    setExpandedRoomId(newRoomId); // Expand the newly added room
+    setExpandedRoomId(newRoomId);
   };
 
   const handleCheckboxChange = (checked: boolean, option: string, fieldIndex: number) => {
@@ -106,56 +106,79 @@ export default function RoomOptionsSection({ control, setValue, watch }: Section
              <Collapsible key={field.id} open={isOpen} onOpenChange={() => toggleExpand(field.id)} asChild>
                 <Card>
                   <CollapsibleTrigger asChild>
-                      <CardHeader className="flex flex-row items-center justify-between py-3 cursor-pointer">
-                        <CardTitle className="text-base">Room {fields.length - index}</CardTitle>
-                        <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between p-3 cursor-pointer">
+                        <div className="flex-1 min-w-0">
+                           <div className={cn("grid grid-cols-2 gap-x-2 items-center", isOpen && "hidden")}>
+                                <FormField
+                                  control={control}
+                                  name={`roomOptions.${index}.roomName`}
+                                  render={({ field: formField }) => (
+                                      <Input {...formField} className="text-sm h-9" readOnly placeholder="Room Name"/>
+                                  )}
+                                />
+                                <FormField
+                                  control={control}
+                                  name={`roomOptions.${index}.roomOptionText`}
+                                  render={({ field: formField }) => (
+                                      <Input {...formField} className="text-sm h-9" readOnly placeholder="Features"/>
+                                  )}
+                                />
+                           </div>
+                           <div className={cn("font-semibold", !isOpen && "hidden")}>
+                                Room {fields.length - index}
+                           </div>
+                        </div>
+                        <div className="flex items-center gap-0">
                             <Button type="button" variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); remove(index); }}>
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
-                            <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+                            <div className="p-2">
+                               <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+                            </div>
                         </div>
-                      </CardHeader>
+                      </div>
                   </CollapsibleTrigger>
                   
-                  <CardContent className="space-y-4 pt-0">
-                     <FormField
-                      control={control}
-                      name={`roomOptions.${index}.roomName`}
-                      render={({ field: formField }) => (
-                        <FormItem>
-                          <FormLabel>Room Name</FormLabel>
-                          <FormControl><Input {...formField} /></FormControl>
-                        </FormItem>
-                      )}
-                    />
-                     <FormField
-                      control={control}
-                      name={`roomOptions.${index}.roomOptionText`}
-                      render={({ field: formField }) => (
-                        <FormItem>
-                          <FormLabel>Generated Text</FormLabel>
-                          <FormControl><Input {...formField} /></FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <CollapsibleContent className="space-y-2">
-                      <FormLabel>Features</FormLabel>
-                      <div className="space-y-2 rounded-md border p-4 max-h-60 overflow-y-auto">
-                        {roomOptions.map((option) => (
-                            <FormItem key={option} className="flex flex-row items-start space-x-3 space-y-0">
-                                <FormControl>
-                                    <Checkbox
-                                        checked={selectedOptions.includes(option)}
-                                        onCheckedChange={(checked) => handleCheckboxChange(!!checked, option, index)}
-                                    />
-                                </FormControl>
-                                <FormLabel className="font-normal text-sm">{option}</FormLabel>
-                            </FormItem>
-                        ))}
-                      </div>
-                    </CollapsibleContent>
-                  </CardContent>
+                  <CollapsibleContent asChild>
+                    <CardContent className="space-y-4 pt-0">
+                        <div className="space-y-2">
+                            <FormLabel>Features</FormLabel>
+                            <div className="space-y-2 rounded-md border p-4 max-h-60 overflow-y-auto">
+                            {roomOptions.map((option) => (
+                                <FormItem key={option} className="flex flex-row items-start space-x-3 space-y-0">
+                                    <FormControl>
+                                        <Checkbox
+                                            checked={selectedOptions.includes(option)}
+                                            onCheckedChange={(checked) => handleCheckboxChange(!!checked, option, index)}
+                                        />
+                                    </FormControl>
+                                    <FormLabel className="font-normal text-sm">{option}</FormLabel>
+                                </FormItem>
+                            ))}
+                            </div>
+                        </div>
+                        <FormField
+                            control={control}
+                            name={`roomOptions.${index}.roomName`}
+                            render={({ field: formField }) => (
+                                <FormItem>
+                                <FormLabel>Room Name</FormLabel>
+                                <FormControl><Input {...formField} /></FormControl>
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={control}
+                            name={`roomOptions.${index}.roomOptionText`}
+                            render={({ field: formField }) => (
+                                <FormItem>
+                                <FormLabel>Generated Text</FormLabel>
+                                <FormControl><Input {...formField} /></FormControl>
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                  </CollapsibleContent>
                 </Card>
             </Collapsible>
           );
