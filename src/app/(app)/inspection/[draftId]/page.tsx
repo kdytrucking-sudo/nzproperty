@@ -22,6 +22,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 // Dynamically import sections to keep initial load small
 const ConstructionChattelsSection = React.lazy(() => import('@/components/inspection/construction-chattels-section'));
@@ -33,12 +35,12 @@ const formSchema = z.any(); // Using a flexible schema as in Step2Review
 
 export default function InspectionPage() {
   const params = useParams();
-  const draftId = params.draftId as string;
-
   const { toast } = useToast();
   const [draft, setDraft] = React.useState<Draft | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [selectedImagePlaceholder, setSelectedImagePlaceholder] = React.useState<string>('');
+
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -53,6 +55,7 @@ export default function InspectionPage() {
 
 
   React.useEffect(() => {
+    const draftId = params.draftId as string;
     async function loadDraft() {
       if (!draftId) return;
 
@@ -76,7 +79,7 @@ export default function InspectionPage() {
       }
     }
     loadDraft();
-  }, [draftId, form, toast]);
+  }, [params.draftId, form, toast]);
 
   const handleSaveDraft = async () => {
     setIsSaving(true);
@@ -150,7 +153,7 @@ export default function InspectionPage() {
                   <AccordionContent>
                       <CardContent className="p-4 pt-0">
                          <React.Suspense fallback={<Skeleton className="h-48 w-full" />}>
-                            <PhotoUploadSection control={form.control} />
+                            <PhotoUploadSection control={form.control} selectedPlaceholder={selectedImagePlaceholder} setSelectedPlaceholder={setSelectedImagePlaceholder}/>
                         </React.Suspense>
                       </CardContent>
                   </AccordionContent>

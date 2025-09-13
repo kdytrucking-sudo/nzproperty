@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -11,6 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { FileUploader } from '@/components/file-uploader';
 import { FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const ACCEPTED_IMAGE_TYPES = {
   'image/png': ['.png'],
@@ -36,9 +38,11 @@ type ImageInfo = {
 
 type PhotoUploadSectionProps = {
   control: any;
+  selectedPlaceholder: string;
+  setSelectedPlaceholder: (placeholder: string) => void;
 };
 
-export default function PhotoUploadSection({ control }: PhotoUploadSectionProps) {
+export default function PhotoUploadSection({ control, selectedPlaceholder, setSelectedPlaceholder }: PhotoUploadSectionProps) {
   const { toast } = useToast();
   const [isLoadingConfigs, setIsLoadingConfigs] = React.useState(true);
   const [imageConfigs, setImageConfigs] = React.useState<ImageConfig[]>([]);
@@ -50,6 +54,9 @@ export default function PhotoUploadSection({ control }: PhotoUploadSectionProps)
       try {
         const configs = await getImageOptions();
         setImageConfigs(configs);
+        if (configs.length > 0) {
+          setSelectedPlaceholder(configs[0].placeholder);
+        }
       } catch (error: any) {
         toast({
           variant: 'destructive',
@@ -61,12 +68,8 @@ export default function PhotoUploadSection({ control }: PhotoUploadSectionProps)
       }
     }
     loadConfigs();
-  }, [toast]);
+  }, [toast, setSelectedPlaceholder]);
   
-  // This is a simplified version for the mobile inspection page.
-  // It's not connected to react-hook-form directly but a real implementation would.
-  // For now, we manage state locally to show the UI. A full implementation would
-  // use the form's `setValue` to store the `tempFileName` for each placeholder.
   const handleImageChange = async (files: File[] | null, placeholder: string) => {
     const file = files?.[0];
     if (!file) {
@@ -137,13 +140,11 @@ export default function PhotoUploadSection({ control }: PhotoUploadSectionProps)
         className="h-full"
     />
   }
+  
+  const selectedConfig = imageConfigs.find(c => c.placeholder === selectedPlaceholder);
 
   if (isLoadingConfigs) {
-    return (
-      <div className="grid grid-cols-2 gap-6">
-        {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-48 w-full" />)}
-      </div>
-    );
+    return <Skeleton className="h-48 w-full" />;
   }
 
   if (imageConfigs.length === 0) {
@@ -159,18 +160,33 @@ export default function PhotoUploadSection({ control }: PhotoUploadSectionProps)
   }
 
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-6">
-      {imageConfigs.map((config) => (
-        <FormItem key={config.id}>
-          <FormLabel>{config.cardName}</FormLabel>
-          <div className="h-36">
-            {renderImageUploader(config)}
-          </div>
-          <FormLabel className="text-xs text-muted-foreground">
-            <code className="bg-muted px-1 py-0.5 rounded-sm">{config.placeholder}</code>
-          </FormLabel>
+    <div className="space-y-4">
+        <FormItem>
+            <FormLabel>Select Image to Upload</FormLabel>
+            <Select value={selectedPlaceholder} onValueChange={setSelectedPlaceholder}>
+                <SelectTrigger>
+                    <SelectValue placeholder="Select an image..." />
+                </SelectTrigger>
+                <SelectContent>
+                    {imageConfigs.map(config => (
+                        <SelectItem key={config.id} value={config.placeholder}>
+                            {config.cardName}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
         </FormItem>
-      ))}
+        
+        {selectedConfig && (
+            <FormItem>
+                <div className="h-36">
+                    {renderImageUploader(selectedConfig)}
+                </div>
+                <FormLabel className="text-xs text-muted-foreground">
+                    <code className="bg-muted px-1 py-0.5 rounded-sm">{selectedConfig.placeholder}</code>
+                </FormLabel>
+            </FormItem>
+        )}
     </div>
   );
 }
