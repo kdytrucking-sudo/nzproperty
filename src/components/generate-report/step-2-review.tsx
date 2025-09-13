@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, PlusCircle, Trash2, Copy, CalendarIcon } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Copy, CalendarIcon, Save } from 'lucide-react';
 import { useForm, useFieldArray, Control, FieldValues, Path, UseFormSetValue } from 'react-hook-form';
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -32,12 +32,15 @@ import { cn } from '@/lib/utils';
 import { getMultiOptions } from '@/ai/flows/get-multi-options';
 import type { MultiOptionsData, MultiOptionCard, MultiOptionItem } from '@/lib/multi-options-schema';
 import { roomOptionsConfig, roomTypes } from '@/lib/room-options-config';
+import { saveDraft } from '@/ai/flows/save-draft';
+import type { Draft } from '@/lib/drafts-schema';
 
 // Main form schema
 const formSchema = z.any();
 
 type Step2ReviewProps = {
   extractedData: PropertyData;
+  draftData: Draft['formData'] | null;
   onReportGenerated: (reportDataUri: string, replacementsCount: number, instructedBy: string | undefined) => void;
   onBack: () => void;
 };
@@ -119,10 +122,11 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
 };
 
 
-export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2ReviewProps) {
+export function Step2Review({ extractedData, draftData, onReportGenerated, onBack }: Step2ReviewProps) {
   const { toast } = useToast();
   const [templates, setTemplates] = React.useState<string[]>([]);
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const [isSavingDraft, setIsSavingDraft] = React.useState(false);
   const [commentaryCards, setCommentaryCards] = React.useState<CommentaryCardsData | null>(null);
   const [isLoadingInitialData, setIsLoadingInitialData] = React.useState(true);
   const [isConvertingToWords, setIsConvertingToWords] = React.useState(false);
@@ -131,46 +135,47 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
   const [multiOptions, setMultiOptions] = React.useState<MultiOptionsData | null>(null);
   const [selectedRoomType, setSelectedRoomType] = React.useState<string>(roomTypes[0]);
 
+  const defaultFormValues = {
+    templateFileName: '',
+    data: extractedData,
+    commentarySelections: {} as Record<string, string>,
+    constructionBrief: {
+      generalConstruction: [],
+      interior: [],
+      finalBrief: '',
+    },
+    marketValuation: {
+      marketValue: '',
+      marketValuation: '',
+      improvementsValueByValuer: '',
+      landValueByValuer: '',
+      chattelsValueByValuer: '',
+      marketValueByValuer: '',
+    },
+    statutoryValuation: {
+      landValueByWeb: '',
+      improvementsValueByWeb: '',
+      ratingValueByWeb: '',
+    },
+    marketValuationRaw: '',
+    multiOptionSelections: {} as Record<string, string[]>,
+    multiOptionBriefs: {} as Record<string, string>,
+    chattels: {
+      selected: [] as string[],
+      finalBrief: '',
+    },
+      roomOptions: [] as {
+      id: string;
+      roomType: string;
+      roomName: string;
+      selectedOptions: string[];
+      roomOptionText: string;
+    }[],
+  };
 
   const form = useForm({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      templateFileName: '',
-      data: extractedData,
-      commentarySelections: {} as Record<string, string>,
-      constructionBrief: {
-        generalConstruction: [],
-        interior: [],
-        finalBrief: '',
-      },
-      marketValuation: {
-        marketValue: '',
-        marketValuation: '',
-        improvementsValueByValuer: '',
-        landValueByValuer: '',
-        chattelsValueByValuer: '',
-        marketValueByValuer: '',
-      },
-      statutoryValuation: {
-        landValueByWeb: '',
-        improvementsValueByWeb: '',
-        ratingValueByWeb: '',
-      },
-      marketValuationRaw: '',
-      multiOptionSelections: {} as Record<string, string[]>,
-      multiOptionBriefs: {} as Record<string, string>,
-      chattels: {
-        selected: [] as string[],
-        finalBrief: '',
-      },
-       roomOptions: [] as {
-        id: string;
-        roomType: string;
-        roomName: string;
-        selectedOptions: string[];
-        roomOptionText: string;
-      }[],
-    },
+    defaultValues: draftData || defaultFormValues,
   });
 
   const { fields, remove: removeSale } = useFieldArray({
@@ -398,29 +403,33 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
 
         setTemplates(templateList);
         if (templateList.length > 0) {
-          form.setValue('templateFileName', templateList[0]);
+          form.setValue('templateFileName', draftData?.templateFileName || templateList[0]);
         }
         
         setCommentaryCards(commentaryData);
-        // Initialize form state for commentary
-        const initialCommentarySelections: Record<string, string> = {};
-        commentaryData.forEach(card => {
-            if (card.options.length > 0) {
-                initialCommentarySelections[card.id] = card.options[0].option;
-            }
-        });
-        form.setValue('commentarySelections', initialCommentarySelections);
+        // Initialize form state for commentary if not loading a draft
+        if (!draftData) {
+            const initialCommentarySelections: Record<string, string> = {};
+            commentaryData.forEach(card => {
+                if (card.options.length > 0) {
+                    initialCommentarySelections[card.id] = card.options[0].option;
+                }
+            });
+            form.setValue('commentarySelections', initialCommentarySelections);
+        }
         
         setMultiOptions(multiOpts);
-        // Initialize form state for multi-options
-        const initialSelections: Record<string, string[]> = {};
-        const initialBriefs: Record<string, string> = {};
-        multiOpts.forEach(card => {
-          initialSelections[card.id] = [];
-          initialBriefs[card.id] = '';
-        });
-        form.setValue('multiOptionSelections', initialSelections);
-        form.setValue('multiOptionBriefs', initialBriefs);
+        // Initialize form state for multi-options if not loading a draft
+        if (!draftData) {
+            const initialSelections: Record<string, string[]> = {};
+            const initialBriefs: Record<string, string> = {};
+            multiOpts.forEach(card => {
+            initialSelections[card.id] = [];
+            initialBriefs[card.id] = '';
+            });
+            form.setValue('multiOptionSelections', initialSelections);
+            form.setValue('multiOptionBriefs', initialBriefs);
+        }
 
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Failed to load initial data', description: error.message });
@@ -430,10 +439,31 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
     }
     fetchInitialData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [draftData]);
 
   const tabKeys = jsonStructure ? Object.keys(jsonStructure) : [];
   const defaultTab = tabKeys.length > 0 ? tabKeys[0] : 'marketValuation';
+
+  const handleSaveDraft = async () => {
+    setIsSavingDraft(true);
+    const formData = form.getValues();
+    try {
+      await saveDraft({ formData });
+      toast({
+        title: 'Draft Saved',
+        description: 'Your progress has been saved successfully.',
+      });
+    } catch (error: any) {
+      console.error('Failed to save draft:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Save Failed',
+        description: error.message || 'An unknown error occurred while saving the draft.',
+      });
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsGenerating(true);
@@ -1184,34 +1214,46 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                 </div>
             ) : (
                 <>
-                    <FormField
-                    control={form.control}
-                    name="templateFileName"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Select Report Template</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a .docx template to use..." />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                            {templates.length === 0 ? (
-                                <SelectItem value="no-templates" disabled>
-                                No templates found. Upload in 'Manage Templates'.
-                                </SelectItem>
-                            ) : (
-                                templates.map(templateName => (
-                                <SelectItem key={templateName} value={templateName}>{templateName}</SelectItem>
-                                ))
-                            )}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
+                  <div className="space-y-4 rounded-lg border p-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <FormField
+                        control={form.control}
+                        name="templateFileName"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Select Report Template</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a .docx template to use..." />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                {templates.length === 0 ? (
+                                    <SelectItem value="no-templates" disabled>
+                                    No templates found. Upload in 'Manage Templates'.
+                                    </SelectItem>
+                                ) : (
+                                    templates.map(templateName => (
+                                    <SelectItem key={templateName} value={templateName}>{templateName}</SelectItem>
+                                    ))
+                                )}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                         <div className="flex items-end justify-end gap-2">
+                            <Button type="button" variant="secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
+                                {isSavingDraft ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : <><Save className="mr-2 h-4 w-4" /> Save Draft</>}
+                            </Button>
+                            <Button type="submit" disabled={isGenerating || templates.length === 0}>
+                                {isGenerating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</> : 'Generate Final Report'}
+                            </Button>
+                        </div>
+                    </div>
+                  </div>
 
                     <Tabs defaultValue={defaultTab}>
                     <TabsList className="grid w-full grid-cols-1 md:grid-cols-8">
@@ -1253,13 +1295,6 @@ export function Step2Review({ extractedData, onReportGenerated, onBack }: Step2R
                     <div className="flex justify-between pt-4">
                     <Button type="button" variant="outline" onClick={onBack}>
                         Back
-                    </Button>
-                    <Button type="submit" disabled={isGenerating || templates.length === 0}>
-                        {isGenerating ? (
-                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</>
-                        ) : (
-                        'Generate Final Report'
-                        )}
                     </Button>
                     </div>
                 </>

@@ -6,10 +6,12 @@ import { Step2Review } from '@/components/generate-report/step-2-review';
 import { Step3Result } from '@/components/generate-report/step-3-result';
 import type { PropertyData } from '@/lib/types';
 import { AnimatePresence, motion } from 'framer-motion';
+import type { Draft } from '@/lib/drafts-schema';
 
 function GenerateReportFlow() {
   const [step, setStep] = React.useState<Step>('input');
   const [propertyData, setPropertyData] = React.useState<PropertyData | null>(null);
+  const [draftData, setDraftData] = React.useState<Draft['formData'] | null>(null);
   const [generatedReportDataUri, setGeneratedReportDataUri] = React.useState<string | null>(null);
   const [generatedFileName, setGeneratedFileName] = React.useState<string>('');
   const [replacementsCount, setReplacementsCount] = React.useState(0);
@@ -18,6 +20,13 @@ function GenerateReportFlow() {
 
   const handleDataExtracted = (data: PropertyData) => {
     setPropertyData(data);
+    setDraftData(null); // Ensure no draft data is present
+    setStep('review');
+  };
+
+  const handleDraftLoaded = (loadedDraftData: Draft['formData']) => {
+    setPropertyData(loadedDraftData.data as PropertyData);
+    setDraftData(loadedDraftData);
     setStep('review');
   };
 
@@ -35,6 +44,7 @@ function GenerateReportFlow() {
 
   const handleStartOver = () => {
     setPropertyData(null);
+    setDraftData(null);
     setGeneratedReportDataUri(null);
     setGeneratedFileName('');
     setReplacementsCount(0);
@@ -76,7 +86,10 @@ function GenerateReportFlow() {
               variants={variants}
               transition={{ duration: 0.3 }}
             >
-              <Step1Input onDataExtracted={handleDataExtracted} />
+              <Step1Input 
+                onDataExtracted={handleDataExtracted} 
+                onDraftLoaded={handleDraftLoaded}
+              />
             </motion.div>
           )}
 
@@ -91,6 +104,7 @@ function GenerateReportFlow() {
             >
               <Step2Review 
                 extractedData={propertyData} 
+                draftData={draftData}
                 onReportGenerated={handleReportGenerated}
                 onBack={handleBackToInput}
               />
