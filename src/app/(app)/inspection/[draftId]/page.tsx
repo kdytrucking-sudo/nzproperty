@@ -30,6 +30,7 @@ const PhotoUploadSection = React.lazy(() => import('@/components/inspection/phot
 const formSchema = z.any(); // Using a flexible schema as in Step2Review
 
 export default function InspectionPage({ params }: { params: { draftId: string } }) {
+  const { draftId } = params;
   const { toast } = useToast();
   const [draft, setDraft] = React.useState<Draft | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -51,7 +52,7 @@ export default function InspectionPage({ params }: { params: { draftId: string }
     async function loadDraft() {
       setIsLoading(true);
       try {
-        const draftData = await getDraft({ draftId: params.draftId });
+        const draftData = await getDraft({ draftId });
         if (!draftData) {
           throw new Error('Draft not found. It might have been deleted.');
         }
@@ -69,7 +70,7 @@ export default function InspectionPage({ params }: { params: { draftId: string }
       }
     }
     loadDraft();
-  }, [params.draftId, form, toast]);
+  }, [draftId, form, toast]);
 
   const handleSaveDraft = async () => {
     setIsSaving(true);
