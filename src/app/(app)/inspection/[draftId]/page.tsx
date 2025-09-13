@@ -1,3 +1,4 @@
+
 // This is a new file for the mobile inspection page.
 'use client';
 
@@ -6,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { Loader2, Mic, Save, Camera, Construction, Home, BookText } from 'lucide-react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useParams } from 'next/navigation';
 
 import { getDraft } from '@/ai/flows/get-draft';
 import { saveDraft } from '@/ai/flows/save-draft';
@@ -29,7 +31,10 @@ const PhotoUploadSection = React.lazy(() => import('@/components/inspection/phot
 
 const formSchema = z.any(); // Using a flexible schema as in Step2Review
 
-export default function InspectionPage({ params }: { params: { draftId: string } }) {
+export default function InspectionPage() {
+  const params = useParams();
+  const draftId = params.draftId as string;
+
   const { toast } = useToast();
   const [draft, setDraft] = React.useState<Draft | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -49,11 +54,11 @@ export default function InspectionPage({ params }: { params: { draftId: string }
 
   React.useEffect(() => {
     async function loadDraft() {
-      if (!params.draftId) return;
+      if (!draftId) return;
 
       setIsLoading(true);
       try {
-        const draftData = await getDraft({ draftId: params.draftId });
+        const draftData = await getDraft({ draftId });
         if (!draftData) {
           throw new Error('Draft not found. It might have been deleted.');
         }
@@ -71,7 +76,7 @@ export default function InspectionPage({ params }: { params: { draftId: string }
       }
     }
     loadDraft();
-  }, [params.draftId, form, toast]);
+  }, [draftId, form, toast]);
 
   const handleSaveDraft = async () => {
     setIsSaving(true);
