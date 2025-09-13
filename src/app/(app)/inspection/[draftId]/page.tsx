@@ -135,7 +135,7 @@ export default function InspectionPage() {
 
       <main>
         <Form {...form}>
-            <Accordion type="multiple" defaultValue={['item-1', 'item-2', 'item-3', 'item-4']} className="w-full space-y-4">
+            <Accordion type="single" collapsible defaultValue='item-1' className="w-full space-y-4">
               
               <AccordionItem value="item-1" className="border-b-0">
                 <Card>

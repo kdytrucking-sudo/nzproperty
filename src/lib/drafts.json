@@ -189,5 +189,19 @@
         }
       ]
     }
+  },
+  {
+    "draftId": "58926dd5-98b6-48ca-a274-e97aacb3cac7",
+    "placeId": "ChIJa7FNAqZHDW0RZEx0cQpaJjk",
+    "propertyAddress": "4/38 DON CROOT STREET, MORNINGSIDE, AUCKLAND",
+    "createdAt": "2025-09-13T15:20:23.810Z",
+    "updatedAt": "2025-09-13T15:20:23.810Z",
+    "formData": {
+      "data": {
+        "Info": {
+          "Property Address": "4/38 DON CROOT STREET, MORNINGSIDE, AUCKLAND"
+        }
+      }
+    }
   }
 ]
