@@ -17,7 +17,8 @@ const UploadTempImageInputSchema = z.object({
 export type UploadTempImageInput = z.infer<typeof UploadTempImageInputSchema>;
 
 const UploadTempImageOutputSchema = z.object({
-    tempFileName: z.string().describe('The unique temporary file name assigned on the server.')
+    tempFileName: z.string().describe('The unique temporary file name assigned on the server.'),
+    fullPath: z.string().describe('The full absolute path where the file was saved on the server.')
 });
 export type UploadTempImageOutput = z.infer<typeof UploadTempImageOutputSchema>;
 
@@ -59,7 +60,7 @@ const uploadTempImageFlow = ai.defineFlow(
           }
       }, 30 * 24 * 3600 * 1000);
 
-      return { tempFileName: uniqueName };
+      return { tempFileName: uniqueName, fullPath: filePath };
 
     } catch (error: any) {
       console.error(`Failed to upload temporary image:`, error);

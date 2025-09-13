@@ -15,12 +15,10 @@ import { promises as fs } from 'fs';
 /* eslint-disable @typescript-eslint/no-var-requires */
 const ImageModule = require('docxtemplater-image-module-free');
 
+
 function resolveTempPath(filename: string) {
+  // ✅ 用项目根目录下的 tmp（和你原来保存的一致）
   const tmpRoot = process.env.TMP_DIR ?? path.join(process.cwd(), 'tmp');
-  // Basic security check to prevent path traversal
-  if (filename.includes('..') || filename.includes('/')) {
-      throw new Error(`Invalid temporary file name: ${filename}`);
-  }
   const safeName = path.basename(filename);
   return path.resolve(tmpRoot, safeName);
 }

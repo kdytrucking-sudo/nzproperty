@@ -51,6 +51,7 @@ type ImageInfo = {
   file?: File;
   state: ImageUploadState;
   tempFileName?: string;
+  fullPath?: string; // For debugging
   errorMessage?: string;
 };
 
@@ -116,6 +117,8 @@ export default function AdvancedImageTestPage() {
                       newImageFiles[placeholder] = {
                           state: 'success',
                           tempFileName: tempFileName,
+                          // We don't have the full path for draft images, so we show the filename.
+                          fullPath: `/tmp/${tempFileName}`
                       };
                   }
               }
@@ -160,7 +163,7 @@ export default function AdvancedImageTestPage() {
       
       setImageFiles(prev => ({ 
           ...prev, 
-          [placeholder]: { file, state: 'success', tempFileName: result.tempFileName }
+          [placeholder]: { file, state: 'success', tempFileName: result.tempFileName, fullPath: result.fullPath }
       }));
     } catch (error: any) {
       console.error('Temp upload failed:', error);
@@ -286,7 +289,7 @@ export default function AdvancedImageTestPage() {
             </Button>
             <CheckCircle2 className="h-8 w-8" />
             <p className="mt-2 text-sm text-center font-medium">Ready for replacement</p>
-            {imageInfo.file && <p className="mt-1 text-xs text-center truncate w-full">{imageInfo.file.name}</p>}
+            {imageInfo.fullPath && <p className="mt-1 text-xs text-center break-all font-mono">{imageInfo.fullPath}</p>}
           </div>
         )
     }
