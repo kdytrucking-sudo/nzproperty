@@ -117,7 +117,7 @@ export default function InspectionPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto max-w-3xl py-8 space-y-6">
+      <div className="px-2 py-8 space-y-6">
         <Skeleton className="h-10 w-3/4" />
         <Skeleton className="h-6 w-1/2" />
         <Skeleton className="h-48 w-full" />
@@ -129,7 +129,7 @@ export default function InspectionPage() {
   
   if (!draft) {
       return (
-          <div className="container mx-auto max-w-2xl py-8">
+          <div className="px-4 py-8">
               <Alert variant="destructive">
                   <AlertTitle>Error</AlertTitle>
                   <AlertDescription>Could not load the inspection draft. Please go back and try again.</AlertDescription>
@@ -139,8 +139,8 @@ export default function InspectionPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-3xl py-8 pb-24">
-      <header className="mb-8">
+    <div className="px-2 py-6 pb-24">
+      <header className="mb-6">
         <h1 className="font-headline text-2xl font-bold text-foreground">
           Field Inspection
         </h1>
@@ -151,11 +151,11 @@ export default function InspectionPage() {
 
       <main>
         <Form {...form}>
-            <Accordion type="single" collapsible defaultValue='item-1' className="w-full space-y-4">
+            <Accordion type="single" collapsible defaultValue='item-1' className="w-full space-y-3">
               
               <AccordionItem value="item-1" className="border-b-0">
                 <Card>
-                  <CardHeader className="p-4">
+                  <CardHeader className="p-3">
                      <AccordionTrigger className="p-0 hover:no-underline">
                       <div className="flex items-center gap-3">
                           <Home className="h-5 w-5 text-primary"/>
@@ -164,7 +164,7 @@ export default function InspectionPage() {
                     </AccordionTrigger>
                   </CardHeader>
                   <AccordionContent>
-                    <CardContent className="p-4 pt-0">
+                    <CardContent className="p-3 pt-0">
                        <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
                             <RoomOptionsSection control={form.control} setValue={form.setValue} getValues={form.getValues} watch={form.watch} />
                         </React.Suspense>
@@ -175,7 +175,7 @@ export default function InspectionPage() {
               
               <AccordionItem value="item-2" className="border-b-0">
                 <Card>
-                  <CardHeader className="p-4">
+                  <CardHeader className="p-3">
                     <AccordionTrigger className="p-0 hover:no-underline">
                       <div className="flex items-center gap-3">
                           <Construction className="h-5 w-5 text-primary"/>
@@ -184,7 +184,7 @@ export default function InspectionPage() {
                     </AccordionTrigger>
                   </CardHeader>
                   <AccordionContent>
-                      <CardContent className="p-4 pt-0">
+                      <CardContent className="p-3 pt-0">
                         <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
                             <ConstructionSection control={form.control} setValue={form.setValue} getValues={form.getValues} />
                         </React.Suspense>
@@ -195,7 +195,7 @@ export default function InspectionPage() {
 
               <AccordionItem value="item-3" className="border-b-0">
                 <Card>
-                  <CardHeader className="p-4">
+                  <CardHeader className="p-3">
                      <AccordionTrigger className="p-0 hover:no-underline">
                       <div className="flex items-center gap-3">
                           <BookText className="h-5 w-5 text-primary"/>
@@ -204,7 +204,7 @@ export default function InspectionPage() {
                     </AccordionTrigger>
                   </CardHeader>
                   <AccordionContent>
-                    <CardContent className="p-4 pt-0 space-y-4">
+                    <CardContent className="p-3 pt-0 space-y-4">
                        <FormField
                           control={form.control}
                           name="data.General Info.Property Description"
@@ -260,7 +260,7 @@ export default function InspectionPage() {
 
               <AccordionItem value="item-4" className="border-b-0">
                 <Card>
-                  <CardHeader className="p-4">
+                  <CardHeader className="p-3">
                     <AccordionTrigger className="p-0 hover:no-underline">
                       <div className="flex items-center gap-3">
                           <Package className="h-5 w-5 text-primary"/>
@@ -269,7 +269,7 @@ export default function InspectionPage() {
                     </AccordionTrigger>
                   </CardHeader>
                   <AccordionContent>
-                      <CardContent className="p-4 pt-0">
+                      <CardContent className="p-3 pt-0">
                         <React.Suspense fallback={<Skeleton className="h-48 w-full" />}>
                             <ChattelsSection control={form.control} setValue={form.setValue} getValues={form.getValues} />
                         </React.Suspense>
@@ -280,7 +280,7 @@ export default function InspectionPage() {
               
               <AccordionItem value="item-5" className="border-b-0">
                 <Card>
-                  <CardHeader className="p-4">
+                  <CardHeader className="p-3">
                     <AccordionTrigger className="p-0 hover:no-underline">
                       <div className="flex items-center gap-3">
                           <Camera className="h-5 w-5 text-primary"/>
@@ -289,7 +289,7 @@ export default function InspectionPage() {
                     </AccordionTrigger>
                   </CardHeader>
                   <AccordionContent>
-                      <CardContent className="p-4 pt-0">
+                      <CardContent className="p-3 pt-0">
                          <React.Suspense fallback={<Skeleton className="h-48 w-full" />}>
                             <PhotoUploadSection 
                               control={form.control} 

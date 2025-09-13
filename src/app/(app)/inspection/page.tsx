@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -110,7 +111,7 @@ export default function InspectionLandingPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-2xl py-8">
+    <div className="px-2 py-8">
       <header className="text-center mb-8">
         <h1 className="font-headline text-3xl font-bold text-foreground">
           Field Inspection
