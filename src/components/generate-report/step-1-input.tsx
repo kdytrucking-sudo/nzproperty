@@ -166,23 +166,7 @@ export function Step1Input({ onDataExtracted, onDraftLoaded }: Step1InputProps) 
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
               <div className="space-y-6">
-                 <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <label className="text-sm font-medium">Property Address</label>
-                      <div className="flex items-center gap-2">
-                        <FormControl>
-                          <Input placeholder="e.g., 123 Queen Street, Auckland" {...field} />
-                        </FormControl>
-                         <Button type="button" variant="secondary" onClick={handleUpdateMap}>Update</Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <Card className="bg-muted/50">
+                <Card className="bg-muted/50">
                     <CardHeader className="pb-4">
                         <CardTitle className="text-lg">Load Existing Draft</CardTitle>
                         <CardDescription>Select a previously saved draft to continue your work.</CardDescription>
@@ -212,6 +196,22 @@ export function Step1Input({ onDataExtracted, onDraftLoaded }: Step1InputProps) 
                         </div>
                     </CardContent>
                  </Card>
+                 <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <label className="text-sm font-medium">Property Address</label>
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Input placeholder="e.g., 123 Queen Street, Auckland" {...field} />
+                        </FormControl>
+                         <Button type="button" variant="secondary" onClick={handleUpdateMap}>Update</Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <MapPreview address={addressForMap} />
               </div>
 
