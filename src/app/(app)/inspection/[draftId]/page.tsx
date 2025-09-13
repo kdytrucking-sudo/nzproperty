@@ -4,7 +4,7 @@
 
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
-import { Loader2, Mic, Save, Camera, Construction, Home, BookText } from 'lucide-react';
+import { Loader2, Mic, Save, Camera, Construction, Home, BookText, Package } from 'lucide-react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useParams } from 'next/navigation';
@@ -26,7 +26,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 
 // Dynamically import sections to keep initial load small
-const ConstructionChattelsSection = React.lazy(() => import('@/components/inspection/construction-chattels-section'));
+const ConstructionSection = React.lazy(() => import('@/components/inspection/construction-section'));
+const ChattelsSection = React.lazy(() => import('@/components/inspection/chattels-section'));
 const RoomOptionsSection = React.lazy(() => import('@/components/inspection/room-options-section'));
 const PhotoUploadSection = React.lazy(() => import('@/components/inspection/photo-upload-section'));
 
@@ -143,66 +144,6 @@ export default function InspectionPage() {
               <AccordionItem value="item-1" className="border-b-0">
                 <Card>
                   <CardHeader className="p-4">
-                    <AccordionTrigger className="p-0 hover:no-underline">
-                      <div className="flex items-center gap-3">
-                          <Camera className="h-5 w-5 text-primary"/>
-                          <CardTitle className="text-lg">Photos</CardTitle>
-                      </div>
-                    </AccordionTrigger>
-                  </CardHeader>
-                  <AccordionContent>
-                      <CardContent className="p-4 pt-0">
-                         <React.Suspense fallback={<Skeleton className="h-48 w-full" />}>
-                            <PhotoUploadSection control={form.control} selectedPlaceholder={selectedImagePlaceholder} setSelectedPlaceholder={setSelectedImagePlaceholder}/>
-                        </React.Suspense>
-                      </CardContent>
-                  </AccordionContent>
-                </Card>
-              </AccordionItem>
-
-              <AccordionItem value="item-2" className="border-b-0">
-                <Card>
-                  <CardHeader className="p-4">
-                    <AccordionTrigger className="p-0 hover:no-underline">
-                      <div className="flex items-center gap-3">
-                          <Construction className="h-5 w-5 text-primary"/>
-                          <CardTitle className="text-lg">Construction & Chattels</CardTitle>
-                      </div>
-                    </AccordionTrigger>
-                  </CardHeader>
-                  <AccordionContent>
-                      <CardContent className="p-4 pt-0">
-                        <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
-                            <ConstructionChattelsSection control={form.control} setValue={form.setValue} getValues={form.getValues} />
-                        </React.Suspense>
-                      </CardContent>
-                  </AccordionContent>
-                </Card>
-              </AccordionItem>
-              
-              <AccordionItem value="item-3" className="border-b-0">
-                <Card>
-                  <CardHeader className="p-4">
-                     <AccordionTrigger className="p-0 hover:no-underline">
-                      <div className="flex items-center gap-3">
-                          <Home className="h-5 w-5 text-primary"/>
-                          <CardTitle className="text-lg">Room Options</CardTitle>
-                      </div>
-                    </AccordionTrigger>
-                  </CardHeader>
-                  <AccordionContent>
-                    <CardContent className="p-4 pt-0">
-                       <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
-                            <RoomOptionsSection control={form.control} setValue={form.setValue} getValues={form.getValues} watch={form.watch} />
-                        </React.Suspense>
-                    </CardContent>
-                  </AccordionContent>
-                </Card>
-              </AccordionItem>
-
-               <AccordionItem value="item-4" className="border-b-0">
-                <Card>
-                  <CardHeader className="p-4">
                      <AccordionTrigger className="p-0 hover:no-underline">
                       <div className="flex items-center gap-3">
                           <BookText className="h-5 w-5 text-primary"/>
@@ -265,6 +206,86 @@ export default function InspectionPage() {
                 </Card>
               </AccordionItem>
               
+              <AccordionItem value="item-2" className="border-b-0">
+                <Card>
+                  <CardHeader className="p-4">
+                    <AccordionTrigger className="p-0 hover:no-underline">
+                      <div className="flex items-center gap-3">
+                          <Construction className="h-5 w-5 text-primary"/>
+                          <CardTitle className="text-lg">Construction</CardTitle>
+                      </div>
+                    </AccordionTrigger>
+                  </CardHeader>
+                  <AccordionContent>
+                      <CardContent className="p-4 pt-0">
+                        <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                            <ConstructionSection control={form.control} setValue={form.setValue} getValues={form.getValues} />
+                        </React.Suspense>
+                      </CardContent>
+                  </AccordionContent>
+                </Card>
+              </AccordionItem>
+              
+              <AccordionItem value="item-3" className="border-b-0">
+                <Card>
+                  <CardHeader className="p-4">
+                     <AccordionTrigger className="p-0 hover:no-underline">
+                      <div className="flex items-center gap-3">
+                          <Home className="h-5 w-5 text-primary"/>
+                          <CardTitle className="text-lg">Room Options</CardTitle>
+                      </div>
+                    </AccordionTrigger>
+                  </CardHeader>
+                  <AccordionContent>
+                    <CardContent className="p-4 pt-0">
+                       <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                            <RoomOptionsSection control={form.control} setValue={form.setValue} getValues={form.getValues} watch={form.watch} />
+                        </React.Suspense>
+                    </CardContent>
+                  </AccordionContent>
+                </Card>
+              </AccordionItem>
+
+              <AccordionItem value="item-4" className="border-b-0">
+                <Card>
+                  <CardHeader className="p-4">
+                    <AccordionTrigger className="p-0 hover:no-underline">
+                      <div className="flex items-center gap-3">
+                          <Package className="h-5 w-5 text-primary"/>
+                          <CardTitle className="text-lg">Chattels</CardTitle>
+                      </div>
+                    </AccordionTrigger>
+                  </CardHeader>
+                  <AccordionContent>
+                      <CardContent className="p-4 pt-0">
+                        <React.Suspense fallback={<Skeleton className="h-48 w-full" />}>
+                            <ChattelsSection control={form.control} setValue={form.setValue} getValues={form.getValues} />
+                        </React.Suspense>
+                      </CardContent>
+                  </AccordionContent>
+                </Card>
+              </AccordionItem>
+              
+              <AccordionItem value="item-5" className="border-b-0">
+                <Card>
+                  <CardHeader className="p-4">
+                    <AccordionTrigger className="p-0 hover:no-underline">
+                      <div className="flex items-center gap-3">
+                          <Camera className="h-5 w-5 text-primary"/>
+                          <CardTitle className="text-lg">Photos</CardTitle>
+                      </div>
+                    </AccordionTrigger>
+                  </CardHeader>
+                  <AccordionContent>
+                      <CardContent className="p-4 pt-0">
+                         <React.Suspense fallback={<Skeleton className="h-48 w-full" />}>
+                            <PhotoUploadSection control={form.control} selectedPlaceholder={selectedImagePlaceholder} setSelectedPlaceholder={setSelectedImagePlaceholder}/>
+                        </React.Suspense>
+                      </CardContent>
+                  </AccordionContent>
+                </Card>
+              </AccordionItem>
+
             </Accordion>
         </Form>
       </main>

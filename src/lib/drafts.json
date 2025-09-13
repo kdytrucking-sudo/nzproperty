@@ -195,13 +195,38 @@
     "propertyAddress": "4/38 DON CROOT STREET, MORNINGSIDE, AUCKLAND",
     "placeId": "ChIJa7FNAqZHDW0RZEx0cQpaJjk",
     "createdAt": "2025-09-13T15:20:23.810Z",
-    "updatedAt": "2025-09-13T15:42:42.883Z",
+    "updatedAt": "2025-09-13T16:21:05.382Z",
     "formData": {
       "data": {
         "Info": {
-          "Property Address": "4/38 DON CROOT STREET, MORNINGSIDE, AUCKLAND"
+          "Property Address": "4/38 DON CROOT STREET, MORNINGSIDE, AUCKLAND",
+          "Property Address Multi-Line": "",
+          "Instructed By": "",
+          "VOS Order No": "",
+          "Job No": "",
+          "Prepared For": "",
+          "Instructions": "",
+          "Client/Borrower": "",
+          "Land Area": "",
+          "Title": "",
+          "Date of Valuation": "",
+          "Date of Preparation": "",
+          "Date of Inspection": "",
+          "Report Version": "",
+          "Special Assumptions": ""
         },
-        "comparableSales": []
+        "comparableSales": [],
+        "General Info": {
+          "Title Interestes": "",
+          "Title Owner": "",
+          "Title Brief": "",
+          "Property Description": "",
+          "General Description": "",
+          "EGS-BF": "",
+          "EGS-FH": "",
+          "EGS-E/LS": "",
+          "Location Description": ""
+        }
       },
       "roomOptions": [
         {
@@ -260,6 +285,20 @@
       "multiOptionBriefs": {},
       "constructionBrief": {},
       "chattels": {}
+    }
+  },
+  {
+    "draftId": "0595f063-c3d8-41fc-859c-6c6fe9cef4dd",
+    "placeId": "ChIJOQQnQxoH9x4Rf9iBzcc5sWA",
+    "propertyAddress": "8 spode pl",
+    "createdAt": "2025-09-13T16:24:36.057Z",
+    "updatedAt": "2025-09-13T16:24:36.057Z",
+    "formData": {
+      "data": {
+        "Info": {
+          "Property Address": "8 spode pl"
+        }
+      }
     }
   }
 ]

@@ -15,6 +15,7 @@ import {
   Image,
   FlaskConical,
   Smartphone,
+  Package,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
