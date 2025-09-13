@@ -14,7 +14,11 @@ const SaveDraftInputSchema = z.object({
   formData: z.any(),
 });
 
-export async function saveDraft(input: { formData: any }): Promise<void> {
+const SaveDraftOutputSchema = z.object({
+  draftId: z.string(),
+});
+
+export async function saveDraft(input: { formData: any }): Promise<{ draftId: string }> {
   return saveDraftFlow(input);
 }
 
@@ -51,15 +55,15 @@ async function getPlaceId(address: string): Promise<string> {
 
 }
 
-
 const saveDraftFlow = ai.defineFlow(
   {
     name: 'saveDraftFlow',
     inputSchema: SaveDraftInputSchema,
-    outputSchema: z.void(),
+    outputSchema: SaveDraftOutputSchema,
   },
   async ({ formData }) => {
     const filePath = path.join(process.cwd(), 'src/lib', 'drafts.json');
+    let draftId: string;
     try {
       const address = formData.data.Info['Property Address'];
       if (!address) {
@@ -84,16 +88,26 @@ const saveDraftFlow = ai.defineFlow(
       if (existingDraftIndex !== -1) {
         // Update existing draft
         const existingDraft = drafts[existingDraftIndex];
-        drafts[existingDraftIndex] = {
+        drafts[existingDraftIndex] = DraftSchema.parse({
             ...existingDraft,
+            formData: {
+              // Deep merge formData to preserve existing data
+              ...existingDraft.formData,
+              ...formData,
+              data: {
+                ...existingDraft.formData?.data,
+                ...formData.data,
+              }
+            },
             propertyAddress: address, // Update address in case it was slightly different
             updatedAt: now,
-            formData,
-        };
+        });
+        draftId = existingDraft.draftId;
       } else {
         // Add new draft
+        const newDraftId = crypto.randomUUID();
         const newDraft = {
-            draftId: crypto.randomUUID(),
+            draftId: newDraftId,
             placeId,
             propertyAddress: address,
             createdAt: now,
@@ -102,10 +116,13 @@ const saveDraftFlow = ai.defineFlow(
         };
         DraftSchema.parse(newDraft); // Validate the new draft object
         drafts.push(newDraft);
+        draftId = newDraftId;
       }
       
       const contentJsonString = JSON.stringify(drafts, null, 2);
       await fs.writeFile(filePath, contentJsonString, 'utf-8');
+
+      return { draftId };
 
     } catch (error: any) {
       console.error('Failed to save draft:', error);

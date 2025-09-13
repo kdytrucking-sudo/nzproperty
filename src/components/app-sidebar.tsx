@@ -14,6 +14,7 @@ import {
   TestTube2,
   Image,
   FlaskConical,
+  Smartphone,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -41,6 +42,11 @@ export function AppSidebar() {
       href: '/',
       label: 'Generate Report',
       icon: LayoutDashboard,
+    },
+     {
+      href: '/inspection',
+      label: 'Field Inspection',
+      icon: Smartphone,
     },
     {
       href: '/manage-content',
@@ -105,7 +111,7 @@ export function AppSidebar() {
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href}
+                isActive={pathname === item.href || (item.href === '/inspection' && pathname.startsWith('/inspection/'))}
                 tooltip={{ children: item.label, side: 'right' }}
               >
                 <Link href={item.href}>
