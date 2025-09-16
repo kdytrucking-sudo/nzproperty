@@ -232,7 +232,23 @@ export function Step2Review({ extractedData, draftData, onReportGenerated, onBac
   
   const formatCurrency = (value: number | undefined): string => {
     if (value === undefined || isNaN(value)) return '';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+
+    const options: Intl.NumberFormatOptions = {
+        style: 'currency',
+        currency: 'USD',
+    };
+
+    // If the value is an integer, don't show fraction digits
+    if (value % 1 === 0) {
+        options.minimumFractionDigits = 0;
+        options.maximumFractionDigits = 0;
+    } else {
+        // Otherwise, show the default 2 fraction digits for currency
+        options.minimumFractionDigits = 2;
+        options.maximumFractionDigits = 2;
+    }
+
+    return new Intl.NumberFormat('en-US', options).format(value);
   };
   
   const handleMarketValuationUpdate = React.useCallback(async () => {

@@ -9,6 +9,15 @@
         "required": true
       }
     },
+    "Single Line Address": {
+      "label": "Single Line Address",
+      "placeholder": "[Replace_SingleLineAddress]",
+      "displayType": "text",
+      "validation": {
+        "type": "string",
+        "required": true
+      }
+    },
     "Property Address Multi-Line": {
       "label": "Property Address Multi-Line",
       "placeholder": "[Replace_AddressMultiLine]",

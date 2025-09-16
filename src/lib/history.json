@@ -1,1 +1,97 @@
-[]
+[
+  {
+    "draftId": "8a2710c7-0cd1-4337-8245-01c07e579f31",
+    "propertyAddress": "2/29 Salisbury Road Birkdale Auckland",
+    "createdAt": "2025-09-16T23:05:39.570Z",
+    "updatedAt": "2025-09-16T23:05:39.570Z",
+    "data": {
+      "templateFileName": "[template] Resi 10_Sep_2025.docx",
+      "data": {
+        "Info": {
+          "Property Address": "2/29 Salisbury Road Birkdale Auckland",
+          "Single Line Address": "4/38 Don Croot Street, Morningside, Auckland",
+          "Property Address Multi-Line": "4/38 Don Croot Street\nMorningside\nAuckland",
+          "Instructed By": "gaby Phua of ASB Bank Limited, via Valocity",
+          "VOS Order No": "800-1343-639",
+          "Job No": "N/A",
+          "Prepared For": "ASB Bank Limited",
+          "Instructions": "We refer to instructions received XXXXXXX, requesting that we to provide our opinion as to the above property's market value XXXXX.",
+          "Client/Borrower": "Barrie MACKENZIE",
+          "Land Area": "Principal Unit 4 Deposited Plan 609214 and Accessory Unit C4 Deposited Plan 609214",
+          "Title": "1203191",
+          "Date of Valuation": "N/A",
+          "Date of Preparation": "N/A",
+          "Date of Inspection": "N/A",
+          "Report Version": "N/A",
+          "Special Assumptions": "N/A"
+        },
+        "General Info": {
+          "Title Interestes": "• 13019370.2 Mortgage to Phillip Graeme Bell, Treacy Anne Bell and Andrew Garwood Hill\n• Land Covenant in Covenant Instrument 13267867.4 (affects Principal Unit 4 DP 609214)",
+          "Title Owner": "L B Holdings Limited",
+          "Title Brief": "Record of Title Identifier 1203191 describes the property as being seised of a Stratum in Freehold comprising Principal Unit 4 Deposited Plan 609214 and Accessory Unit C4 Deposited Plan 609214.",
+          "Property Description": "N/A",
+          "General Description": "It appears that XXXXX.",
+          "EGS-BF": "N/A",
+          "EGS-FH": "N/A",
+          "EGS-E/LS": "No obvious unusual erosion risk.",
+          "Location Description": "The property is situated in the city fringe suburb of Morningside, a popular location undergoing significant gentrification. The immediate vicinity comprises a mix of character homes, modern infill townhouses, and some light industrial properties. It benefits from close proximity to a wide range of amenities including the St Lukes shopping mall, local cafes, and the vibrant Kingsland hospitality precinct. The area is well-served by public transport with the Morningside train station nearby, and offers convenient access to the Northwestern Motorway. Reputable schooling, such as Mt Albert Grammar School, is available. The Auckland CBD is approximately a 10 to 15-minute drive under normal traffic conditions."
+        },
+        "comparableSales": []
+      },
+      "commentarySelections": {
+        "c1-purpose": " Mortgage Security Purposes.",
+        "c2-principal-use": "Residential",
+        "c3-previous-sale": "There are no sales listed for the property within the last three years.  ",
+        "c4-contract-sale": "To the best of our knowledge, we are not aware of any current contract for sale on the property. ",
+        "c5-supplied-docs": "In undertaking this valuation we have been supplied with copies of the following documents:\n•\tA copy of the Agreement for Sale and Purchase of Real Estate dated on 14 July 2025.\n",
+        "c6-recent-provided": "Recent",
+        "c7-lim": "We have not been provided with or obtained a copy of the Land Information Report (LIM) for the subject property.  We have assumed there are no outstanding issues or requisitions",
+        "c8-pc78": "Under the proposed zone – Plan Change 78, the property has a zoning of Residential – Mixed Housing Suburban.  This zone is to be the most widespread residential zone in Auckland.  Its density controls allow a moderate level of intensification, while retaining a relatively spacious quality consistent with a suburban residential character, compared to the Mixed Housing Urban and Terrace Housing and Apartment Buildings zones.  \nSubdivision and development within the zone allows two dwellings per site as a permitted activity and three or more dwellings being a restricted discretionary activity.  Further, development of two dwellings will need to comply with the following standards within the Mixed Housing Suburban zone:\nBuilding Height\nHeight in relation to boundary\nMinimum yard depth setbacks from each boundary\nMaximum impervious area\nBuilding coverage\nLandscaped area\nOutlook space\nDaylight ingress\nOutdoor living space\nFencing and wall restrictions\nSubdivision for three or more dwellings within this zone, while being restricted discretionary will also need to comply with the following standards within the zone, building height; height in relation to boundary and minimum yard depth setbacks from each boundary. \nVacant proposed site subdivision is a restricted discretionary activity within this zone and allows a net site area of 400 sm for parent sites that are less than one hectare.  For parent sites that are in excess of one hectare, vacant proposed site subdivision is a discretionary activity with the following rules regarding site areas:\nMinimum net site area\t320 sm\nMinimum average net site area\t400 sm\nMaximum average net site area\t480 sm\nThe Mixed Housing Suburban zone aims to enable a variety of housing types and encourage development as it is the most wide-spread residential zone under the unitary plan.  The zone is concentrated around residential use but allows for non – residential activities that will support the social and economic well-being of the community while monitoring any effects on the residential amenity of the zone.",
+        "c9-operative-zone": "Under the Auckland Unitary Plan (Operative in Part), the property has a zoning of Residential – Mixed Housing Suburban.  This zone is to be the most widespread residential zone in Auckland.  Its density controls allow a moderate level of intensification, while retaining a relatively spacious quality consistent with a suburban residential character, compared to the Mixed Housing Urban and Terrace Housing and Apartment Buildings zones.  \nSubdivision and development within the zone allows two dwellings per site as a permitted activity and three or more dwellings being a restricted discretionary activity.  Further, development of two dwellings will need to comply with the following standards within the Mixed Housing Suburban zone:\nBuilding Height\nHeight in relation to boundary\nMinimum yard depth setbacks from each boundary\nMaximum impervious area\nBuilding coverage\nLandscaped area\nOutlook space\nDaylight ingress\nOutdoor living space\nFencing and wall restrictions\nSubdivision for three or more dwellings within this zone, while being restricted discretionary will also need to comply with the following standards within the zone, building height; height in relation to boundary and minimum yard depth setbacks from each boundary. \nVacant proposed site subdivision is a restricted discretionary activity within this zone and allows a net site area of 400 sm for parent sites that are less than one hectare.  For parent sites that are in excess of one hectare, vacant proposed site subdivision is a discretionary activity with the following rules regarding site areas:\nMinimum net site area\t320 sm\nMinimum average net site area\t400 sm\nMaximum average net site area\t480 sm\nThe Mixed Housing Suburban zone aims to enable a variety of housing types and encourage development as it is the most wide-spread residential zone under the unitary plan.  The zone is concentrated around residential use but allows for non – residential activities that will support the social and economic well-being of the community while monitoring any effects on the residential amenity of the zone.",
+        "c10-zoning-op": "Residential – Large Lot ",
+        "c11-zoning-pc78": "Residential – Mixed Housing Suburban",
+        "c12-condition": "a. The property is presented to a new standard and good condition, both externally and internally. ",
+        "c13-site-desc-1": "Freehold 1 : As shown above, the property currently comprises an irregular shaped site of approximately 1,070 sm. It has a narrow road frontage off Mander Place of around 3.2 metres, providing vehicle access to the site. The northern boundary measures approximately 46.4 metres, while the southern boundary is around 25.7 metres. The eastern boundary extends approximately 28.9 metres, and the southwestern boundary measures roughly 40 metres. Contourwise, the site is generally level.",
+        "c14-site-desc-2": "In terms of catchments and hydrology, there are no overland flow paths traversing the site, and it is not identified as flood prone.",
+        "c15-sales-evidence": "\"GENERAL FREEHOLD : The subject property comprises a freestanding dwelling originally constructed circa 1980s, now presented in modest to average condition with dated fitout, and would benefit from modernisation/renovation. The dwelling provides three bedrooms and one bathroom, together with a detached double garage.\nIn a broader context, comparable properties with similar characteristics have transacted in the range of $670,000 to $835,000 between October 2024 and June 2025, with an average sale price of approximately $771,000. These properties provide floor areas between 80 sm and 140 sm (averaging 123 sm) and are situated on sites ranging from 363 sm to 922 sm, with an average site size of 617 sm.\nOn balance, and taking into account the physical attributes of the property including its age, size, condition, views, and aspect, together with also allowing for the prevailing market conditions, we believe the subject property would warrant a market value ranging between $740,000 – $780,000, and we deem it appropriate in this instance to adopt the mid-point of this range at a figure of $760,000.\"",
+        "2d161ebb-6a0d-4613-ba19-26b27bc4cabc": "searched a copy of Title Identifier, reviewed the supplied documentation",
+        "d05e7455-7c49-4f6c-a104-98e6a99ef052": "NIL",
+        "7d4c3595-f966-4e4e-9c4d-7f657ee78d3e": "For properties of this nature in this market, we consider there to be a medium to high risk, given the market has favoured tidy, renovated or newly improved properties through the downturn. "
+      },
+      "constructionBrief": {
+        "generalConstruction": [],
+        "interior": [],
+        "finalBrief": ""
+      },
+      "marketValuation": {
+        "marketValue": "",
+        "marketValuation": "",
+        "improvementsValueByValuer": "",
+        "landValueByValuer": "",
+        "chattelsValueByValuer": "",
+        "marketValueByValuer": ""
+      },
+      "statutoryValuation": {
+        "landValueByWeb": "",
+        "improvementsValueByWeb": "",
+        "ratingValueByWeb": ""
+      },
+      "marketValuationRaw": "",
+      "multiOptionSelections": {
+        "4e4ae017-dd6d-4195-8201-a9694fa6fcd1": [],
+        "b88b5e49-a806-47b9-bb78-d872900962c5": []
+      },
+      "multiOptionBriefs": {
+        "4e4ae017-dd6d-4195-8201-a9694fa6fcd1": "",
+        "b88b5e49-a806-47b9-bb78-d872900962c5": ""
+      },
+      "chattels": {
+        "selected": [],
+        "finalBrief": ""
+      },
+      "roomOptions": []
+    },
+    "ifreplacetext": true,
+    "ifreplaceimage": false
+  }
+]
