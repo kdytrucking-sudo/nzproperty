@@ -44,6 +44,91 @@ export async function performImageReplacement(
 }
 
 
+/**
+ * THIS IS THE ISOLATED REPLACEMENT FUNCTION
+ * It downloads a report and images from cloud storage, performs the replacement,
+ * and returns the resulting document buffer.
+ */
+async function replaceImagesInDocx(
+    reportFileName: string,
+    images: z.infer<typeof ImageInfoSchema>[],
+    logs: string[]
+): Promise<{finalDocBuffer: Buffer, imagesReplacedCount: number}> {
+    
+    let imagesReplacedCount = 0;
+
+    // 1. Download the report template from storage
+    const reportStoragePath = `reports/${reportFileName}`;
+    logs.push(`Downloading report from: ${reportStoragePath}`);
+    const reportArrayBuffer = await downloadBinary(reportStoragePath);
+    const reportBuffer = Buffer.from(reportArrayBuffer);
+    logs.push(`Report downloaded successfully (${(reportBuffer.length / 1024).toFixed(2)} KB).`);
+
+    const zip = new PizZip(reportBuffer);
+
+    // 2. Prepare image data and sizes
+    const imageSizes = new Map<string, { width: number; height: number }>();
+    const templateData: { [key: string]: Buffer } = {};
+    
+    for (const img of images) {
+      const key = img.placeholder.replace(/\{%|}/g, '');
+      imageSizes.set(key, { width: img.width, height: img.height });
+      
+      const imagePath = `images/${img.imageFileName}`;
+      logs.push(`Downloading image: ${img.imageFileName} for placeholder ${img.placeholder}`);
+      const imageArrayBuffer = await downloadBinary(imagePath);
+      const imageBuffer = Buffer.from(imageArrayBuffer);
+      
+      templateData[key] = imageBuffer;
+
+      logs.push(`Image ${img.imageFileName} downloaded (${(imageBuffer.length / 1024).toFixed(2)} KB).`);
+    }
+
+    // 3. Setup Docxtemplater with the image module
+    const imageModule = new ImageModule({
+      fileType: 'docx',
+      centered: false,
+      getImage: (tagValue: unknown) => {
+        if (Buffer.isBuffer(tagValue)) {
+          imagesReplacedCount++;
+          return tagValue;
+        }
+        logs.push(`[ERROR] getImage received an unexpected type for a tag. Expected a Buffer.`);
+        throw new Error('Image data is not a buffer.');
+      },
+      getSize: (_img: Buffer, _tagValue: unknown, tagName: string) => {
+        const size = imageSizes.get(tagName);
+        if (size) {
+          logs.push(`Providing size ${size.width}x${size.height} for tag: ${tagName}`);
+          return [size.width, size.height];
+        }
+        logs.push(`[WARNING] No size found for tag: ${tagName}. Using default 300x200.`);
+        return [300, 200];
+      },
+    });
+
+    const doc = new Docxtemplater(zip, {
+      modules: [imageModule],
+      delimiters: { start: '{%', end: '}' },
+      paragraphLoop: true,
+      linebreaks: true,
+    });
+
+    logs.push(`Setting data for docxtemplater with keys: ${Object.keys(templateData).join(', ')}`);
+    doc.setData(templateData);
+
+    // 4. Render the document
+    logs.push('Rendering the document...');
+    doc.render();
+    logs.push('Document rendered successfully.');
+
+    // 5. Generate and return the final document buffer
+    const finalDocBuffer = doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' });
+    
+    return { finalDocBuffer, imagesReplacedCount };
+}
+
+
 /* ------------------------------ Flow ------------------------------ */
 
 const performImageReplacementFlow = ai.defineFlow(
@@ -54,83 +139,14 @@ const performImageReplacementFlow = ai.defineFlow(
   },
   async ({ reportFileName, images }) => {
     const logs: string[] = [];
-    let imagesReplacedCount = 0;
 
     try {
       logs.push(`Starting replacement process for report: ${reportFileName}`);
 
-      // 1. Download the report template from storage
-      const reportStoragePath = `reports/${reportFileName}`;
-      logs.push(`Downloading report from: ${reportStoragePath}`);
-      const reportArrayBuffer = await downloadBinary(reportStoragePath);
-      const reportBuffer = Buffer.from(reportArrayBuffer);
-      logs.push(`Report downloaded successfully (${(reportBuffer.length / 1024).toFixed(2)} KB).`);
-
-      const zip = new PizZip(reportBuffer);
-
-      // 2. Prepare image data and sizes
-      const imageSizes = new Map<string, { width: number; height: number }>();
-      const templateData: { [key: string]: Buffer } = {};
+      const { finalDocBuffer, imagesReplacedCount } = await replaceImagesInDocx(reportFileName, images, logs);
       
-      for (const img of images) {
-        const key = img.placeholder.replace(/\{%|}/g, '');
-        imageSizes.set(key, { width: img.width, height: img.height });
-        
-        const imagePath = `images/${img.imageFileName}`;
-        logs.push(`Downloading image: ${img.imageFileName} for placeholder ${img.placeholder}`);
-        const imageArrayBuffer = await downloadBinary(imagePath);
-        const imageBuffer = Buffer.from(imageArrayBuffer);
-        
-        // **FIX:** Directly pass the buffer to the template data.
-        templateData[key] = imageBuffer;
-
-        logs.push(`Image ${img.imageFileName} downloaded (${(imageBuffer.length / 1024).toFixed(2)} KB).`);
-      }
-
-      // 3. Setup Docxtemplater with the image module
-      const imageModule = new ImageModule({
-        fileType: 'docx',
-        centered: false,
-        // **FIX:** The `getImage` function now directly receives the buffer from `templateData`.
-        getImage: (tagValue: unknown) => {
-          if (Buffer.isBuffer(tagValue)) {
-            imagesReplacedCount++;
-            return tagValue;
-          }
-          // This should ideally not be reached if the setup is correct.
-          logs.push(`[ERROR] getImage received an unexpected type for a tag. Expected a Buffer.`);
-          throw new Error('Image data is not a buffer.');
-        },
-        getSize: (_img: Buffer, _tagValue: unknown, tagName: string) => {
-          const size = imageSizes.get(tagName);
-          if (size) {
-            logs.push(`Providing size ${size.width}x${size.height} for tag: ${tagName}`);
-            return [size.width, size.height];
-          }
-          logs.push(`[WARNING] No size found for tag: ${tagName}. Using default 300x200.`);
-          return [300, 200];
-        },
-      });
-
-      const doc = new Docxtemplater(zip, {
-        modules: [imageModule],
-        delimiters: { start: '{%', end: '}' },
-        paragraphLoop: true,
-        linebreaks: true,
-      });
-
-      logs.push(`Setting data for docxtemplater with keys: ${Object.keys(templateData).join(', ')}`);
-      doc.setData(templateData);
-
-      // 4. Render the document
-      logs.push('Rendering the document...');
-      doc.render();
-      logs.push('Document rendered successfully.');
-
-      // 5. Generate and return the final document
-      const out = doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' });
-      const base64 = out.toString('base64');
-      logs.push(`Final document generated (${(out.length / 1024).toFixed(2)} KB). Process complete.`);
+      const base64 = finalDocBuffer.toString('base64');
+      logs.push(`Final document generated (${(finalDocBuffer.length / 1024).toFixed(2)} KB). Process complete.`);
 
       return {
         generatedDocxDataUri: `data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${base64}`,
