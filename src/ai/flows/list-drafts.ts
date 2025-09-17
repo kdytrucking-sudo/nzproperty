@@ -1,13 +1,12 @@
 'use server';
 /**
- * @fileOverview Lists all available drafts from the drafts.json file.
+ * @fileOverview Lists all available drafts from the drafts.json file in Firebase Storage.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import fs from 'fs/promises';
-import path from 'path';
 import { DraftsFileSchema, DraftSummarySchema, type DraftSummary } from '@/lib/drafts-schema';
+import { readJSON, writeJSON } from '@/lib/storage'; // Firebase Storage 封装
 
 export async function listDrafts(): Promise<DraftSummary[]> {
   return listDraftsFlow();
@@ -20,10 +19,10 @@ const listDraftsFlow = ai.defineFlow(
     outputSchema: z.array(DraftSummarySchema),
   },
   async () => {
-    const filePath = path.join(process.cwd(), 'src', 'lib', 'drafts.json');
+    const storagePath = 'json/drafts.json';
     try {
-      const jsonString = await fs.readFile(filePath, 'utf-8');
-      const drafts = DraftsFileSchema.parse(JSON.parse(jsonString));
+      const jsonData = await readJSON(storagePath);
+      const drafts = DraftsFileSchema.parse(jsonData);
       
       // Sort drafts by last updated date, descending
       drafts.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
@@ -37,13 +36,13 @@ const listDraftsFlow = ai.defineFlow(
         updatedAt
       }));
     } catch (error: any) {
-      if (error.code === 'ENOENT') {
+      if (error.message.includes('not found') || error.message.includes('No object exists')) {
         // If the file doesn't exist, create it with an empty array.
-        await fs.writeFile(filePath, '[]', 'utf-8');
+        await writeJSON(storagePath, []);
         return [];
       }
       console.error('Failed to list drafts:', error);
-      throw new Error(`Failed to read or parse drafts.json: ${error.message}`);
+      throw new Error(`Failed to read or parse drafts.json from Firebase Storage: ${error.message}`);
     }
   }
 );
