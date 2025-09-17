@@ -39,6 +39,11 @@ export function AppSidebar() {
       icon: LayoutDashboard,
     },
      {
+      href: '/advanced-image-test',
+      label: 'Advanced Image Test',
+      icon: Image,
+    },
+     {
       href: '/image-test',
       label: 'Image Test',
       icon: FlaskConical,

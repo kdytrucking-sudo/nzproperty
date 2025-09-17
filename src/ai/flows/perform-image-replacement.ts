@@ -117,10 +117,12 @@ const performImageReplacementFlow = ai.defineFlow(
       });
 
       // Prepare template data object with keys for docxtemplater to trigger `getImage`
-      const templateData: { [key: string]: boolean } = {};
+      // The value here is what's passed to getImage's `tagValue` argument.
+      // We pass the placeholder key itself so `getImage` can use it to look up the buffer.
+      const templateData: { [key: string]: string } = {};
       images.forEach(img => {
         const key = img.placeholder.replace(/\{%|}/g, '');
-        templateData[key] = true;
+        templateData[key] = key;
       });
 
       logs.push(`Setting data for docxtemplater with keys: ${Object.keys(templateData).join(', ')}`);
