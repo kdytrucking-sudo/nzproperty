@@ -70,7 +70,7 @@ const performImageReplacementFlow = ai.defineFlow(
 
       // 2. Prepare image data and sizes
       const imageSizes = new Map<string, { width: number; height: number }>();
-      const imageBuffers = new Map<string, Buffer>();
+      const templateData: { [key: string]: Buffer } = {};
       
       for (const img of images) {
         const key = img.placeholder.replace(/\{%|}/g, '');
@@ -80,7 +80,10 @@ const performImageReplacementFlow = ai.defineFlow(
         logs.push(`Downloading image: ${img.imageFileName} for placeholder ${img.placeholder}`);
         const imageArrayBuffer = await downloadBinary(imagePath);
         const imageBuffer = Buffer.from(imageArrayBuffer);
-        imageBuffers.set(key, imageBuffer);
+        
+        // **FIX:** Directly pass the buffer to the template data.
+        templateData[key] = imageBuffer;
+
         logs.push(`Image ${img.imageFileName} downloaded (${(imageBuffer.length / 1024).toFixed(2)} KB).`);
       }
 
@@ -88,15 +91,15 @@ const performImageReplacementFlow = ai.defineFlow(
       const imageModule = new ImageModule({
         fileType: 'docx',
         centered: false,
-        getImage: (tagName: string) => {
-          logs.push(`docxtemplater is requesting image for tag: ${tagName}`);
-          const buffer = imageBuffers.get(tagName);
-          if (!buffer) {
-            logs.push(`[ERROR] No image buffer found for tag: ${tagName}`);
-            throw new Error(`Image for tag ${tagName} not found in pre-downloaded buffers.`);
+        // **FIX:** The `getImage` function now directly receives the buffer from `templateData`.
+        getImage: (tagValue: unknown) => {
+          if (Buffer.isBuffer(tagValue)) {
+            imagesReplacedCount++;
+            return tagValue;
           }
-          imagesReplacedCount++;
-          return buffer;
+          // This should ideally not be reached if the setup is correct.
+          logs.push(`[ERROR] getImage received an unexpected type for a tag. Expected a Buffer.`);
+          throw new Error('Image data is not a buffer.');
         },
         getSize: (_img: Buffer, _tagValue: unknown, tagName: string) => {
           const size = imageSizes.get(tagName);
@@ -114,15 +117,6 @@ const performImageReplacementFlow = ai.defineFlow(
         delimiters: { start: '{%', end: '}' },
         paragraphLoop: true,
         linebreaks: true,
-      });
-
-      // Prepare template data object with keys for docxtemplater to trigger `getImage`
-      // The value here is what's passed to getImage's `tagValue` argument.
-      // We pass the placeholder key itself so `getImage` can use it to look up the buffer.
-      const templateData: { [key: string]: string } = {};
-      images.forEach(img => {
-        const key = img.placeholder.replace(/\{%|}/g, '');
-        templateData[key] = key;
       });
 
       logs.push(`Setting data for docxtemplater with keys: ${Object.keys(templateData).join(', ')}`);
