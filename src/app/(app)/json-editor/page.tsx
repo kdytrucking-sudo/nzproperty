@@ -11,14 +11,15 @@ import { useToast } from '@/hooks/use-toast';
 import * as React from 'react';
 import { FileUploader } from '@/components/file-uploader';
 import { Textarea } from '@/components/ui/textarea';
-import { saveExtractionConfig } from '@/ai/flows/save-json-structure';
 import { getExtractionConfig } from '@/ai/flows/get-extraction-config';
 import { extractPropertyData } from '@/ai/flows/extract-property-data-from-pdf';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { getAiConfig } from '@/ai/flows/get-ai-config';
 import { saveAiConfig } from '@/ai/flows/save-ai-config';
-import { type AiConfig, AiConfigSchema, DEFAULT_AI_CONFIG } from '@/lib/ai-config-schema';
+import type { AiConfig } from '@/lib/ai-config-schema';
+import { AiConfigSchema, DEFAULT_AI_CONFIG } from '@/lib/ai-config-schema';
+import { saveExtractionConfig } from '@/ai/flows/save-extraction-config';
 
 const ACCEPTED_FILE_TYPES = {
   'application/pdf': ['.pdf'],
@@ -308,21 +309,6 @@ export default function JsonEditorPage() {
                            </FormItem>
                         )}
                       />
-                  </CardContent>
-                </Card>
-                 <Card>
-                  <CardHeader>
-                    <CardTitle>AI Output Structure (JSON)</CardTitle>
-                    <CardDescription>Define the JSON output format for the AI.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <FormField
-                      control={form.control}
-                      name="jsonStructure"
-                      render={({ field }) => (
-                        <Textarea {...field} className="min-h-[400px] font-mono text-xs" />
-                      )}
-                    />
                   </CardContent>
                 </Card>
                  <div className="flex justify-between rounded-md border bg-card p-4 text-card-foreground shadow-sm">
