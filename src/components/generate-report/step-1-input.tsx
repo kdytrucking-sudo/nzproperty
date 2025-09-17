@@ -104,8 +104,10 @@ export function Step1Input({ onDataExtracted, onDraftLoaded }: Step1InputProps) 
     }
     setIsDraftLoading(true);
     try {
-        const draft = await getDraft({ draftId: selectedDraftId });
-        if (draft) {
+        const draftResponse = await getDraft({ draftId: selectedDraftId });
+        const draft = draftResponse?.draft;
+
+        if (draft && draft.formData) {
             // "Data补全" step to ensure UI consistency
             const config = await getExtractionConfig();
             const jsonStructure = JSON.parse(config.jsonStructure);
@@ -117,12 +119,13 @@ export function Step1Input({ onDataExtracted, onDraftLoaded }: Step1InputProps) 
                 });
             });
 
-            // Deep merge draft data over the default structure
+            // Deep merge draft data over the default structure with safety checks
+            const draftFormData = draft.formData.data || {};
             const completeData = {
                 ...defaultData,
-                ...draft.formData.data,
-                Info: {...defaultData.Info, ...draft.formData.data?.Info},
-                'General Info': {...defaultData['General Info'], ...draft.formData.data?.['General Info']}
+                ...draftFormData,
+                Info: {...defaultData.Info, ...(draftFormData.Info || {})},
+                'General Info': {...defaultData['General Info'], ...(draftFormData['General Info'] || {})}
             };
             
             const completedDraft = {
@@ -133,7 +136,7 @@ export function Step1Input({ onDataExtracted, onDraftLoaded }: Step1InputProps) 
             onDraftLoaded(completedDraft);
             toast({ title: 'Draft Loaded', description: `Successfully loaded draft for ${draft.propertyAddress}.`});
         } else {
-            throw new Error('Draft not found on the server.');
+            throw new Error('Draft not found or is corrupted on the server.');
         }
     } catch (error: any) {
         console.error('Failed to load draft:', error);
