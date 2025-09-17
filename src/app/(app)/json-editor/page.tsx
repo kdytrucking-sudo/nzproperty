@@ -19,7 +19,7 @@ import { getAiConfig } from '@/ai/flows/get-ai-config';
 import { saveAiConfig } from '@/ai/flows/save-ai-config';
 import type { AiConfig } from '@/lib/ai-config-schema';
 import { AiConfigSchema, DEFAULT_AI_CONFIG } from '@/lib/ai-config-schema';
-import { saveExtractionConfig } from '@/ai/flows/save-extraction-config';
+import { saveExtractionConfig } from '@/ai/flows/save-json-structure';
 
 const ACCEPTED_FILE_TYPES = {
   'application/pdf': ['.pdf'],
@@ -361,3 +361,5 @@ export default function JsonEditorPage() {
     </div>
   );
 }
+
+    
