@@ -1,15 +1,14 @@
 'use server';
 /**
- * @fileOverview Saves the provided global content to a JSON file.
+ * @fileOverview Saves the provided global content to a JSON file in Firebase Storage.
  *
  * - saveGlobalContent - A function that saves the content object to a file.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import fs from 'fs/promises';
-import path from 'path';
 import { contentFormSchema, type ContentFormData } from '@/lib/content-config';
+import { writeJSON } from '@/lib/storage';
 
 
 export async function saveGlobalContent(input: ContentFormData): Promise<void> {
@@ -23,12 +22,12 @@ const saveGlobalContentFlow = ai.defineFlow(
     outputSchema: z.void(),
   },
   async (content) => {
+    const storagePath = 'json/global-content.json';
     try {
-      const jsonFilePath = path.join(process.cwd(), 'src', 'lib', 'global-content.json');
       const contentJsonString = JSON.stringify(content, null, 2);
-      await fs.writeFile(jsonFilePath, contentJsonString, 'utf-8');
+      await writeJSON(storagePath, JSON.parse(contentJsonString));
     } catch (error: any) {
-      console.error('Failed to save global content:', error);
+      console.error('Failed to save global content to Firebase Storage:', error);
       throw new Error(`Failed to write content file: ${error.message}`);
     }
   }
