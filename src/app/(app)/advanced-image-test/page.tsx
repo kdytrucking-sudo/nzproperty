@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, FileDown, AlertCircle, UploadCloud, CheckCircle2, FlaskConical, X } from 'lucide-react';
+import { Loader2, FileDown, AlertCircle, CheckCircle2, FlaskConical, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -16,11 +16,7 @@ import { getImageOptions } from '@/ai/flows/get-image-options';
 import { Skeleton } from '@/components/ui/skeleton';
 import { uploadTempImage } from '@/ai/flows/upload-temp-image';
 import { replaceImagesFromTemp } from '@/ai/flows/replace-images-from-temp';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { listDrafts } from '@/ai/flows/list-drafts';
-import { getDraft } from '@/ai/flows/get-draft';
-import type { DraftSummary } from '@/lib/drafts-schema';
-import { saveHistory } from '@/ai/flows/save-history';
+
 
 const ACCEPTED_DOCX_TYPES = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
@@ -64,22 +60,12 @@ export default function AdvancedImageTestPage() {
   const [imageConfigs, setImageConfigs] = React.useState<ImageConfig[]>([]);
   const [imageFiles, setImageFiles] = React.useState<Record<string, ImageInfo | null>>({});
   
-  const [drafts, setDrafts] = React.useState<DraftSummary[]>([]);
-  const [isLoadingDrafts, setIsLoadingDrafts] = React.useState(true);
-  const [selectedDraftId, setSelectedDraftId] = React.useState<string>('');
-  const [selectedPropertyAddress, setSelectedPropertyAddress] = React.useState<string>('');
-
   React.useEffect(() => {
     async function loadInitialData() {
       setIsLoadingConfigs(true);
-      setIsLoadingDrafts(true);
       try {
-        const [configs, draftList] = await Promise.all([
-          getImageOptions(),
-          listDrafts(),
-        ]);
+        const configs = await getImageOptions();
         setImageConfigs(configs);
-        setDrafts(draftList);
       } catch (error: any) {
         toast({
           variant: 'destructive',
@@ -88,58 +74,11 @@ export default function AdvancedImageTestPage() {
         });
       } finally {
         setIsLoadingConfigs(false);
-        setIsLoadingDrafts(false);
       }
     }
     loadInitialData();
   }, [toast]);
   
-  const handleDraftSelection = async (draftId: string) => {
-    if (!draftId) {
-        // Clear image states if no draft is selected
-        setImageFiles({});
-        setSelectedDraftId('');
-        setSelectedPropertyAddress('');
-        return;
-    }
-    
-    setSelectedDraftId(draftId);
-    
-    try {
-        const draft = await getDraft({ draftId });
-        if (draft) {
-          setSelectedPropertyAddress(draft.propertyAddress);
-          if (draft.formData.uploadedImages) {
-              const newImageFiles: Record<string, ImageInfo | null> = {};
-              for (const placeholder in draft.formData.uploadedImages) {
-                  const tempFileName = draft.formData.uploadedImages[placeholder];
-                  if (tempFileName) {
-                      newImageFiles[placeholder] = {
-                          state: 'success',
-                          tempFileName: tempFileName,
-                          // We now show a more representative path
-                          fullPath: `src/lib/images/${tempFileName}`
-                      };
-                  }
-              }
-              setImageFiles(newImageFiles);
-              toast({
-                  title: 'Draft Images Loaded',
-                  description: `Found ${Object.keys(newImageFiles).length} pre-uploaded images from the selected draft.`
-              });
-          } else {
-             setImageFiles({});
-          }
-        }
-    } catch (error: any) {
-        toast({
-            variant: 'destructive',
-            title: 'Failed to load draft images',
-            description: error.message,
-        });
-    }
-  };
-
 
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
@@ -226,20 +165,6 @@ export default function AdvancedImageTestPage() {
         return;
       }
       
-      // Save to history before generating
-      if (selectedDraftId) {
-        await saveHistory({
-          draftId: selectedDraftId,
-          propertyAddress: selectedPropertyAddress,
-          data: {
-            template: values.template[0].name,
-            images: imagesToReplace.map(img => ({ placeholder: img.placeholder, fileName: img.tempFileName })),
-          },
-          ifreplaceimage: true,
-        });
-      }
-
-
       const result = await replaceImagesFromTemp({
         templateDataUri,
         images: imagesToReplace,
@@ -334,32 +259,6 @@ export default function AdvancedImageTestPage() {
       <main>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>0. (Optional) Load Draft Images</CardTitle>
-                <CardDescription>Select a draft to automatically load images that were uploaded from a mobile device.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="max-w-md">
-                    {isLoadingDrafts ? (
-                        <Skeleton className="h-10 w-full" />
-                    ) : (
-                        <Select onValueChange={handleDraftSelection}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a draft..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {drafts.length > 0 ? drafts.map(d => (
-                                <SelectItem key={d.draftId} value={d.draftId}>
-                                    {d.propertyAddress}
-                                </SelectItem>
-                                )) : <SelectItem value="none" disabled>No drafts found</SelectItem>}
-                            </SelectContent>
-                        </Select>
-                    )}
-                </div>
-              </CardContent>
-            </Card>
 
             <Card className="bg-muted/50">
               <CardHeader>
@@ -391,7 +290,7 @@ export default function AdvancedImageTestPage() {
               <CardHeader>
                 <CardTitle>2. Upload Images</CardTitle>
                 <CardDescription>
-                  Each image will be uploaded to a permanent location as you select it. Mobile uploads will show as "Ready".
+                  Each image will be uploaded to a permanent location as you select it.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
