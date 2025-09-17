@@ -1,9 +1,10 @@
 'use server';
 /**
- * Reads a .docx template (data URI), replaces image placeholders with images from a server dir,
- * and returns the final .docx as data URI. Robust to tagName changes; uses tagValue (= filename).
+ * All-in-one .docx image+text renderer (triple-attempt fallback).
+ * - 支持图片+文本占位符
+ * - 先用 `{% ... }` + linebreaks:false；不行→ linebreaks:true；还不行→ `{{ ... }}`
+ * - 严格同步读图；自动统计 getImage 触发次数
  */
-
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import PizZip from 'pizzip';
@@ -11,64 +12,53 @@ import Docxtemplater from 'docxtemplater';
 import path from 'path';
 import fs from 'fs';
 import { promises as fsp } from 'fs';
-import { ImageConfigSchema } from '@/lib/image-options-schema';
 
-// Compatible CJS/ESM import to avoid module instantiation failures being silently ignored by Docxtemplater
+// 兼容 CJS/ESM 的导入
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const ImageModuleRaw = require('docxtemplater-image-module-free');
-const ImageModule = ImageModuleRaw?.default ?? ImageModuleRaw;
+const ModRaw = require('docxtemplater-image-module-free');
+const ImageModuleCtor: any =
+  (ModRaw && (ModRaw.default || ModRaw.ImageModule || ModRaw)) || ModRaw;
 
-/** ========= Configuration: Points to your "server temporary directory" =========
- * You can specify this via the IMAGE_TEMP_DIR environment variable or change the default value below.
- */
 const IMAGE_BASE_DIR =
   process.env.IMAGE_TEMP_DIR || path.join(process.cwd(), 'src', 'lib', 'images');
 
-const ALL_IMAGE_CONFIGS_PATH = path.join(process.cwd(), 'src', 'lib', 'image-options.json');
-
-
-/** Path and existence utilities */
 function resolveImagePath(filename: string) {
   const safe = path.basename(filename);
   return path.join(IMAGE_BASE_DIR, safe);
 }
 async function assertExists(absPath: string) {
-  try {
-    await fsp.access(absPath);
-  } catch {
-    throw new Error(`Image not found: ${path.basename(absPath)}`);
-  }
+  try { await fsp.access(absPath); }
+  catch { throw new Error(`Image not found: ${path.basename(absPath)}`); }
+}
+function normKey(raw: string): string {
+  let k = (raw || '').trim();
+  if (k.startsWith('{%')) k = k.slice(2);
+  if (k.endsWith('}')) k = k.slice(0, -1);
+  if (k.startsWith('{{')) k = k.slice(2);
+  if (k.endsWith('}}')) k = k.slice(0, -2);
+  return k.trim();
 }
 
 /* ----------------------------- Schemas ----------------------------- */
 const ImageInfoSchema = z.object({
-  /** Template placeholder. Supports "{%logo}" or "logo" */
-  placeholder: z.string(),
-  /** Filename in the server directory (filename only, no path) */
-  tempFileName: z.string(),
-  /** Width in pixels */
-  width: z.number(),
-  /** Height in pixels */
-  height: z.number(),
+  placeholder: z.string(),       // "{%logo}" 或 "logo" 或 "{{logo}}"
+  tempFileName: z.string(),      // 仅文件名
+  width: z.number(),             // 像素
+  height: z.number(),            // 像素
 });
-
 const ReplaceImagesInputSchema = z.object({
-  /** .docx template as data URI (e.g., data:application/...;base64,xxxxx) */
   templateDataUri: z.string(),
-  /** List of images to replace */
-  images: z.array(ImageInfoSchema),
+  images: z.array(ImageInfoSchema).default([]),
+  textData: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
 });
 export type ReplaceImagesFromTempInput = z.infer<typeof ReplaceImagesInputSchema>;
 
 const ReplaceImagesOutputSchema = z.object({
-  /** Output .docx file (data URI) */
   generatedDocxDataUri: z.string(),
-  /** Count of successfully replaced images (based on getImage triggers) */
   imagesReplacedCount: z.number(),
 });
 export type ReplaceImagesFromTempOutput = z.infer<typeof ReplaceImagesOutputSchema>;
 
-/* ------------------------------ API ------------------------------ */
 export async function replaceImagesFromTemp(
   input: ReplaceImagesFromTempInput
 ): Promise<ReplaceImagesFromTempOutput> {
@@ -82,116 +72,104 @@ const replaceImagesFromTempFlow = ai.defineFlow(
     inputSchema: ReplaceImagesInputSchema,
     outputSchema: ReplaceImagesOutputSchema,
   },
-  async ({ templateDataUri, images }) => {
-    try {
-      // 1) Parse template
-      const base64Part = templateDataUri.split(',')[1] ?? '';
-      const templateBuffer = Buffer.from(base64Part, 'base64');
-      if (!templateBuffer?.length) throw new Error('Invalid templateDataUri: empty buffer.');
-      const zip = new PizZip(templateBuffer);
+  async ({ templateDataUri, images, textData }) => {
+    // 解析模板 buffer
+    const base64 = templateDataUri.split(',')[1] ?? '';
+    const tplBuf = Buffer.from(base64, 'base64');
+    if (!tplBuf.length) throw new Error('Invalid templateDataUri: empty buffer');
 
-      // 2) Prepare mappings (key = placeholder without brackets)
-      const valueByKey = new Map<string, string>(); // key -> filename
-      const sizeByKey = new Map<string, { width: number; height: number }>(); // key -> size
+    // 预处理映射
+    const imgVal = new Map<string, string>();           // key -> 文件名（作为 tagValue）
+    const imgSize = new Map<string, {w:number; h:number}>(); // key -> 尺寸
+    for (const it of images) {
+      const k = normKey(it.placeholder);
+      imgVal.set(k, it.tempFileName);
+      imgSize.set(k, { w: it.width, h: it.height });
+      await assertExists(resolveImagePath(it.tempFileName));
+    }
+    const txtVal = new Map<string, string|number|boolean>();
+    if (textData) for (const [kRaw,v] of Object.entries(textData)) txtVal.set(normKey(kRaw), v);
 
-      for (const img of images) {
-        let key = img.placeholder.trim();
-        if (key.startsWith('{%')) key = key.slice(2);
-        if (key.endsWith('}')) key = key.slice(0, -1);
-        key = key.trim();
+    // 封装一次渲染尝试
+    const tryRender = (opts: {delims: {start:string; end:string}, linebreaks: boolean}) => {
+      const zip = new PizZip(tplBuf);
+      let count = 0;
 
-        valueByKey.set(key, img.tempFileName);
-        sizeByKey.set(key, { width: img.width, height: img.height });
-
-        // Pre-check file existence
-        await assertExists(resolveImagePath(img.tempFileName));
-      }
-
-      // 3) Build image module (synchronously returns Buffer; prefers tagValue=filename, then falls back to tagName)
-      let replacedCount = 0;
-      const imageModule = new ImageModule({
+      const imageModule = new ImageModuleCtor({
         fileType: 'docx',
         centered: false,
-
         getImage: (tagValue: unknown, tagName: string) => {
-          let file: string | undefined =
-            typeof tagValue === 'string' && tagValue.trim() ? tagValue.trim() : undefined;
-          
-          if (!file) { // Fallback to tagName if tagValue is empty or not a string
-             file = valueByKey.get(tagName);
-          }
-
-          if (!file) { // If still no file, it means the placeholder is not in our image list. We return empty buffer to avoid error.
-            return Buffer.from([]);
-          }
-
+          let file =
+            (typeof tagValue === 'string' && tagValue.trim()) ? tagValue.trim() :
+            imgVal.get(tagName) ?? imgVal.get(normKey(tagName));
+          if (!file) throw new Error(`Image tag "${tagName}" has no value`);
           const abs = resolveImagePath(file);
           if (!fs.existsSync(abs)) throw new Error(`Image not found at ${abs}`);
-
-          replacedCount += 1;
-          return fs.readFileSync(abs); // **Must return Buffer synchronously**
+          count += 1;
+          return fs.readFileSync(abs); // 必须同步
         },
-
-        getSize: (_img: Buffer, tagValue: unknown, tagName: string) => {
-          let s = sizeByKey.get(tagName);
+        getSize: (_buf: Buffer, tagValue: unknown, tagName: string) => {
+          let s = imgSize.get(tagName) || imgSize.get(normKey(tagName));
           if (!s && typeof tagValue === 'string') {
-            const base = path.basename(tagValue).replace(/\.[^.]+$/, '');
-            s = sizeByKey.get(base);
+            const base = path.basename(tagValue).replace(/\.[^.]+$/,'');
+            s = imgSize.get(base);
           }
-          return s ? [s.width, s.height] : [300, 200]; // fallback
+          return s ? [s.w, s.h] : [300, 200];
         },
       });
 
-      // 4) Render (disable linebreaks to prevent paragraph structure modification that could break imageModule)
+      const knownImg = new Set(imgVal.keys());
       const doc = new Docxtemplater(zip, {
         modules: [imageModule],
-        delimiters: { start: '{%', end: '}' },
+        delimiters: opts.delims,
         paragraphLoop: true,
-        linebreaks: false,
-        // For any non-image tag that is not resolved, replace it with an empty string to prevent errors.
-        nullGetter: () => '',
-      });
-      
-      // Load all possible image configs to ensure all placeholders are handled
-      const allConfigsContent = await fsp.readFile(ALL_IMAGE_CONFIGS_PATH, 'utf-8');
-      const allImageConfigs = ImageConfigSchema.array().parse(JSON.parse(allConfigsContent));
-
-      // Build data object for docxtemplater.
-      // If an image is provided, its value is the filename.
-      // If not, its value is an empty string to clear the tag.
-      const data: Record<string, unknown> = {};
-      allImageConfigs.forEach(config => {
-         let key = config.placeholder.trim();
-         if (key.startsWith('{%')) key = key.slice(2);
-         if (key.endsWith('}')) key = key.slice(0, -1);
-         key = key.trim();
-         
-         data[key] = valueByKey.get(key) || ''; // Use filename or empty string
+        linebreaks: opts.linebreaks,
+        nullGetter: (part: any) => {
+          const t = part?.tag;
+          if (t && knownImg.has(t)) throw new Error(`Image placeholder "${t}" has no value`);
+          return ''; // 其他未知标签置空，不阻断
+        },
       });
 
+      // setData：文本 + 图片（图片把文件名丢进去作为 tagValue）
+      const data: Record<string, any> = {};
+      for (const [k,v] of txtVal.entries()) data[k] = v;
+      for (const [k,v] of imgVal.entries()) data[k] = v;
       doc.setData(data);
+
       doc.render();
-
-      // 5) Output
       const out = doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' });
-      const base64 = out.toString('base64');
+      return { buf: out, count };
+    };
 
-      return {
-        generatedDocxDataUri:
-          `data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${base64}`,
-        imagesReplacedCount: replacedCount,
-      };
-    } catch (err: any) {
-      // Docxtemplater error structure handling
-      if (err?.properties?.errors?.length) {
-        const first = err.properties.errors[0];
-        const context = first?.properties?.context;
-        const tagName = context ? `Tag: ${JSON.stringify(context)}` : '';
-        throw new Error(
-          first?.properties?.explanation || first?.id || `Template render error. ${tagName}`
-        );
+    // 三段尝试：优先你的老习惯；不行再换
+    const attempts = [
+      { delims: { start: '{%', end: '}' },  linebreaks: false },
+      { delims: { start: '{%', end: '}' },  linebreaks: true  },
+      { delims: { start: '{{', end: '}}' }, linebreaks: true  },
+    ] as const;
+
+    let lastErr: any = null;
+    for (const a of attempts) {
+      try {
+        const { buf, count } = tryRender(a);
+        // 如果你确实传了 images，但 count=0，多半是占位符分隔符不匹配或模板结构问题
+        if (images.length > 0 && count === 0) {
+          // 继续尝试下一种配置
+          lastErr = new Error('Image module not triggered (0 replacements)');
+          continue;
+        }
+        const b64 = buf.toString('base64');
+        return {
+          generatedDocxDataUri:
+            `data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${b64}`,
+          imagesReplacedCount: count,
+        };
+      } catch (e) {
+        lastErr = e;
+        // 换下一种策略
       }
-      throw new Error(err?.message || 'Failed to process the document for image replacement.');
     }
+    throw (lastErr ?? new Error('Rendering failed'));
   }
 );

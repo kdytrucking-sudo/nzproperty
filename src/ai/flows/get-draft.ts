@@ -1,14 +1,12 @@
 'use server';
 /**
- * @fileOverview Retrieves a specific draft from the drafts.json file.
- * Can query by draftId or propertyAddress.
+ * @fileOverview Retrieves a specific draft from Firebase Storage.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
-import fs from 'fs/promises';
-import path from 'path';
+import { z } from 'zod';
 import { DraftSchema, DraftsFileSchema, type Draft } from '@/lib/drafts-schema';
+import { readJSON } from '@/lib/storage'; // Firebase Storage 封装
 
 const GetDraftInputSchema = z.object({
   draftId: z.string().optional(),
@@ -17,8 +15,7 @@ const GetDraftInputSchema = z.object({
   message: "Either draftId or propertyAddress must be provided.",
 });
 
-
-export async function getDraft(input: z.infer<typeof GetDraftInputSchema>): Promise<Draft | null> {
+export async function getDraft(input: z.infer<typeof GetDraftInputSchema>) {
   return getDraftFlow(input);
 }
 
@@ -26,33 +23,52 @@ const getDraftFlow = ai.defineFlow(
   {
     name: 'getDraftFlow',
     inputSchema: GetDraftInputSchema,
-    outputSchema: DraftSchema.nullable(),
+    outputSchema: z.object({
+      draft: DraftSchema.nullable(),
+      debugLogs: z.array(z.string())
+    }),
   },
   async ({ draftId, propertyAddress }) => {
-    const filePath = path.join(process.cwd(), 'src', 'lib', 'drafts.json');
+    const storagePath = 'json/drafts.json';
+    const debugLogs: string[] = [];
+    debugLogs.push(`Attempting to read from Firebase Storage path: ${storagePath}`);
+
     try {
-      const jsonString = await fs.readFile(filePath, 'utf-8');
-      const drafts = DraftsFileSchema.parse(JSON.parse(jsonString));
+      // Directly read the JSON file from Firebase Storage using the helper
+      const jsonData = await readJSON(storagePath);
+      debugLogs.push(`Successfully read and parsed drafts.json.`);
       
-      let draft: Draft | undefined;
+      const drafts = DraftsFileSchema.parse(jsonData);
+      debugLogs.push(`Found ${drafts.length} drafts in the file.`);
+
+      let foundDraft: Draft | undefined;
+      
       if (draftId) {
-        draft = drafts.find(d => d.draftId === draftId);
+        const normalizedDraftId = draftId.trim();
+        foundDraft = drafts.find(d => d.draftId?.trim() === normalizedDraftId);
+        debugLogs.push(`Searching by draftId: "${normalizedDraftId}". Found: ${foundDraft ? 'YES' : 'NO'}`);
       } else if (propertyAddress) {
-        // Find the most recently updated draft for a given address
-        const matchingDrafts = drafts.filter(d => d.propertyAddress === propertyAddress);
+        const normalizedAddress = propertyAddress.trim();
+        const matchingDrafts = drafts.filter(d => d.propertyAddress?.trim() === normalizedAddress);
+        debugLogs.push(`Searching by address: "${normalizedAddress}". Found ${matchingDrafts.length} match(es).`);
+
         if (matchingDrafts.length > 0) {
-            matchingDrafts.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-            draft = matchingDrafts[0];
+          // If multiple drafts have the same address, return the most recently updated one.
+          matchingDrafts.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+          foundDraft = matchingDrafts[0];
+          debugLogs.push(`Selected the most recent draft, updated at: ${foundDraft.updatedAt}`);
         }
       }
-      return draft || null;
 
-    } catch (error: any) {
-      if (error.code === 'ENOENT') {
-        return null; // File doesn't exist, so no draft.
+      return { draft: foundDraft || null, debugLogs };
+
+    } catch (err: any) {
+      debugLogs.push(`Error during process: ${err.message}`);
+      // Distinguish between file-not-found and other errors
+      if (err.message.includes('not found') || err.message.includes('No object exists')) {
+         throw new Error(`Drafts file not found on the server at path: ${storagePath}. Ensure a draft has been saved first.`);
       }
-      console.error('Failed to get draft:', error);
-      throw new Error(`Failed to read or parse drafts.json: ${error.message}`);
+      throw new Error(`Failed to read or process drafts from Firebase Storage: ${err.message}`);
     }
   }
 );
