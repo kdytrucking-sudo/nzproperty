@@ -1,12 +1,11 @@
 'use server';
 /**
- * @fileOverview Retrieves the current extraction configuration (JSON structure and prompts) from files.
+ * @fileOverview Retrieves the current extraction configuration (JSON structure and prompts) from files in Firebase Storage.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import fs from 'fs/promises';
-import path from 'path';
+import { readJSON } from '@/lib/storage';
 
 const ExtractionConfigOutputSchema = z.object({
   jsonStructure: z.string().describe('The JSON structure as a string.'),
@@ -30,12 +29,10 @@ const getExtractionConfigFlow = ai.defineFlow(
   },
   async () => {
     try {
-      const jsonFilePath = path.join(process.cwd(), 'src', 'lib', 'json-structure.json');
-      const promptsFilePath = path.join(process.cwd(), 'src', 'lib', 'prompts.json');
+      const jsonStructureObj = await readJSON('json/json-structure.json');
+      const prompts = await readJSON('json/prompts.json');
 
-      const jsonStructure = await fs.readFile(jsonFilePath, 'utf-8');
-      const promptsJsonString = await fs.readFile(promptsFilePath, 'utf-8');
-      const prompts = JSON.parse(promptsJsonString);
+      const jsonStructure = JSON.stringify(jsonStructureObj, null, 2);
 
       return {
         jsonStructure,
@@ -45,10 +42,8 @@ const getExtractionConfigFlow = ai.defineFlow(
         extractionHints: prompts.extraction_hints,
       };
     } catch (error: any) {
-      console.error('Failed to get extraction config:', error);
-      throw new Error(`Failed to read config files: ${error.message}`);
+      console.error('Failed to get extraction config from Storage:', error);
+      throw new Error(`Failed to read config files from Firebase Storage: ${error.message}`);
     }
   }
 );
-
-    

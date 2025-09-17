@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Saves the AI model configuration to a JSON file and "touches" genkit.ts to trigger a reload.
+ * @fileOverview Saves the AI model configuration to a JSON file in Firebase Storage and "touches" genkit.ts to trigger a reload.
  */
 
 import { ai } from '@/ai/genkit';
@@ -8,9 +8,11 @@ import { z } from 'genkit';
 import fs from 'fs/promises';
 import path from 'path';
 import { AiConfigSchema, type AiConfig } from '@/lib/ai-config-schema';
+import { writeJSON } from '@/lib/storage';
 
-const CONFIG_FILE_PATH = path.join(process.cwd(), 'src', 'lib', 'ai-config.json');
 const GENKIT_FILE_PATH = path.join(process.cwd(), 'src', 'ai', 'genkit.ts');
+const CONFIG_STORAGE_PATH = 'json/ai-config.json';
+
 
 export async function saveAiConfig(input: AiConfig): Promise<void> {
   return saveAiConfigFlow(input);
@@ -24,9 +26,8 @@ const saveAiConfigFlow = ai.defineFlow(
   },
   async (config) => {
     try {
-      // 1. Save the configuration to the JSON file.
-      const configJsonString = JSON.stringify(config, null, 2);
-      await fs.writeFile(CONFIG_FILE_PATH, configJsonString, 'utf-8');
+      // 1. Save the configuration to the JSON file in Firebase Storage.
+      await writeJSON(CONFIG_STORAGE_PATH, config);
 
       // 2. "Touch" the genkit.ts file to trigger a hot-reload in the development server.
       // This makes the server re-initialize Genkit with the new configuration.
@@ -40,8 +41,8 @@ const saveAiConfigFlow = ai.defineFlow(
       }
 
     } catch (error: any) {
-      console.error('Failed to save AI configuration:', error);
-      throw new Error(`Failed to write to ai-config.json: ${error.message}`);
+      console.error('Failed to save AI configuration to Storage:', error);
+      throw new Error(`Failed to write to ai-config.json in Firebase Storage: ${error.message}`);
     }
   }
 );
