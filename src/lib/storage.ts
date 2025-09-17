@@ -1,6 +1,6 @@
 // src/lib/storage.ts
 import { storage } from './firebase'; // 已初始化的 Firebase App Storage
-import { ref, uploadBytes, getBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getBytes, getDownloadURL, listAll, deleteObject } from "firebase/storage";
 
 /**
  * 写入文本或 JSON 文件
@@ -74,4 +74,24 @@ export async function downloadBinary(path: string): Promise<ArrayBuffer> {
 export async function getFileURL(path: string): Promise<string> {
   const storageRef = ref(storage, path);
   return await getDownloadURL(storageRef);
+}
+
+/**
+ * 列出指定路径下的所有文件名
+ * @param path Firebase Storage 目录路径
+ * @returns 文件名数组
+ */
+export async function listFileNames(path: string): Promise<string[]> {
+    const storageRef = ref(storage, path);
+    const res = await listAll(storageRef);
+    return res.items.map((itemRef) => itemRef.name);
+}
+
+/**
+ * 删除指定路径的文件
+ * @param path Firebase Storage 文件路径
+ */
+export async function deleteFile(path: string): Promise<void> {
+    const storageRef = ref(storage, path);
+    await deleteObject(storageRef);
 }
