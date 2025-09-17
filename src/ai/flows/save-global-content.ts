@@ -9,26 +9,17 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import fs from 'fs/promises';
 import path from 'path';
+import { contentFormSchema, type ContentFormData } from '@/lib/content-config';
 
-const SaveGlobalContentInputSchema = z.object({
-  nzEconomicOverview: z.string(),
-  globalEconomicOverview: z.string(),
-  residentialMarket: z.string(),
-  recentMarketDirection: z.string(),
-  marketVolatility: z.string(),
-  localEconomyImpact: z.string(),
-});
 
-export type SaveGlobalContentInput = z.infer<typeof SaveGlobalContentInputSchema>;
-
-export async function saveGlobalContent(input: SaveGlobalContentInput): Promise<void> {
+export async function saveGlobalContent(input: ContentFormData): Promise<void> {
   return saveGlobalContentFlow(input);
 }
 
 const saveGlobalContentFlow = ai.defineFlow(
   {
     name: 'saveGlobalContentFlow',
-    inputSchema: SaveGlobalContentInputSchema,
+    inputSchema: contentFormSchema,
     outputSchema: z.void(),
   },
   async (content) => {

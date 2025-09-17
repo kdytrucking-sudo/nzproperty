@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const formSchema = z.object({
+export const contentFormSchema = z.object({
   nzEconomicOverview: z.string(),
   globalEconomicOverview: z.string(),
   residentialMarket: z.string(),
@@ -9,7 +9,7 @@ const formSchema = z.object({
   localEconomyImpact: z.string(),
 });
 
-type ContentFormData = z.infer<typeof formSchema>;
+export type ContentFormData = z.infer<typeof contentFormSchema>;
 
 export const contentFields: { name: keyof ContentFormData; label: string, placeholder: string, templateKey: string }[] = [
     { name: "nzEconomicOverview", label: "New Zealand Economy Overview", placeholder: "Enter New Zealand Economy Overview...", templateKey: "Replace_NZEconomic" },
@@ -19,5 +19,3 @@ export const contentFields: { name: keyof ContentFormData; label: string, placeh
     { name: "marketVolatility", label: "Market Volatility", placeholder: "Enter Market Volatility information...", templateKey: "Replace_MarketVolatility" },
     { name: "localEconomyImpact", label: "Local Economy Impact", placeholder: "Enter Local Economy Impact analysis...", templateKey: "Replace_LocalEconomyImpact" },
 ] as const;
-
-export { type ContentFormData, formSchema as contentFormSchema };

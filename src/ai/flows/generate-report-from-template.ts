@@ -11,7 +11,7 @@ import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import fs from 'fs/promises';
 import path from 'path';
-import globalContent from '@/lib/global-content.json';
+import { getGlobalContent } from './get-global-content';
 import { contentFields } from '@/lib/content-config';
 
 
@@ -161,9 +161,11 @@ const prepareTemplateData = async (data: any) => {
   const templateData: Record<string, any> = {};
   let replacementCount = 0;
   
-  const jsonStructurePath = path.join(process.cwd(), 'src', 'lib', 'json-structure.json');
-  const jsonString = await fs.readFile(jsonStructurePath, 'utf-8');
-  const jsonStructure = JSON.parse(jsonString);
+  const [jsonStructureString, globalContent] = await Promise.all([
+    fs.readFile(path.join(process.cwd(), 'src', 'lib', 'json-structure.json'), 'utf-8'),
+    getGlobalContent()
+  ]);
+  const jsonStructure = JSON.parse(jsonStructureString);
 
 
   const countAndSetReplacement = (key: string, value: any): void => {
@@ -208,7 +210,7 @@ const prepareTemplateData = async (data: any) => {
   // 2) 全局内容（manage-content）
   contentFields.forEach((field: any) => {
     const templateKey: string = String(field.templateKey).replace(/\[|\]/g, '');
-    const contentValue = (globalContent as Record<string, any>)[field.name as keyof typeof globalContent];
+    const contentValue = globalContent[field.name as keyof typeof globalContent];
     countAndSetReplacement(templateKey, contentValue);
   });
 

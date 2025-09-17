@@ -212,10 +212,10 @@
   },
   {
     "draftId": "371b229f-e041-4a64-b8fd-bebe559c77b2",
-    "placeId": "ChIJz4kXlC86DW0R0nX2hmVQVMo",
     "propertyAddress": "1B Maxwelton Drive, Mairangi Bay_08.25",
+    "placeId": "ChIJz4kXlC86DW0R0nX2hmVQVMo",
     "createdAt": "2025-09-16T23:08:01.888Z",
-    "updatedAt": "2025-09-16T23:08:01.888Z",
+    "updatedAt": "2025-09-17T00:37:06.685Z",
     "formData": {
       "templateFileName": "[template] Resi 16_Sep_2025.docx",
       "data": {
@@ -235,7 +235,7 @@
           "Date of Preparation": "N/A",
           "Date of Inspection": "N/A",
           "Report Version": "N/A",
-          "Special Assumptions": "N/A"
+          "Special Assumptions": "阿萨德房东发"
         },
         "General Info": {
           "Title Interestes": "- 13019370.2 Mortgage to Phillip Graeme Bell, Treacy Anne Bell and Andrew Garwood Hill\n- Land Covenant in Covenant Instrument 13267867.4 (affects Principal Unit 4 DP 609214)",
@@ -251,11 +251,11 @@
         "comparableSales": []
       },
       "commentarySelections": {
-        "c1-purpose": " Mortgage Security Purposes.",
+        "c1-purpose": "Related Party Transfer Purpose",
         "c2-principal-use": "Residential",
         "c3-previous-sale": "There are no sales listed for the property within the last three years.  ",
         "c4-contract-sale": "To the best of our knowledge, we are not aware of any current contract for sale on the property. ",
-        "c5-supplied-docs": "In undertaking this valuation we have been supplied with copies of the following documents:\n•\tA copy of the Agreement for Sale and Purchase of Real Estate dated on 14 July 2025.\n",
+        "c5-supplied-docs": "In undertaking this valuation we have not been supplied with any additional information or documentation of significant relevance.",
         "c6-recent-provided": "Recent",
         "c7-lim": "We have not been provided with or obtained a copy of the Land Information Report (LIM) for the subject property.  We have assumed there are no outstanding issues or requisitions",
         "c8-pc78": "Under the proposed zone – Plan Change 78, the property has a zoning of Residential – Mixed Housing Suburban.  This zone is to be the most widespread residential zone in Auckland.  Its density controls allow a moderate level of intensification, while retaining a relatively spacious quality consistent with a suburban residential character, compared to the Mixed Housing Urban and Terrace Housing and Apartment Buildings zones.  \nSubdivision and development within the zone allows two dwellings per site as a permitted activity and three or more dwellings being a restricted discretionary activity.  Further, development of two dwellings will need to comply with the following standards within the Mixed Housing Suburban zone:\nBuilding Height\nHeight in relation to boundary\nMinimum yard depth setbacks from each boundary\nMaximum impervious area\nBuilding coverage\nLandscaped area\nOutlook space\nDaylight ingress\nOutdoor living space\nFencing and wall restrictions\nSubdivision for three or more dwellings within this zone, while being restricted discretionary will also need to comply with the following standards within the zone, building height; height in relation to boundary and minimum yard depth setbacks from each boundary. \nVacant proposed site subdivision is a restricted discretionary activity within this zone and allows a net site area of 400 sm for parent sites that are less than one hectare.  For parent sites that are in excess of one hectare, vacant proposed site subdivision is a discretionary activity with the following rules regarding site areas:\nMinimum net site area\t320 sm\nMinimum average net site area\t400 sm\nMaximum average net site area\t480 sm\nThe Mixed Housing Suburban zone aims to enable a variety of housing types and encourage development as it is the most wide-spread residential zone under the unitary plan.  The zone is concentrated around residential use but allows for non – residential activities that will support the social and economic well-being of the community while monitoring any effects on the residential amenity of the zone.",
@@ -276,8 +276,8 @@
         "finalBrief": ""
       },
       "marketValuation": {
-        "marketValue": "",
-        "marketValuation": "",
+        "marketValue": "$430,000",
+        "marketValuation": "$430,000\nFour Hundred Thirty Thousand Dollars",
         "improvementsValueByValuer": "",
         "landValueByValuer": "",
         "chattelsValueByValuer": "",
@@ -288,7 +288,7 @@
         "improvementsValueByWeb": "",
         "ratingValueByWeb": ""
       },
-      "marketValuationRaw": "",
+      "marketValuationRaw": "430000",
       "multiOptionSelections": {
         "4e4ae017-dd6d-4195-8201-a9694fa6fcd1": [],
         "b88b5e49-a806-47b9-bb78-d872900962c5": []
@@ -301,7 +301,31 @@
         "selected": [],
         "finalBrief": ""
       },
-      "roomOptions": []
+      "roomOptions": [
+        {
+          "id": "dee6e409-3c5a-44d3-96e1-86f6031e9a7e",
+          "roomType": "Kitchen",
+          "roomName": "Kitchen",
+          "selectedOptions": [
+            "Timber floor",
+            "Vinyl floor",
+            "Pantry and cupboards"
+          ],
+          "roomOptionText": "Timber floor, Vinyl floor, Pantry and cupboards"
+        },
+        {
+          "id": "5b32f3df-5ef7-4d3b-942d-e7f80c391fc8",
+          "roomType": "Toilet",
+          "roomName": "Toilet",
+          "selectedOptions": [
+            "Extractor fan",
+            "Handbasin",
+            "Toilet"
+          ],
+          "roomOptionText": "Extractor fan, Handbasin, Toilet"
+        }
+      ],
+      "uploadedImages": {}
     }
   }
 ]
