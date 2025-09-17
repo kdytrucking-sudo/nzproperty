@@ -1,4 +1,3 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -148,7 +147,7 @@ export default function JsonEditorPage() {
       setIsSavingAiSettings(true);
       try {
           await saveAiConfig(values.aiConfig);
-          toast({ title: 'AI Settings Saved', description: 'The global AI model configuration has been updated.' });
+          toast({ title: 'AI Settings Saved', description: 'The global AI model configuration has been updated and will be applied on the next action.' });
       } catch (error: any) {
           console.error('Failed to save AI settings:', error);
           toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
@@ -201,10 +200,7 @@ export default function JsonEditorPage() {
                                       type="number" 
                                       placeholder="e.g., 0.2"
                                       value={field.value ?? ''}
-                                      onChange={field.onChange}
-                                      onBlur={field.onBlur}
-                                      name={field.name}
-                                      ref={field.ref}
+                                      onChange={e => field.onChange(parseFloat(e.target.value))}
                                     />
                                     <FormMessage/>
                                </FormItem>
@@ -220,10 +216,7 @@ export default function JsonEditorPage() {
                                       type="number" 
                                       placeholder="e.g., 1"
                                       value={field.value ?? ''}
-                                      onChange={field.onChange}
-                                      onBlur={field.onBlur}
-                                      name={field.name}
-                                      ref={field.ref}
+                                      onChange={e => field.onChange(parseFloat(e.target.value))}
                                     />
                                     <FormMessage/>
                                </FormItem>
@@ -239,10 +232,7 @@ export default function JsonEditorPage() {
                                       type="number" 
                                       placeholder="e.g., 1"
                                       value={field.value ?? ''}
-                                      onChange={field.onChange}
-                                      onBlur={field.onBlur}
-                                      name={field.name}
-                                      ref={field.ref}
+                                      onChange={e => field.onChange(parseInt(e.target.value, 10))}
                                     />
                                     <FormMessage/>
                                </FormItem>
@@ -259,10 +249,7 @@ export default function JsonEditorPage() {
                                   type="number" 
                                   placeholder="e.g., 8192"
                                   value={field.value ?? ''}
-                                  onChange={field.onChange}
-                                  onBlur={field.onBlur}
-                                  name={field.name}
-                                  ref={field.ref}
+                                  onChange={e => field.onChange(parseInt(e.target.value, 10))}
                                 />
                                 <FormMessage/>
                            </FormItem>
