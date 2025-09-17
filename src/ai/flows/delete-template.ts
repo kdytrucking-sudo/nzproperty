@@ -1,14 +1,13 @@
 'use server';
 /**
- * @fileOverview Deletes a template file from the server.
+ * @fileOverview Deletes a template file from Firebase Storage.
  *
  * - deleteTemplate - A function that deletes a specified template file.
  */
 
 import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
-import fs from 'fs/promises';
-import path from 'path';
+import { deleteFile } from '@/lib/storage';
 
 const ai = await getAi();
 
@@ -30,19 +29,19 @@ const deleteTemplateFlow = ai.defineFlow(
   },
   async ({ fileName }) => {
     try {
-      const templatesDir = path.join(process.cwd(), 'src', 'lib', 'templates');
       // Basic security check to prevent path traversal
-      if (fileName.includes('..') || fileName.includes('/')) {
+      if (fileName.includes('/') || fileName.includes('..')) {
         throw new Error('Invalid file name.');
       }
-      const filePath = path.join(templatesDir, fileName);
-      await fs.unlink(filePath);
+
+      const storagePath = `templates/${fileName}`;
+      await deleteFile(storagePath);
+      
     } catch (error: any) {
-      console.error(`Failed to delete template ${fileName}:`, error);
-      // Don't throw if file doesn't exist, could be a stale client request
-      if (error.code !== 'ENOENT') {
-         throw new Error(`Failed to delete template: ${error.message}`);
-      }
+      console.error(`Failed to delete template ${fileName} from Storage:`, error);
+      // Re-throw the error to ensure the client is aware of the failure.
+      // The client-side toast will display the error message.
+      throw new Error(`Failed to delete template from storage: ${error.message}`);
     }
   }
 );
