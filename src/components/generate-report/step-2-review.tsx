@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { listTemplates } from '@/ai/flows/list-templates';
+import { listTemplates, type TemplateFile } from '@/ai/flows/list-templates';
 import { generateReportFromTemplate } from '@/ai/flows/generate-report-from-template';
 import type { PropertyData } from '@/lib/types';
 import { getCommentaryCards } from '@/ai/flows/get-commentary-cards';
@@ -126,7 +126,7 @@ const renderFormSection = (form: any, path: string, data: any, structure: any) =
 
 export function Step2Review({ extractedData, draftData, onReportGenerated, onBack }: Step2ReviewProps) {
   const { toast } = useToast();
-  const [templates, setTemplates] = React.useState<string[]>([]);
+  const [templates, setTemplates] = React.useState<TemplateFile[]>([]);
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isSavingDraft, setIsSavingDraft] = React.useState(false);
   const [commentaryCards, setCommentaryCards] = React.useState<CommentaryCardsData | null>(null);
@@ -421,7 +421,7 @@ export function Step2Review({ extractedData, draftData, onReportGenerated, onBac
 
         setTemplates(templateList);
         if (templateList.length > 0) {
-          form.setValue('templateFileName', draftData?.templateFileName || templateList[0]);
+          form.setValue('templateFileName', draftData?.templateFileName || templateList[0].name);
         }
         
         setCommentaryCards(commentaryData);
@@ -498,7 +498,7 @@ export function Step2Review({ extractedData, draftData, onReportGenerated, onBac
       let draftId = draftData?.draftId; // Use existing draftId if available
       
       if (!draftId && address) {
-        const draft = await getDraft({ propertyAddress: address });
+        const {draft} = await getDraft({ propertyAddress: address });
         if (draft) {
           draftId = draft.draftId;
         }
@@ -1271,8 +1271,8 @@ export function Step2Review({ extractedData, draftData, onReportGenerated, onBac
                                     No templates found. Upload in 'Manage Templates'.
                                     </SelectItem>
                                 ) : (
-                                    templates.map(templateName => (
-                                    <SelectItem key={templateName} value={templateName}>{templateName}</SelectItem>
+                                    templates.map(template => (
+                                    <SelectItem key={template.name} value={template.name}>{template.name}</SelectItem>
                                     ))
                                 )}
                                 </SelectContent>
