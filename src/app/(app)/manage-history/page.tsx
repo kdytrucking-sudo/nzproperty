@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Shield, Eye } from 'lucide-react';
+import { Loader2, Trash2, Shield, Eye, Download } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -39,8 +39,12 @@ import { listDrafts } from '@/ai/flows/list-drafts';
 import { deleteDraft } from '@/ai/flows/delete-draft';
 import { listHistory } from '@/ai/flows/list-history';
 import { deleteHistory } from '@/ai/flows/delete-history';
+import { listReports } from '@/ai/flows/list-reports';
+import { deleteReport } from '@/ai/flows/delete-report';
+
 import type { DraftSummary } from '@/lib/drafts-schema';
 import type { HistoryRecord } from '@/lib/history-schema';
+import type { ReportFile } from '@/ai/flows/list-reports';
 
 type CombinedRecord = (DraftSummary | HistoryRecord) & { type: 'draft' | 'history' };
 
@@ -51,11 +55,16 @@ export default function ManageHistoryPage() {
   const [password, setPassword] = React.useState('');
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [records, setRecords] = React.useState<CombinedRecord[]>([]);
+  
+  const [draftsAndHistory, setDraftsAndHistory] = React.useState<CombinedRecord[]>([]);
+  const [reports, setReports] = React.useState<ReportFile[]>([]);
+  
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = React.useState(false);
-  const [recordToDelete, setRecordToDelete] = React.useState<CombinedRecord | null>(null);
+
+  const [recordToDelete, setRecordToDelete] = React.useState<CombinedRecord | ReportFile | null>(null);
   const [recordToView, setRecordToView] = React.useState<HistoryRecord | null>(null);
+  
 
   const handleLogin = () => {
     if (password === PASSWORD) {
@@ -69,13 +78,14 @@ export default function ManageHistoryPage() {
   const fetchRecords = React.useCallback(async () => {
     setIsLoading(true);
     try {
-      const [drafts, history] = await Promise.all([listDrafts(), listHistory()]);
+      const [drafts, history, reportFiles] = await Promise.all([listDrafts(), listHistory(), listReports()]);
       const combined: CombinedRecord[] = [
         ...drafts.map((d) => ({ ...d, type: 'draft' as const })),
         ...history.map((h) => ({ ...h, type: 'history' as const })),
       ];
       combined.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-      setRecords(combined);
+      setDraftsAndHistory(combined);
+      setReports(reportFiles);
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error fetching records', description: error.message });
     } finally {
@@ -83,7 +93,7 @@ export default function ManageHistoryPage() {
     }
   }, [toast]);
 
-  const openDeleteDialog = (record: CombinedRecord) => {
+  const openDeleteDialog = (record: CombinedRecord | ReportFile) => {
     setRecordToDelete(record);
     setIsDeleteDialogOpen(true);
   };
@@ -96,13 +106,17 @@ export default function ManageHistoryPage() {
   const handleDelete = async () => {
     if (!recordToDelete) return;
     try {
-      if (recordToDelete.type === 'draft') {
-        await deleteDraft({ draftId: recordToDelete.draftId });
-      } else {
-        await deleteHistory({ draftId: recordToDelete.draftId });
-      }
-      toast({ title: 'Success', description: `${recordToDelete.type.charAt(0).toUpperCase() + recordToDelete.type.slice(1)} record deleted.` });
-      fetchRecords();
+       if ('type' in recordToDelete) { // It's a CombinedRecord
+            if (recordToDelete.type === 'draft') {
+                await deleteDraft({ draftId: recordToDelete.draftId });
+            } else {
+                await deleteHistory({ draftId: recordToDelete.draftId });
+            }
+       } else { // It's a ReportFile
+            await deleteReport({ fileName: recordToDelete.name });
+       }
+       toast({ title: 'Success', description: `Record deleted.` });
+       fetchRecords();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Deletion Failed', description: error.message });
     } finally {
@@ -143,12 +157,62 @@ export default function ManageHistoryPage() {
     <div className="space-y-8">
       <header>
         <h1 className="font-headline text-3xl font-bold text-foreground">Manage Drafts & History</h1>
-        <p className="text-muted-foreground">View and delete saved drafts and replacement history.</p>
+        <p className="text-muted-foreground">View and delete saved drafts, replacement history, and generated reports.</p>
       </header>
-      <main>
+      <main className="space-y-8">
         <Card>
           <CardHeader>
-            <CardTitle>All Records</CardTitle>
+            <CardTitle>Generated Reports</CardTitle>
+            <CardDescription>Final documents saved in the 'reports' directory.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>File Name</TableHead>
+                    <TableHead>Date Created</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                   {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="h-24 text-center">
+                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                      </TableCell>
+                    </TableRow>
+                  ) : reports.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="h-24 text-center">No reports found.</TableCell>
+                    </TableRow>
+                  ) : (
+                    reports.map((report) => (
+                      <TableRow key={report.name}>
+                        <TableCell className="font-medium">{report.name}</TableCell>
+                        <TableCell>{format(new Date(report.timeCreated), 'dd MMM yyyy, HH:mm')}</TableCell>
+                        <TableCell className="text-right">
+                           <Button asChild variant="ghost" size="icon">
+                             <a href={report.downloadUrl} target="_blank" rel="noopener noreferrer">
+                               <Download className="h-4 w-4" />
+                             </a>
+                           </Button>
+                          <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(report)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Drafts & Replacement History</CardTitle>
             <CardDescription>Combined view of drafts and history, sorted by last update time.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -172,12 +236,12 @@ export default function ManageHistoryPage() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ) : records.length === 0 ? (
+                  ) : draftsAndHistory.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="h-24 text-center">No records found.</TableCell>
                     </TableRow>
                   ) : (
-                    records.map((record) => (
+                    draftsAndHistory.map((record) => (
                       <TableRow key={`${record.type}-${record.draftId}`}>
                         <TableCell>
                           <Badge variant={record.type === 'draft' ? 'secondary' : 'outline'}>
@@ -221,9 +285,7 @@ export default function ManageHistoryPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the 
-              <span className="font-bold"> {recordToDelete?.type}</span> record for 
-              <span className="font-bold"> {recordToDelete?.propertyAddress}</span>.
+              This action cannot be undone. This will permanently delete the selected record.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
