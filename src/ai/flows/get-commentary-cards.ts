@@ -1,14 +1,13 @@
 
 'use server';
 /**
- * @fileOverview Retrieves commentary card configurations from a JSON file.
+ * @fileOverview Retrieves commentary card configurations from a JSON file in Firebase Storage.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import fs from 'fs/promises';
-import path from 'path';
 import { CommentaryCardsSchema, type CommentaryCardsData } from '@/lib/commentary-card-schema';
+import { readJSON, writeJSON } from '@/lib/storage';
 
 export async function getCommentaryCards(): Promise<CommentaryCardsData> {
   return getCommentaryCardsFlow();
@@ -21,19 +20,19 @@ const getCommentaryCardsFlow = ai.defineFlow(
         outputSchema: CommentaryCardsSchema,
     },
     async () => {
-        const jsonFilePath = path.join(process.cwd(), 'src', 'lib', 'commentary-cards.json');
+        const storagePath = 'json/commentary-cards.json';
         try {
-          const jsonString = await fs.readFile(jsonFilePath, 'utf-8');
-          const data = JSON.parse(jsonString);
-          return CommentaryCardsSchema.parse(data);
+          const jsonString = await readJSON(storagePath);
+          const data = CommentaryCardsSchema.parse(jsonString);
+          return data;
         } catch (error: any) {
            // If the file doesn't exist, create it with a default empty array.
-          if (error.code === 'ENOENT') {
+          if (error.message.includes('not found') || error.message.includes('No object exists')) {
             const defaultData: CommentaryCardsData = [];
-            await fs.writeFile(jsonFilePath, JSON.stringify(defaultData, null, 2), 'utf-8');
+            await writeJSON(storagePath, defaultData);
             return defaultData;
           }
-          console.error('Failed to get commentary cards:', error);
+          console.error('Failed to get commentary cards from Firebase Storage:', error);
           throw new Error(`Failed to read or parse commentary-cards.json file: ${error.message}`);
         }
     }
