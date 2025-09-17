@@ -1,14 +1,13 @@
 'use server';
 /**
- * @fileOverview Uploads a .docx template to the server.
+ * @fileOverview Uploads a .docx template to Firebase Storage.
  *
- * - uploadTemplate - A function that saves a template file to the server.
+ * - uploadTemplate - A function that saves a template file to the cloud.
  */
 
 import { getAi } from '@/ai/genkit';
-import { z } from 'zod';
-import fs from 'fs/promises';
-import path from 'path';
+import { z } from 'genkit';
+import { uploadBinary } from '@/lib/storage';
 
 const ai = await getAi();
 
@@ -31,23 +30,27 @@ const uploadTemplateFlow = ai.defineFlow(
   },
   async ({ fileName, dataUri }) => {
     try {
-      const templatesDir = path.join(process.cwd(), 'src', 'lib', 'templates');
-      await fs.mkdir(templatesDir, { recursive: true });
-
       // Basic security check to prevent path traversal
-      if (fileName.includes('..') || fileName.includes('/')) {
+      if (fileName.includes('/') || fileName.includes('..')) {
         throw new Error('Invalid file name.');
       }
       
-      const filePath = path.join(templatesDir, fileName);
+      const storagePath = `templates/${fileName}`;
+      const mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+      // Convert data URI to ArrayBuffer
       const base64Content = dataUri.split(',')[1];
+      if (!base64Content) {
+        throw new Error('Invalid data URI provided.');
+      }
       const buffer = Buffer.from(base64Content, 'base64');
       
-      await fs.writeFile(filePath, buffer);
+      // Upload to Firebase Storage
+      await uploadBinary(storagePath, buffer, mimeType);
 
     } catch (error: any) {
-      console.error(`Failed to upload template ${fileName}:`, error);
-      throw new Error(`Failed to save template file: ${error.message}`);
+      console.error(`Failed to upload template ${fileName} to Storage:`, error);
+      throw new Error(`Failed to save template file to Firebase Storage: ${error.message}`);
     }
   }
 );

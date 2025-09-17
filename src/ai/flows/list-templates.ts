@@ -1,14 +1,13 @@
 'use server';
 /**
- * @fileOverview Lists available .docx templates from the server directory.
+ * @fileOverview Lists available .docx templates from Firebase Storage.
  *
  * - listTemplates - A function that returns an array of template file names.
  */
 
 import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
-import fs from 'fs/promises';
-import path from 'path';
+import { listFileNames } from '@/lib/storage';
 
 const ai = await getAi();
 
@@ -27,17 +26,13 @@ const listTemplatesFlow = ai.defineFlow(
     outputSchema: ListTemplatesOutputSchema,
   },
   async () => {
-    const templatesDir = path.join(process.cwd(), 'src', 'lib', 'templates');
     try {
-      // Ensure the directory exists
-      await fs.mkdir(templatesDir, { recursive: true });
-      const files = await fs.readdir(templatesDir);
-      // Filter for .docx files only
-      const docxFiles = files.filter(file => file.endsWith('.docx'));
-      return docxFiles;
+      // List files from the 'templates/' directory in Firebase Storage
+      const docxFiles = await listFileNames('templates');
+      return docxFiles.filter(file => file.endsWith('.docx'));
     } catch (error) {
-      console.error('Failed to list templates:', error);
-      // If there's an error (e.g., directory not accessible), return an empty array
+      console.error('Failed to list templates from Firebase Storage:', error);
+      // If there's an error (e.g., permissions), return an empty array
       return [];
     }
   }
