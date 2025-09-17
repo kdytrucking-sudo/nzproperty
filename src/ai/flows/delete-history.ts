@@ -1,14 +1,13 @@
 
 'use server';
 /**
- * @fileOverview Deletes a history record from the history.json file.
+ * @fileOverview Deletes a history record from the history.json file in Firebase Storage.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import fs from 'fs/promises';
-import path from 'path';
 import { HistoryFileSchema } from '@/lib/history-schema';
+import { readJSON, writeJSON } from '@/lib/storage';
 
 const DeleteHistoryInputSchema = z.object({
   draftId: z.string().describe('The unique ID of the history record to delete.'),
@@ -25,10 +24,10 @@ const deleteHistoryFlow = ai.defineFlow(
     outputSchema: z.void(),
   },
   async ({ draftId }) => {
-    const filePath = path.join(process.cwd(), 'src/lib', 'history.json');
+    const storagePath = 'json/history.json';
     try {
-      const jsonString = await fs.readFile(filePath, 'utf-8');
-      const records = HistoryFileSchema.parse(JSON.parse(jsonString));
+      const jsonData = await readJSON(storagePath);
+      const records = HistoryFileSchema.parse(jsonData);
       
       const updatedRecords = records.filter(d => d.draftId !== draftId);
 
@@ -37,15 +36,14 @@ const deleteHistoryFlow = ai.defineFlow(
         return;
       }
 
-      const contentJsonString = JSON.stringify(updatedRecords, null, 2);
-      await fs.writeFile(filePath, contentJsonString, 'utf-8');
+      await writeJSON(storagePath, updatedRecords);
 
     } catch (error: any) {
-      if (error.code === 'ENOENT') {
+      if (error.message.includes('not found') || error.message.includes('No object exists')) {
         return; // File doesn't exist, so nothing to delete.
       }
       console.error(`Failed to delete history record ${draftId}:`, error);
-      throw new Error(`Failed to delete from history.json: ${error.message}`);
+      throw new Error(`Failed to delete from history.json in Firebase Storage: ${error.message}`);
     }
   }
 );

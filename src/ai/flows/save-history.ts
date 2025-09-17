@@ -1,15 +1,14 @@
 
 'use server';
 /**
- * @fileOverview Saves or updates a history record to the history.json file.
+ * @fileOverview Saves or updates a history record to the history.json file in Firebase Storage.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import fs from 'fs/promises';
-import path from 'path';
 import { HistoryRecordSchema, HistoryFileSchema } from '@/lib/history-schema';
 import * as crypto from 'crypto';
+import { readJSON, writeJSON } from '@/lib/storage';
 
 const SaveHistoryInputSchema = z.object({
   draftId: z.string().optional(),
@@ -30,7 +29,7 @@ const saveHistoryFlow = ai.defineFlow(
     outputSchema: z.void(),
   },
   async ({ draftId: inputDraftId, propertyAddress, data, ifreplacetext, ifreplaceimage }) => {
-    const filePath = path.join(process.cwd(), 'src/lib', 'history.json');
+    const storagePath = 'json/history.json';
     const now = new Date().toISOString();
 
     // Use provided draftId or generate a new one if not available
@@ -39,11 +38,15 @@ const saveHistoryFlow = ai.defineFlow(
     try {
       let historyRecords: z.infer<typeof HistoryFileSchema> = [];
       try {
-        const jsonString = await fs.readFile(filePath, 'utf-8');
-        historyRecords = HistoryFileSchema.parse(JSON.parse(jsonString));
+        const jsonData = await readJSON(storagePath);
+        historyRecords = HistoryFileSchema.parse(jsonData);
       } catch (e: any) {
-        if (e.code !== 'ENOENT') throw e;
-        await fs.writeFile(filePath, '[]', 'utf-8');
+        if (e.message.includes('not found') || e.message.includes('No object exists')) {
+            // File doesn't exist, start with an empty array
+            historyRecords = [];
+        } else {
+            throw e; // Re-throw other errors
+        }
       }
 
       const existingRecordIndex = historyRecords.findIndex(r => r.draftId === draftId);
@@ -76,12 +79,11 @@ const saveHistoryFlow = ai.defineFlow(
         historyRecords.push(newRecord);
       }
       
-      const contentJsonString = JSON.stringify(historyRecords, null, 2);
-      await fs.writeFile(filePath, contentJsonString, 'utf-8');
+      await writeJSON(storagePath, historyRecords);
 
     } catch (error: any) {
       console.error('Failed to save history:', error);
-      throw new Error(`Failed to write to history.json: ${error.message}`);
+      throw new Error(`Failed to write to history.json in Firebase Storage: ${error.message}`);
     }
   }
 );
