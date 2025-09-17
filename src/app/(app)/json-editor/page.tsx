@@ -93,6 +93,9 @@ export default function JsonEditorPage() {
     setIsTesting(true);
     setTestResult(null);
     try {
+        // Temporarily save config to use in the test run
+        await onSaveExtraction(values);
+
         if (!values.testPropertyTitlePdf?.[0] || !values.testBriefInformationPdf?.[0]) {
             throw new Error('PDF files are missing for the test.');
         }
@@ -148,7 +151,7 @@ export default function JsonEditorPage() {
       setIsSavingAiSettings(true);
       try {
           await saveAiConfig(values.aiConfig);
-          toast({ title: 'AI Settings Saved', description: 'The global AI model configuration has been updated. A reload will be triggered.' });
+          toast({ title: 'AI Settings Saved', description: 'The global AI model configuration has been updated. A reload may be triggered.' });
       } catch (error: any) {
           console.error('Failed to save AI settings:', error);
           toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
@@ -265,8 +268,8 @@ export default function JsonEditorPage() {
                 </Card>
                  <Card>
                   <CardHeader>
-                    <CardTitle>AI Prompts</CardTitle>
-                    <CardDescription>Define the instructions for the AI extractor.</CardDescription>
+                    <CardTitle>AI Prompts & Structure</CardTitle>
+                    <CardDescription>Define the instructions and JSON output format for the AI extractor.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                      <FormField
@@ -309,6 +312,20 @@ export default function JsonEditorPage() {
                            </FormItem>
                         )}
                       />
+                       <Separator />
+                       <FormField
+                        control={form.control}
+                        name="jsonStructure"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>JSON Output Structure</FormLabel>
+                                <FormControl>
+                                <Textarea {...field} className="min-h-[400px] font-mono text-xs" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                        />
                   </CardContent>
                 </Card>
                  <div className="flex justify-between rounded-md border bg-card p-4 text-card-foreground shadow-sm">
@@ -361,5 +378,3 @@ export default function JsonEditorPage() {
     </div>
   );
 }
-
-    
