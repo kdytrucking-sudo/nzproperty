@@ -1,14 +1,13 @@
 
 'use server';
 /**
- * @fileOverview Retrieves image configurations from a JSON file.
+ * @fileOverview Retrieves image configurations from a JSON file in Firebase Storage.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import fs from 'fs/promises';
-import path from 'path';
 import { ImageOptionsSchema, type ImageOptionsData } from '@/lib/image-options-schema';
+import { readJSON, writeJSON } from '@/lib/storage';
 
 export async function getImageOptions(): Promise<ImageOptionsData> {
   return getImageOptionsFlow();
@@ -21,18 +20,17 @@ const getImageOptionsFlow = ai.defineFlow(
     outputSchema: ImageOptionsSchema,
   },
   async () => {
-    const jsonFilePath = path.join(process.cwd(), 'src', 'lib', 'image-options.json');
+    const storagePath = 'json/image-options.json';
     try {
-      const jsonString = await fs.readFile(jsonFilePath, 'utf-8');
-      const data = JSON.parse(jsonString);
-      return ImageOptionsSchema.parse(data);
+      const jsonData = await readJSON(storagePath);
+      return ImageOptionsSchema.parse(jsonData);
     } catch (error: any) {
-      if (error.code === 'ENOENT') {
+      if (error.message.includes('not found') || error.message.includes('No object exists')) {
         const defaultOptions: ImageOptionsData = [];
-        await fs.writeFile(jsonFilePath, JSON.stringify(defaultOptions, null, 2), 'utf-8');
+        await writeJSON(storagePath, defaultOptions);
         return defaultOptions;
       }
-      console.error('Failed to get image options:', error);
+      console.error('Failed to get image options from Firebase Storage:', error);
       throw new Error(`Failed to read or parse image-options.json file: ${error.message}`);
     }
   }

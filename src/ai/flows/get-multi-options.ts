@@ -1,14 +1,13 @@
 
 'use server';
 /**
- * @fileOverview Retrieves multi-option configurations from a JSON file.
+ * @fileOverview Retrieves multi-option configurations from a JSON file in Firebase Storage.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import fs from 'fs/promises';
-import path from 'path';
 import { MultiOptionsSchema, type MultiOptionsData } from '@/lib/multi-options-schema';
+import { readJSON, writeJSON } from '@/lib/storage';
 
 export async function getMultiOptions(): Promise<MultiOptionsData> {
   return getMultiOptionsFlow();
@@ -21,19 +20,17 @@ const getMultiOptionsFlow = ai.defineFlow(
     outputSchema: MultiOptionsSchema,
   },
   async () => {
-    const jsonFilePath = path.join(process.cwd(), 'src', 'lib', 'multi-options.json');
+    const storagePath = 'json/multi-options.json';
     try {
-      const jsonString = await fs.readFile(jsonFilePath, 'utf-8');
-      const data = JSON.parse(jsonString);
-      return MultiOptionsSchema.parse(data);
+      const jsonData = await readJSON(storagePath);
+      return MultiOptionsSchema.parse(jsonData);
     } catch (error: any) {
-       // If the file doesn't exist, create it with a default empty array.
-      if (error.code === 'ENOENT') {
+      if (error.message.includes('not found') || error.message.includes('No object exists')) {
         const defaultOptions: MultiOptionsData = [];
-        await fs.writeFile(jsonFilePath, JSON.stringify(defaultOptions, null, 2), 'utf-8');
+        await writeJSON(storagePath, defaultOptions);
         return defaultOptions;
       }
-      console.error('Failed to get multi-options:', error);
+      console.error('Failed to get multi-options from Firebase Storage:', error);
       throw new Error(`Failed to read or parse multi-options file: ${error.message}`);
     }
   }

@@ -1,14 +1,13 @@
 
 'use server';
 /**
- * @fileOverview Saves multi-option configurations to a JSON file.
+ * @fileOverview Saves multi-option configurations to a JSON file in Firebase Storage.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import fs from 'fs/promises';
-import path from 'path';
 import { MultiOptionsSchema, type MultiOptionsData } from '@/lib/multi-options-schema';
+import { writeJSON } from '@/lib/storage';
 
 export async function saveMultiOptions(input: MultiOptionsData): Promise<void> {
   return saveMultiOptionsFlow(input);
@@ -21,13 +20,11 @@ const saveMultiOptionsFlow = ai.defineFlow(
     outputSchema: z.void(),
   },
   async (options) => {
+    const storagePath = 'json/multi-options.json';
     try {
-      const jsonFilePath = path.join(process.cwd(), 'src', 'lib', 'multi-options.json');
-      const contentJsonString = JSON.stringify(options, null, 2);
-      await fs.writeFile(jsonFilePath, contentJsonString, 'utf-8');
-    } catch (error: any)
-    {
-      console.error('Failed to save multi-options:', error);
+      await writeJSON(storagePath, options);
+    } catch (error: any) {
+      console.error('Failed to save multi-options to Firebase Storage:', error);
       throw new Error(`Failed to write multi-options file: ${error.message}`);
     }
   }
