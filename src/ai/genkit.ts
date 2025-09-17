@@ -1,29 +1,42 @@
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
-import * as fs from 'fs';
-import * as path from 'path';
-import { AiConfig, DEFAULT_AI_CONFIG } from '@/lib/ai-config-schema';
+import {readJSON} from '@/lib/storage';
+import {AiConfig, DEFAULT_AI_CONFIG} from '@/lib/ai-config-schema';
 
-let loadedConfig: AiConfig;
-
-try {
-  const configPath = path.join(process.cwd(), 'src', 'lib', 'ai-config.json');
-  const configJson = fs.readFileSync(configPath, 'utf-8');
-  loadedConfig = JSON.parse(configJson) as AiConfig;
-} catch (error) {
-  console.warn("Could not load 'ai-config.json'. Using default AI configuration.", error);
-  loadedConfig = DEFAULT_AI_CONFIG;
+async function loadAiConfig(): Promise<AiConfig> {
+  try {
+    // Read the config from Firebase Storage.
+    const config = await readJSON('json/ai-config.json');
+    // Ensure all fields from the schema are present, even if the file is old.
+    const validatedConfig = {...DEFAULT_AI_CONFIG, ...config};
+    return AiConfig.parse(validatedConfig);
+  } catch (error) {
+    console.warn(
+      "Could not load 'ai-config.json' from Storage. Using default AI configuration.",
+      error
+    );
+    return DEFAULT_AI_CONFIG;
+  }
 }
 
-const { model, ...configOptions } = loadedConfig;
+// Load the configuration asynchronously.
+const loadedConfigPromise = loadAiConfig();
 
 export const ai = genkit({
-  plugins: [googleAI()],
-  model: model || DEFAULT_AI_CONFIG.model,
-  config: {
-    temperature: configOptions.temperature ?? DEFAULT_AI_CONFIG.temperature,
-    topP: configOptions.topP ?? DEFAULT_AI_CONFIG.topP,
-    topK: configOptions.topK ?? DEFAULT_AI_CONFIG.topK,
-    maxOutputTokens: configOptions.maxOutputTokens ?? DEFAULT_AI_CONFIG.maxOutputTokens,
+  plugins: [
+    googleAI({
+      // The generationConfig must be awaited as it's loaded asynchronously.
+      generationConfig: loadedConfigPromise.then(config => ({
+        temperature: config.temperature,
+        topP: config.topP,
+        topK: config.topK,
+        maxOutputTokens: config.maxOutputTokens,
+      })),
+    }),
+  ],
+  // Define a custom getter for the model to ensure it's resolved after the async config load.
+  // This avoids race conditions and ensures the model name from the config is always used.
+  get model() {
+    return loadedConfigPromise.then(config => config.model);
   },
 });
