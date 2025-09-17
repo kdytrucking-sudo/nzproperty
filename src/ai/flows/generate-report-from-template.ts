@@ -1,5 +1,6 @@
 
 
+
 'use server';
 /**
  * 生成 Word 报告（稳定版：软回车 -> 硬回车，保样式，避坑）
@@ -13,7 +14,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { getGlobalContent } from './get-global-content';
 import { contentFields } from '@/lib/content-config';
-import { downloadBinary } from '@/lib/storage';
+import { downloadBinary, uploadBinary } from '@/lib/storage';
 
 const ai = await getAi();
 
@@ -320,7 +321,6 @@ const generateReportFromTemplateFlow = ai.defineFlow(
 
     try {
       const arrayBuffer = await downloadBinary(storagePath);
-      // As you suggested, convert ArrayBuffer to Buffer for maximum stability
       const buffer = Buffer.from(arrayBuffer);
       
       const zip = new PizZip(buffer);
@@ -361,6 +361,23 @@ const generateReportFromTemplateFlow = ai.defineFlow(
         type: 'nodebuffer',
         compression: 'DEFLATE',
       });
+
+      // START: 新增的存档代码
+      try {
+        const address = data?.Info?.['Property Address'] || 'UntitledReport';
+        const date = new Date().toISOString().split('T')[0];
+        // 清理文件名，避免非法字符
+        const sanitizedAddress = address.replace(/[\\/:"*?<>|]/g, '-');
+        const archiveFileName = `${sanitizedAddress} - ${date}.docx`;
+        const archiveStoragePath = `reports/${archiveFileName}`;
+        
+        await uploadBinary(archiveStoragePath, outputBuffer, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+
+      } catch (archiveError: any) {
+          // 存档失败不应中断主流程，只在后台记录错误
+          console.error(`Failed to archive report to ${storagePath}:`, archiveError);
+      }
+      // END: 新增的存档代码
 
       const outputBase64 = outputBuffer.toString('base64');
       const outputDataUri =
