@@ -29,7 +29,7 @@ const getDraftFlow = ai.defineFlow(
     }),
   },
   async ({ draftId, propertyAddress }) => {
-    const storagePath = 'json/drafts.json';
+    const storagePath = 'json/drafts.json'; // CORRECTED PATH
     const debugLogs: string[] = [];
     debugLogs.push(`Attempting to read from Firebase Storage path: ${storagePath}`);
 
