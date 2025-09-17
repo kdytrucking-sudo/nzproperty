@@ -3,10 +3,12 @@
  * @fileOverview Deletes a draft record from the drafts.json file in Firebase Storage.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
 import { DraftsFileSchema } from '@/lib/drafts-schema';
 import { readJSON, writeJSON } from '@/lib/storage';
+
+const ai = await getAi();
 
 const DeleteDraftInputSchema = z.object({
   draftId: z.string().describe('The unique ID of the draft record to delete.'),

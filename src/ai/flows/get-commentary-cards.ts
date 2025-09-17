@@ -4,10 +4,12 @@
  * @fileOverview Retrieves commentary card configurations from a JSON file in Firebase Storage.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
 import { CommentaryCardsSchema, type CommentaryCardsData } from '@/lib/commentary-card-schema';
 import { readJSON, writeJSON } from '@/lib/storage';
+
+const ai = await getAi();
 
 export async function getCommentaryCards(): Promise<CommentaryCardsData> {
   return getCommentaryCardsFlow();

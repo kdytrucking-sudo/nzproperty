@@ -3,10 +3,12 @@
  * @fileOverview Retrieves a specific draft from Firebase Storage.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'zod';
 import { DraftSchema, DraftsFileSchema, type Draft } from '@/lib/drafts-schema';
 import { readJSON } from '@/lib/storage'; // Firebase Storage 封装
+
+const ai = await getAi();
 
 const GetDraftInputSchema = z.object({
   draftId: z.string().optional(),

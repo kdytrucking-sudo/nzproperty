@@ -1,15 +1,19 @@
+'use server';
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {readJSON} from '@/lib/storage';
-import {AiConfig, DEFAULT_AI_CONFIG} from '@/lib/ai-config-schema';
+import {
+  AiConfigSchema,
+  DEFAULT_AI_CONFIG,
+  type AiConfig,
+} from '@/lib/ai-config-schema';
 
+// This function asynchronously loads the AI configuration from storage.
 async function loadAiConfig(): Promise<AiConfig> {
   try {
-    // Read the config from Firebase Storage.
     const config = await readJSON('json/ai-config.json');
-    // Ensure all fields from the schema are present, even if the file is old.
     const validatedConfig = {...DEFAULT_AI_CONFIG, ...config};
-    return AiConfig.parse(validatedConfig);
+    return AiConfigSchema.parse(validatedConfig);
   } catch (error) {
     console.warn(
       "Could not load 'ai-config.json' from Storage. Using default AI configuration.",
@@ -19,24 +23,29 @@ async function loadAiConfig(): Promise<AiConfig> {
   }
 }
 
-// Load the configuration asynchronously.
-const loadedConfigPromise = loadAiConfig();
+let aiInstance: any;
 
-export const ai = genkit({
-  plugins: [
-    googleAI({
-      // The generationConfig must be awaited as it's loaded asynchronously.
-      generationConfig: loadedConfigPromise.then(config => ({
-        temperature: config.temperature,
-        topP: config.topP,
-        topK: config.topK,
-        maxOutputTokens: config.maxOutputTokens,
-      })),
-    }),
-  ],
-  // Define a custom getter for the model to ensure it's resolved after the async config load.
-  // This avoids race conditions and ensures the model name from the config is always used.
-  get model() {
-    return loadedConfigPromise.then(config => config.model);
-  },
-});
+// Asynchronously get the initialized AI instance.
+export async function getAi() {
+  if (aiInstance) {
+    return aiInstance;
+  }
+
+  const config = await loadAiConfig();
+
+  aiInstance = genkit({
+    plugins: [
+      googleAI({
+        generationConfig: {
+          temperature: config.temperature,
+          topP: config.topP,
+          topK: config.topK,
+          maxOutputTokens: config.maxOutputTokens,
+        },
+      }),
+    ],
+    model: config.model,
+  });
+
+  return aiInstance;
+}

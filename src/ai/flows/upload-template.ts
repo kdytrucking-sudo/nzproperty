@@ -5,10 +5,12 @@
  * - uploadTemplate - A function that saves a template file to the server.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { getAi } from '@/ai/genkit';
+import { z } from 'zod';
 import fs from 'fs/promises';
 import path from 'path';
+
+const ai = await getAi();
 
 const UploadTemplateInputSchema = z.object({
   fileName: z.string().describe('The desired file name for the template.'),

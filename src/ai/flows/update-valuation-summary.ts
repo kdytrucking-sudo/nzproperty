@@ -8,8 +8,10 @@
  * - `UpdateValuationSummaryOutput` - The return type for the `updateValuationSummary` function.
  */
 
-import {ai} from '@/ai/genkit';
+import {getAi} from '@/ai/genkit';
 import {z} from 'genkit';
+
+const ai = await getAi();
 
 const UpdateValuationSummaryInputSchema = z.object({
   valuationDate: z.string().describe('The date of the valuation.'),

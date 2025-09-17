@@ -5,11 +5,13 @@
  * - mergeAiDataWithDraft - Merges new AI data into an existing draft, prioritizing draft data.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'zod';
 import { getDraft } from './get-draft';
 import { extractPropertyData } from './extract-property-data-from-pdf';
 import { getExtractionConfig } from './get-extraction-config';
+
+const ai = await getAi();
 
 const MergeAiDataWithDraftInputSchema = z.object({
   draftId: z.string().describe('The ID of the draft to merge data into.'),
@@ -59,11 +61,13 @@ const mergeAiDataWithDraftFlow = ai.defineFlow(
   },
   async ({ draftId, propertyTitlePdfDataUri, briefInformationPdfDataUri }) => {
     // 1. Get existing draft data and AI-extracted data in parallel
-    const [draft, aiData, config] = await Promise.all([
+    const [draftResponse, aiData, config] = await Promise.all([
       getDraft({ draftId }),
       extractPropertyData({ propertyTitlePdfDataUri, briefInformationPdfDataUri }),
       getExtractionConfig()
     ]);
+    
+    const draft = draftResponse?.draft;
 
     if (!draft) {
       throw new Error(`Draft with ID ${draftId} not found.`);

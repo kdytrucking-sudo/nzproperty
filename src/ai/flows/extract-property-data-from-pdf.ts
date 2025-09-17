@@ -7,10 +7,12 @@
  * - ExtractPropertyDataOutput - The return type for the extractPropertyData function.
  */
 
-import {ai} from '@/ai/genkit';
+import {getAi} from '@/ai/genkit';
 import {z} from 'genkit';
 import fs from 'fs/promises';
 import path from 'path';
+
+const ai = await getAi();
 
 // Dynamically create the Zod schema from the JSON file
 async function getOutputSchema() {

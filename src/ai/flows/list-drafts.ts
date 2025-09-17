@@ -3,10 +3,12 @@
  * @fileOverview Lists all available drafts from the drafts.json file in Firebase Storage.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
 import { DraftsFileSchema, DraftSummarySchema, type DraftSummary } from '@/lib/drafts-schema';
 import { readJSON, writeJSON } from '@/lib/storage'; // Firebase Storage 封装
+
+const ai = await getAi();
 
 export async function listDrafts(): Promise<DraftSummary[]> {
   return listDraftsFlow();

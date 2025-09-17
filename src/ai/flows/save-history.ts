@@ -4,11 +4,13 @@
  * @fileOverview Saves or updates a history record to the history.json file in Firebase Storage.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
 import { HistoryRecordSchema, HistoryFileSchema } from '@/lib/history-schema';
 import * as crypto from 'crypto';
 import { readJSON, writeJSON } from '@/lib/storage';
+
+const ai = await getAi();
 
 const SaveHistoryInputSchema = z.object({
   draftId: z.string().optional(),

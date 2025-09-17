@@ -3,11 +3,13 @@
  * @fileOverview Uploads a single image file to a temporary directory on the server.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { getAi } from '@/ai/genkit';
+import { z } from 'zod';
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
+
+const ai = await getAi();
 
 const UploadTempImageInputSchema = z.object({
   fileDataUri: z.string().describe('The base64 encoded data URI of the image file.'),

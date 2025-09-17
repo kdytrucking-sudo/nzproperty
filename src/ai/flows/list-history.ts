@@ -4,10 +4,12 @@
  * @fileOverview Lists all available history records from Firebase Storage.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
 import { HistoryFileSchema } from '@/lib/history-schema';
 import { readJSON, writeJSON } from '@/lib/storage'; // Firebase Storage 封装
+
+const ai = await getAi();
 
 export async function listHistory(): Promise<z.infer<typeof HistoryFileSchema>> {
   return listHistoryFlow();

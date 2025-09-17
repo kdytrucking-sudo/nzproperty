@@ -3,10 +3,12 @@
  * @fileOverview Retrieves the current AI model configuration from a dedicated JSON file in Firebase Storage.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
 import { AiConfigSchema, type AiConfig, DEFAULT_AI_CONFIG } from '@/lib/ai-config-schema';
 import { readJSON, writeJSON } from '@/lib/storage';
+
+const ai = await getAi();
 
 const CONFIG_STORAGE_PATH = 'json/ai-config.json';
 

@@ -3,11 +3,13 @@
  * @fileOverview Saves or updates a draft to drafts.json in Firebase Storage.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
 import { DraftSchema, DraftsFileSchema } from '@/lib/drafts-schema';
 import * as crypto from 'crypto';
 import { writeJSON, readJSON } from '@/lib/storage'; // Firebase Storage 封装
+
+const ai = await getAi();
 
 const SaveDraftInputSchema = z.object({
   formData: z.any(),

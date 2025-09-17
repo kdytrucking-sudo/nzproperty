@@ -5,10 +5,12 @@
  * - listTemplates - A function that returns an array of template file names.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
 import fs from 'fs/promises';
 import path from 'path';
+
+const ai = await getAi();
 
 const ListTemplatesOutputSchema = z.array(z.string()).describe('An array of template file names.');
 

@@ -3,12 +3,14 @@
  * @fileOverview Saves the AI model configuration to a JSON file in Firebase Storage and "touches" genkit.ts to trigger a reload.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
 import fs from 'fs/promises';
 import path from 'path';
 import { AiConfigSchema, type AiConfig } from '@/lib/ai-config-schema';
 import { writeJSON } from '@/lib/storage';
+
+const ai = await getAi();
 
 const GENKIT_FILE_PATH = path.join(process.cwd(), 'src', 'ai', 'genkit.ts');
 const CONFIG_STORAGE_PATH = 'json/ai-config.json';

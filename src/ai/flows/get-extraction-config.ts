@@ -3,9 +3,11 @@
  * @fileOverview Retrieves the current extraction configuration (JSON structure and prompts) from files in Firebase Storage.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
 import { readJSON } from '@/lib/storage';
+
+const ai = await getAi();
 
 const ExtractionConfigOutputSchema = z.object({
   jsonStructure: z.string().describe('The JSON structure as a string.'),

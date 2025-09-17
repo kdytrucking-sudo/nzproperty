@@ -5,7 +5,7 @@
  * 生成 Word 报告（稳定版：软回车 -> 硬回车，保样式，避坑）
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'zod';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
@@ -13,6 +13,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import { getGlobalContent } from './get-global-content';
 import { contentFields } from '@/lib/content-config';
+
+const ai = await getAi();
 
 
 /* -----------------------------

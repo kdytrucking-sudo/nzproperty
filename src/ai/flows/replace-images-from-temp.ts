@@ -5,13 +5,15 @@
  * - 先用 `{% ... }` + linebreaks:false；不行→ linebreaks:true；还不行→ `{{ ... }}`
  * - 严格同步读图；自动统计 getImage 触发次数
  */
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'zod';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import path from 'path';
 import fs from 'fs';
 import { promises as fsp } from 'fs';
+
+const ai = await getAi();
 
 // 兼容 CJS/ESM 的导入
 // eslint-disable-next-line @typescript-eslint/no-var-requires

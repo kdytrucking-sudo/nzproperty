@@ -4,10 +4,12 @@
  * @fileOverview Saves commentary card configurations to a JSON file in Firebase Storage.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
 import { CommentaryCardsSchema, type CommentaryCardsData } from '@/lib/commentary-card-schema';
 import { writeJSON } from '@/lib/storage';
+
+const ai = await getAi();
 
 export async function saveCommentaryCards(input: CommentaryCardsData): Promise<void> {
   return saveCommentaryCardsFlow(input);

@@ -4,10 +4,12 @@
  * @fileOverview Deletes a history record from the history.json file in Firebase Storage.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
 import { HistoryFileSchema } from '@/lib/history-schema';
 import { readJSON, writeJSON } from '@/lib/storage';
+
+const ai = await getAi();
 
 const DeleteHistoryInputSchema = z.object({
   draftId: z.string().describe('The unique ID of the history record to delete.'),

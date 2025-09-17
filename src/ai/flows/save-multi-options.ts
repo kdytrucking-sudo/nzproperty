@@ -4,10 +4,12 @@
  * @fileOverview Saves multi-option configurations to a JSON file in Firebase Storage.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { getAi } from '@/ai/genkit';
+import { z } from 'zod';
 import { MultiOptionsSchema, type MultiOptionsData } from '@/lib/multi-options-schema';
 import { writeJSON } from '@/lib/storage';
+
+const ai = await getAi();
 
 export async function saveMultiOptions(input: MultiOptionsData): Promise<void> {
   return saveMultiOptionsFlow(input);

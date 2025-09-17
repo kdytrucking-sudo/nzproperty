@@ -3,12 +3,14 @@
  * Reads a temporary .docx file, adds images to it, and returns the final file as a data URI.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'zod';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import fs from 'fs/promises';
 import path from 'path';
+
+const ai = await getAi();
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 const ImageModule = require('docxtemplater-image-module-free');

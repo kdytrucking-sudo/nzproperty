@@ -5,10 +5,12 @@
  * - getGlobalContent - A function that retrieves the content object from a file.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
 import { contentFormSchema, contentFields, type ContentFormData } from '@/lib/content-config';
 import { readJSON, writeJSON } from '@/lib/storage';
+
+const ai = await getAi();
 
 // Create a default object with empty strings for all fields
 const createDefaultContent = (): ContentFormData => {

@@ -7,8 +7,10 @@
  * - ConvertNumberToWordsOutput - The return type for the function.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
+
+const ai = await getAi();
 
 const ConvertNumberToWordsInputSchema = z.object({
   number: z.number().describe('The number to convert to words.'),

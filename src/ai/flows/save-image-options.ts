@@ -4,10 +4,12 @@
  * @fileOverview Saves image configurations to a JSON file in Firebase Storage.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'zod';
 import { ImageOptionsSchema, type ImageOptionsData } from '@/lib/image-options-schema';
 import { writeJSON } from '@/lib/storage';
+
+const ai = await getAi();
 
 export async function saveImageOptions(input: ImageOptionsData): Promise<void> {
   return saveImageOptionsFlow(input);

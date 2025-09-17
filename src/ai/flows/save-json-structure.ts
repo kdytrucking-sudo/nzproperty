@@ -5,9 +5,11 @@
  * - saveExtractionConfig - A function that saves the config strings to files.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
 import { writeJSON } from '@/lib/storage';
+
+const ai = await getAi();
 
 const SaveConfigInputSchema = z.object({
   jsonStructure: z.string().describe('The JSON structure to save as a string.'),

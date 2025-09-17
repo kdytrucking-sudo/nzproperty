@@ -5,10 +5,12 @@
  * - deleteTemplate - A function that deletes a specified template file.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
 import fs from 'fs/promises';
 import path from 'path';
+
+const ai = await getAi();
 
 const DeleteTemplateInputSchema = z.object({
   fileName: z.string().describe('The name of the template file to delete.'),

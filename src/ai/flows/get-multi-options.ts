@@ -4,10 +4,12 @@
  * @fileOverview Retrieves multi-option configurations from a JSON file in Firebase Storage.
  */
 
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
 import { MultiOptionsSchema, type MultiOptionsData } from '@/lib/multi-options-schema';
 import { readJSON, writeJSON } from '@/lib/storage';
+
+const ai = await getAi();
 
 export async function getMultiOptions(): Promise<MultiOptionsData> {
   return getMultiOptionsFlow();
