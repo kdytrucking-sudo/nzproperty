@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Deletes a history record from the history.json file.

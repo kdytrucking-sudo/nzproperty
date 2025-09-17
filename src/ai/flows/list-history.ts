@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Lists all available history records from the history.json file.
