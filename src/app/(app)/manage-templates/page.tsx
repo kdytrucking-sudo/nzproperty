@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, FilePlus2, Trash2 } from 'lucide-react';
+import { Loader2, FilePlus2, Trash2, Download } from 'lucide-react';
 import * as React from 'react';
 import {
   Table,
@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from '@/components/ui/skeleton';
-import { listTemplates } from '@/ai/flows/list-templates';
+import { listTemplates, type TemplateFile } from '@/ai/flows/list-templates';
 import { uploadTemplate } from '@/ai/flows/upload-template';
 import { deleteTemplate } from '@/ai/flows/delete-template';
 
@@ -29,7 +29,7 @@ const fileToDataUri = (file: File): Promise<string> => {
 
 export default function ManageTemplatesPage() {
   const { toast } = useToast();
-  const [templates, setTemplates] = React.useState<string[]>([]);
+  const [templates, setTemplates] = React.useState<TemplateFile[]>([]);
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [isUploading, setIsUploading] = React.useState(false);
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
@@ -80,7 +80,7 @@ export default function ManageTemplatesPage() {
     try {
         await deleteTemplate({ fileName });
         toast({ title: 'Template Deleted', description: `"${fileName}" has been removed.` });
-        setTemplates(prev => prev.filter(t => t !== fileName));
+        setTemplates(prev => prev.filter(t => t.name !== fileName));
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Deletion Failed', description: error.message });
     } finally {
@@ -122,7 +122,7 @@ export default function ManageTemplatesPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Template Name</TableHead>
-                    <TableHead className="w-[100px] text-right">Actions</TableHead>
+                    <TableHead className="w-[120px] text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -142,17 +142,22 @@ export default function ManageTemplatesPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    templates.map((templateName) => (
-                      <TableRow key={templateName}>
-                        <TableCell className="font-medium">{templateName}</TableCell>
+                    templates.map((template) => (
+                      <TableRow key={template.name}>
+                        <TableCell className="font-medium">{template.name}</TableCell>
                         <TableCell className="text-right">
+                          <Button asChild variant="ghost" size="icon">
+                             <a href={template.downloadUrl} download={template.name} target="_blank">
+                               <Download className="h-4 w-4" />
+                             </a>
+                           </Button>
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            onClick={() => handleDeleteTemplate(templateName)}
-                            disabled={deletingId === templateName}
+                            onClick={() => handleDeleteTemplate(template.name)}
+                            disabled={deletingId === template.name}
                           >
-                            {deletingId === templateName ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4" />}
+                            {deletingId === template.name ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4 text-destructive" />}
                             <span className="sr-only">Delete</span>
                           </Button>
                         </TableCell>

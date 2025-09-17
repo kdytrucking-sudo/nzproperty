@@ -2,20 +2,25 @@
 /**
  * @fileOverview Lists available .docx templates from Firebase Storage.
  *
- * - listTemplates - A function that returns an array of template file names.
+ * - listTemplates - A function that returns an array of template file information.
  */
 
 import { getAi } from '@/ai/genkit';
 import { z } from 'genkit';
-import { listFileNames } from '@/lib/storage';
+import { listFileNames, getFileURL } from '@/lib/storage';
 
 const ai = await getAi();
 
-const ListTemplatesOutputSchema = z.array(z.string()).describe('An array of template file names.');
+const TemplateFileSchema = z.object({
+  name: z.string(),
+  downloadUrl: z.string().url(),
+});
 
-export type ListTemplatesOutput = z.infer<typeof ListTemplatesOutputSchema>;
+const ListTemplatesOutputSchema = z.array(TemplateFileSchema);
 
-export async function listTemplates(): Promise<ListTemplatesOutput> {
+export type TemplateFile = z.infer<typeof TemplateFileSchema>;
+
+export async function listTemplates(): Promise<TemplateFile[]> {
   return listTemplatesFlow();
 }
 
@@ -27,12 +32,19 @@ const listTemplatesFlow = ai.defineFlow(
   },
   async () => {
     try {
-      // List files from the 'templates/' directory in Firebase Storage
-      const docxFiles = await listFileNames('templates');
-      return docxFiles.filter(file => file.endsWith('.docx'));
+      const docxFileNames = await listFileNames('templates');
+      const filteredNames = docxFileNames.filter(file => file.endsWith('.docx'));
+
+      const templates = await Promise.all(
+        filteredNames.map(async (name) => {
+          const downloadUrl = await getFileURL(`templates/${name}`);
+          return { name, downloadUrl };
+        })
+      );
+      
+      return templates;
     } catch (error) {
       console.error('Failed to list templates from Firebase Storage:', error);
-      // If there's an error (e.g., permissions), return an empty array
       return [];
     }
   }
