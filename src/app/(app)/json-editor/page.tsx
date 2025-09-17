@@ -147,7 +147,7 @@ export default function JsonEditorPage() {
       setIsSavingAiSettings(true);
       try {
           await saveAiConfig(values.aiConfig);
-          toast({ title: 'AI Settings Saved', description: 'The global AI model configuration has been updated and will be applied on the next action.' });
+          toast({ title: 'AI Settings Saved', description: 'The global AI model configuration has been updated. A reload will be triggered.' });
       } catch (error: any) {
           console.error('Failed to save AI settings:', error);
           toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
@@ -184,6 +184,7 @@ export default function JsonEditorPage() {
                                 <Input 
                                   placeholder="e.g., googleai/gemini-1.5-flash"
                                   {...field}
+                                  value={field.value ?? ''}
                                 />
                                 <FormMessage/>
                            </FormItem>
@@ -199,8 +200,9 @@ export default function JsonEditorPage() {
                                     <Input 
                                       type="number" 
                                       placeholder="e.g., 0.2"
+                                      {...field}
                                       value={field.value ?? ''}
-                                      onChange={e => field.onChange(parseFloat(e.target.value))}
+                                      onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
                                     />
                                     <FormMessage/>
                                </FormItem>
@@ -215,8 +217,9 @@ export default function JsonEditorPage() {
                                     <Input 
                                       type="number" 
                                       placeholder="e.g., 1"
+                                      {...field}
                                       value={field.value ?? ''}
-                                      onChange={e => field.onChange(parseFloat(e.target.value))}
+                                      onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
                                     />
                                     <FormMessage/>
                                </FormItem>
@@ -231,8 +234,9 @@ export default function JsonEditorPage() {
                                     <Input 
                                       type="number" 
                                       placeholder="e.g., 1"
+                                      {...field}
                                       value={field.value ?? ''}
-                                      onChange={e => field.onChange(parseInt(e.target.value, 10))}
+                                      onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
                                     />
                                     <FormMessage/>
                                </FormItem>
@@ -248,8 +252,9 @@ export default function JsonEditorPage() {
                                 <Input 
                                   type="number" 
                                   placeholder="e.g., 8192"
+                                  {...field}
                                   value={field.value ?? ''}
-                                  onChange={e => field.onChange(parseInt(e.target.value, 10))}
+                                  onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
                                 />
                                 <FormMessage/>
                            </FormItem>
