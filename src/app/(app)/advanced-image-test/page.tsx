@@ -117,8 +117,8 @@ export default function AdvancedImageTestPage() {
                       newImageFiles[placeholder] = {
                           state: 'success',
                           tempFileName: tempFileName,
-                          // We don't have the full path for draft images, so we show the filename.
-                          fullPath: `/tmp/${tempFileName}`
+                          // We now show a more representative path
+                          fullPath: `src/lib/images/${tempFileName}`
                       };
                   }
               }
@@ -166,7 +166,7 @@ export default function AdvancedImageTestPage() {
           [placeholder]: { file, state: 'success', tempFileName: result.tempFileName, fullPath: result.fullPath }
       }));
     } catch (error: any) {
-      console.error('Temp upload failed:', error);
+      console.error('Upload failed:', error);
       setImageFiles(prev => ({ 
           ...prev, 
           [placeholder]: { file, state: 'error', errorMessage: error.message }
@@ -289,7 +289,7 @@ export default function AdvancedImageTestPage() {
             </Button>
             <CheckCircle2 className="h-8 w-8" />
             <p className="mt-2 text-sm text-center font-medium">Ready for replacement</p>
-            {imageInfo.fullPath && <p className="mt-1 text-xs text-center break-all font-mono">{imageInfo.fullPath}</p>}
+            {imageInfo.fullPath && <p className="mt-1 text-xs text-center break-all font-mono">{imageInfo.fullPath.replace(process.cwd(), '')}</p>}
           </div>
         )
     }
@@ -327,7 +327,7 @@ export default function AdvancedImageTestPage() {
       <header>
       <h1 className="font-headline text-3xl font-bold text-foreground">Advanced Image Replacement</h1>
         <p className="text-muted-foreground">
-          A more robust workflow for replacing many images, uploading each one to a temporary store first.
+          A more robust workflow for replacing many images, uploading each one to a permanent store first.
         </p>
       </header>
 
@@ -391,7 +391,7 @@ export default function AdvancedImageTestPage() {
               <CardHeader>
                 <CardTitle>2. Upload Images</CardTitle>
                 <CardDescription>
-                  Each image will be uploaded to a temporary location as you select it. Mobile uploads will show as "Ready".
+                  Each image will be uploaded to a permanent location as you select it. Mobile uploads will show as "Ready".
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">

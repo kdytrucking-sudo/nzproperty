@@ -93,5 +93,26 @@
     },
     "ifreplacetext": true,
     "ifreplaceimage": false
+  },
+  {
+    "draftId": "ecdc8d7c-df61-470e-9fe9-34a18354872b",
+    "propertyAddress": "8 spode pl",
+    "createdAt": "2025-09-17T01:22:02.023Z",
+    "updatedAt": "2025-09-17T01:22:02.023Z",
+    "data": {
+      "template": "2_29 Salisbury Road Birkdale Auckland - 2025-09-16.docx",
+      "images": [
+        {
+          "placeholder": "{%Image_NatureofProperty1}",
+          "fileName": "9939805fdc1b752ea1bf11d8b57c7c46.png"
+        },
+        {
+          "placeholder": "{%Image_NatureofProperty2}",
+          "fileName": "7718142296392429c48240fb580a63eb.png"
+        }
+      ]
+    },
+    "ifreplacetext": false,
+    "ifreplaceimage": true
   }
 ]

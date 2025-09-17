@@ -4,7 +4,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import { z } from 'genkit';
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
@@ -35,14 +35,14 @@ const uploadTempImageFlow = ai.defineFlow(
   },
   async ({ fileDataUri, originalFileName }) => {
     try {
-      // Use the standard /tmp directory which is writable in App Hosting environments.
-      const tmpDir = '/tmp';
-      await fs.mkdir(tmpDir, { recursive: true });
+      // Use a permanent directory within the project source.
+      const permanentDir = path.join(process.cwd(), 'src', 'lib', 'images');
+      await fs.mkdir(permanentDir, { recursive: true });
 
       const extension = path.extname(originalFileName) || '.tmp';
       const uniqueName = `${crypto.randomBytes(16).toString('hex')}${extension}`;
       
-      const filePath = path.join(tmpDir, uniqueName);
+      const filePath = path.join(permanentDir, uniqueName);
       const base64Content = fileDataUri.split(',')[1];
       if (!base64Content) {
           throw new Error('Invalid data URI format.');
@@ -51,20 +51,13 @@ const uploadTempImageFlow = ai.defineFlow(
       
       await fs.writeFile(filePath, buffer);
 
-      // Clean up the file after a timeout (e.g., 30 days)
-      setTimeout(async () => {
-          try {
-              await fs.unlink(filePath);
-          } catch (cleanupError) {
-              // Ignore errors if file is already deleted
-          }
-      }, 30 * 24 * 3600 * 1000);
+      // No longer need to clean up the file as it's meant to be permanent.
 
       return { tempFileName: uniqueName, fullPath: filePath };
 
     } catch (error: any) {
-      console.error(`Failed to upload temporary image:`, error);
-      throw new Error(`Failed to save temporary file: ${error.message}`);
+      console.error(`Failed to upload image:`, error);
+      throw new Error(`Failed to save image file: ${error.message}`);
     }
   }
 );

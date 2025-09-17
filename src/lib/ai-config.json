@@ -1,5 +1,5 @@
 {
-  "model": "googleai/gemini-2.5-pro",
+  "model": "googleai/gemini-2.5-flash",
   "temperature": 0.2,
   "topP": 1,
   "topK": 1,
