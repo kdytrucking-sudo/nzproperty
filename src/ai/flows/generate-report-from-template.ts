@@ -13,6 +13,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { getGlobalContent } from './get-global-content';
 import { contentFields } from '@/lib/content-config';
+import { downloadBinary } from '@/lib/storage';
 
 const ai = await getAi();
 
@@ -315,11 +316,13 @@ const generateReportFromTemplateFlow = ai.defineFlow(
     outputSchema: GenerateReportOutputSchema,
   },
   async ({ templateFileName, data }) => {
-    const templatesDir = path.join(process.cwd(), 'src', 'lib', 'templates');
-    const templatePath = path.join(templatesDir, templateFileName);
+    const storagePath = `templates/${templateFileName}`;
 
     try {
-      const buffer = await fs.readFile(templatePath);
+      const arrayBuffer = await downloadBinary(storagePath);
+      // As you suggested, convert ArrayBuffer to Buffer for maximum stability
+      const buffer = Buffer.from(arrayBuffer);
+      
       const zip = new PizZip(buffer);
 
       const doc = new Docxtemplater(zip, {
@@ -369,8 +372,8 @@ const generateReportFromTemplateFlow = ai.defineFlow(
       };
     } catch (error: any) {
       console.error(`Error processing template file ${templateFileName}:`, error);
-      if (error.code === 'ENOENT') {
-        throw new Error(`Template file "${templateFileName}" not found on the server.`);
+      if (error.message.includes('not found') || error.message.includes('No object exists')) {
+        throw new Error(`Template file "${templateFileName}" not found in cloud storage.`);
       }
       throw new Error(error.message || 'Failed to read or process the template file.');
     }
