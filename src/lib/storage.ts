@@ -1,6 +1,6 @@
 // src/lib/storage.ts
 import { storage } from './firebase'; // 已初始化的 Firebase App Storage
-import { ref, uploadBytes, getBytes, getDownloadURL, listAll, deleteObject, getMetadata } from "firebase/storage";
+import { ref, uploadBytes, getBytes, getDownloadURL, listAll, deleteObject } from "firebase/storage";
 
 /**
  * 写入文本或 JSON 文件
@@ -86,29 +86,6 @@ export async function listFileNames(path: string): Promise<string[]> {
     const res = await listAll(storageRef);
     return res.items.map((itemRef) => itemRef.name);
 }
-
-/**
- * 列出指定路径下的所有文件及其元数据
- * @param path Firebase Storage 目录路径
- * @returns 文件元数据数组
- */
-export async function listFilesWithMetadata(path: string): Promise<{ name: string; timeCreated: string; downloadUrl: string }[]> {
-    const storageRef = ref(storage, path);
-    const res = await listAll(storageRef);
-    const files = await Promise.all(
-        res.items.map(async (itemRef) => {
-            const metadata = await getMetadata(itemRef);
-            const downloadUrl = await getDownloadURL(itemRef);
-            return {
-                name: itemRef.name,
-                timeCreated: metadata.timeCreated,
-                downloadUrl,
-            };
-        })
-    );
-    return files;
-}
-
 
 /**
  * 删除指定路径的文件
