@@ -62,14 +62,18 @@ export default function InspectionPage() {
 
       setIsLoading(true);
       try {
-        const draftData = await getDraft({ draftId });
+        const draftResponse = await getDraft({ draftId });
+        const draftData = draftResponse?.draft;
+
         if (!draftData) {
           throw new Error('Draft not found. It might have been deleted.');
         }
         setDraft(draftData);
-        form.reset(draftData.formData);
-        if (draftData.formData.uploadedImages) {
-          setUploadedImageFiles(draftData.formData.uploadedImages);
+        if (draftData.formData) {
+          form.reset(draftData.formData);
+          if (draftData.formData.uploadedImages) {
+            setUploadedImageFiles(draftData.formData.uploadedImages);
+          }
         }
       } catch (error: any) {
         console.error('Failed to load draft:', error);
