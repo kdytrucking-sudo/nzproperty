@@ -40,12 +40,12 @@ export function AppSidebar() {
     },
      {
       href: '/advanced-image-test',
-      label: 'Advanced Image Test',
+      label: 'Image Replace',
       icon: Image,
     },
      {
       href: '/image-test',
-      label: 'Image Test',
+      label: 'Test ImageUpload',
       icon: FlaskConical,
     },
     {

@@ -7,7 +7,7 @@ export function Logo() {
       <Building className="size-6 shrink-0 text-primary group-hover:text-sidebar-primary" />
       <div className="flex flex-col items-start">
         <span className="font-headline text-lg font-semibold leading-none tracking-tight">
-          NZ Property Ace
+          NZ Property Valuer
         </span>
       </div>
     </div>

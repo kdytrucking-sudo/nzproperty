@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Saves image configurations to a JSON file in Firebase Storage.
@@ -21,7 +20,7 @@ const saveImageOptionsFlow = ai.defineFlow(
     inputSchema: ImageOptionsSchema,
     outputSchema: z.void(),
   },
-  async (options) => {
+  async (options: ImageOptionsData) => {
     const storagePath = 'json/image-options.json';
     try {
       await writeJSON(storagePath, options);
