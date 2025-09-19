@@ -9,33 +9,27 @@
 
 import {getAi} from '@/ai/genkit';
 import {z} from 'genkit';
-import fs from 'fs/promises';
-import path from 'path';
+import { readJSON } from '@/lib/storage';
 
 const ai = await getAi();
 
-// Dynamically create the Zod schema from the JSON file
+// Dynamically create the Zod schema from the JSON file content from storage
 async function getOutputSchema() {
-    const filePath = path.join(process.cwd(), 'src', 'lib', 'json-structure.json');
-    const jsonString = await fs.readFile(filePath, 'utf-8');
-    const jsonObject = JSON.parse(jsonString);
+    const jsonObject = await readJSON('json/json-structure.json');
 
     function createZodSchema(obj: any): z.ZodType<any> {
         if (Array.isArray(obj)) {
-            // This case might not be used with the new structure but is kept for safety
             return obj.length > 0 ? z.array(createZodSchema(obj[0])) : z.array(z.any());
         } else if (typeof obj === 'object' && obj !== null) {
             const shape: { [key: string]: z.ZodType<any> } = {};
             for (const key in obj) {
-                // Now we need to look deeper into the object to find the placeholder
                 if (typeof obj[key] === 'object' && obj[key] !== null && 'placeholder' in obj[key]) {
                     const fieldConfig = obj[key];
                     const description = `Extracted data for ${fieldConfig.label || key}`;
                     
-                    // Basic validation type handling
                     let zodType;
                     if (fieldConfig.validation?.type === 'number') {
-                        zodType = z.union([z.number(), z.string()]).describe(description); // Allow string to be flexible
+                        zodType = z.union([z.number(), z.string()]).describe(description);
                     } else {
                         zodType = z.string().describe(description);
                     }
@@ -43,13 +37,11 @@ async function getOutputSchema() {
                     shape[key] = zodType;
 
                 } else {
-                     // Handle nested objects that are not field definitions (if any)
                     shape[key] = createZodSchema(obj[key]);
                 }
             }
             return z.object(shape);
         }
-        // Fallback for any other type
         return z.any();
     }
     return createZodSchema(jsonObject);
@@ -83,12 +75,11 @@ export async function extractPropertyData(input: ExtractPropertyDataInput): Prom
       outputSchema: outputSchema,
     },
     async (flowInput) => {
-        const jsonStructurePath = path.join(process.cwd(), 'src', 'lib', 'json-structure.json');
-        const jsonFormat = await fs.readFile(jsonStructurePath, 'utf-8');
-
-        const promptsPath = path.join(process.cwd(), 'src', 'lib', 'prompts.json');
-        const promptsJson = await fs.readFile(promptsPath, 'utf-8');
-        const prompts = JSON.parse(promptsJson);
+        const [jsonStructureObj, prompts] = await Promise.all([
+          readJSON('json/json-structure.json'),
+          readJSON('json/prompts.json'),
+        ]);
+        const jsonFormat = JSON.stringify(jsonStructureObj, null, 2);
 
         const finalPrompt = `${prompts.user_prompt}
 ---
