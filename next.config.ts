@@ -1,9 +1,6 @@
 import 'dotenv/config';
 import type {NextConfig} from 'next';
 
-// Read the GOOGLE_MAPS_API_KEY from .env file
-process.env.GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY ?? '';
-
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
