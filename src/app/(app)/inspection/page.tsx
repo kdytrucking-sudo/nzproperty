@@ -18,7 +18,6 @@ import { useToast } from '@/hooks/use-toast';
 import { listDrafts } from '@/ai/flows/list-drafts';
 import { saveDraft } from '@/ai/flows/save-draft';
 import type { DraftSummary } from '@/lib/drafts-schema';
-import { MapPreview } from '@/components/map-preview';
 import { Separator } from '@/components/ui/separator';
 
 const formSchema = z.object({
@@ -29,7 +28,6 @@ export default function InspectionLandingPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [isCreating, setIsCreating] = React.useState(false);
-  const [addressForMap, setAddressForMap] = React.useState<string | null>(null);
   const [drafts, setDrafts] = React.useState<DraftSummary[]>([]);
   const [isLoadingDrafts, setIsLoadingDrafts] = React.useState(true);
   const [selectedDraftId, setSelectedDraftId] = React.useState<string>('');
@@ -40,8 +38,6 @@ export default function InspectionLandingPage() {
       address: '',
     },
   });
-
-  const address = form.watch('address');
 
   React.useEffect(() => {
     async function loadDrafts() {
@@ -65,10 +61,6 @@ export default function InspectionLandingPage() {
 
   const handleDraftSelection = (draftId: string) => {
     setSelectedDraftId(draftId);
-    const selected = drafts.find(d => d.draftId === draftId);
-    if(selected) {
-        setAddressForMap(selected.propertyAddress);
-    }
   };
 
   const handleLoadDraft = () => {
@@ -77,10 +69,6 @@ export default function InspectionLandingPage() {
       return;
     }
     router.push(`/inspection/${selectedDraftId}`);
-  };
-
-  const handleUpdateMap = () => {
-    setAddressForMap(address);
   };
 
   async function onCreateNew(values: z.infer<typeof formSchema>) {
@@ -174,19 +162,13 @@ export default function InspectionLandingPage() {
                         render={({ field }) => (
                             <FormItem>
                             <FormLabel className="sr-only">Property Address</FormLabel>
-                            <div className="flex flex-col sm:flex-row items-center gap-2">
-                                <FormControl>
-                                <Input placeholder="e.g., 123 Queen Street, Auckland" {...field} />
-                                </FormControl>
-                                <Button type="button" variant="secondary" onClick={handleUpdateMap} className="w-full sm:w-auto">
-                                    Preview Map
-                                </Button>
-                            </div>
+                            <FormControl>
+                            <Input placeholder="e.g., 123 Queen Street, Auckland" {...field} />
+                            </FormControl>
                             <FormMessage />
                             </FormItem>
                         )}
                         />
-                        <MapPreview address={addressForMap} />
                         <div className="flex justify-end">
                             <Button type="submit" disabled={isCreating}>
                                 {isCreating ? (
