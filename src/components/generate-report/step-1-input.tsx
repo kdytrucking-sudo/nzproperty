@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import type { PropertyData } from '@/lib/types';
 import { FileUploader } from '../file-uploader';
-import { MapPreview } from '../map-preview';
 import { extractPropertyData } from '@/ai/flows/extract-property-data-from-pdf';
 import * as React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -54,7 +53,6 @@ export function Step1Input({ onDataExtracted, onDraftLoaded }: Step1InputProps) 
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [isDraftLoading, setIsDraftLoading] = React.useState(false);
-  const [addressForMap, setAddressForMap] = React.useState<string | null>(null);
   const [drafts, setDrafts] = React.useState<DraftSummary[]>([]);
   const [selectedDraftId, setSelectedDraftId] = React.useState<string>('');
 
@@ -90,7 +88,6 @@ export function Step1Input({ onDataExtracted, onDraftLoaded }: Step1InputProps) 
     const selected = drafts.find(d => d.draftId === draftId);
     if(selected) {
         form.setValue('address', selected.propertyAddress);
-        setAddressForMap(selected.propertyAddress);
         setSelectedDraftId(draftId);
     } else {
         setSelectedDraftId('');
@@ -208,10 +205,6 @@ export function Step1Input({ onDataExtracted, onDraftLoaded }: Step1InputProps) 
     }
   }
 
-  const handleUpdateMap = () => {
-    setAddressForMap(address);
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -258,17 +251,13 @@ export function Step1Input({ onDataExtracted, onDraftLoaded }: Step1InputProps) 
                   render={({ field }) => (
                     <FormItem>
                       <label className="text-sm font-medium">Property Address</label>
-                      <div className="flex items-center gap-2">
-                        <FormControl>
-                          <Input placeholder="e.g., 123 Queen Street, Auckland" {...field} />
-                        </FormControl>
-                         <Button type="button" variant="secondary" onClick={handleUpdateMap}>Update</Button>
-                      </div>
+                      <FormControl>
+                        <Input placeholder="e.g., 123 Queen Street, Auckland" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <MapPreview address={addressForMap} />
               </div>
 
               <div className="space-y-6">
